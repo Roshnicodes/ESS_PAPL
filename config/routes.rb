@@ -45,8 +45,8 @@ Rails.application.routes.draw do
     patch "read_for_tour/:tour_id", on: :collection, action: :read_for_tour, as: :read_for_tour
   end
 
-  # IT Tools – open Guest House / Help Desk / Training / GeoHub already signed in
-  get "it-tools/:tool", to: "it_tools#open", as: :it_tool, constraints: { tool: /guest_house|help_desk|training|geohub|old_ess/ }
+  # IT Tools – open Guest House / Help Desk / Training / Old ESS already signed in
+  get "it-tools/:tool", to: "it_tools#open", as: :it_tool, constraints: { tool: /guest_house|help_desk|training|old_ess/ }
 
   namespace :account do
     resource :password, only: %i[edit update]

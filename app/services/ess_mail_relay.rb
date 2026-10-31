@@ -5,12 +5,13 @@ require "uri"
 # Every in-app notification (bell) is also sent as an email through krai (the server has no SMTP),
 # the same way Apurti (Asset Management) and the KRA portal send their mails:
 #
-#   GET https://krai.ploughmanagro.com/ess_notification.aspx?to_email=...&to_name=...&subject=...&message=...
+#   GET https://krai.asaindia.org/papless_notification.aspx?to_email=...&to_name=...&subject=...&message=...
 #       &link=...&employee_name=...&employee_code=...&quarter=&month=&reviewer_role=...&reviewer_name=...
 #       &action=...&remarks=...&mail_type=<notification kind>
 # (the same parameters krai's KRA / Guest House pages use; tour reference, dates and claim amount go in message)
 #
-# Off until ESS_MAIL_RELAY_URL is set (e.g. https://krai.ploughmanagro.com/ess_notification.aspx),
+# In production it uses krai's PAPL page (DEFAULT_RELAY_URL; mails go out from notification@ploughmanagro.com).
+# ESS_MAIL_RELAY_URL overrides it; elsewhere (development / test) mails are off until it is set,
 # so nothing changes before krai has the page. A failed mail is only logged – it never stops
 # the approval / claim that created the notification.
 class EssMailRelay
@@ -18,7 +19,8 @@ class EssMailRelay
 
   FIELDS = %w[to_email to_name subject message link employee_name employee_code quarter month
               reviewer_role reviewer_name action remarks mail_type].freeze
-  DEFAULT_APP_URL = "https://hr.ploughmanagro.com".freeze
+  DEFAULT_RELAY_URL = "https://krai.asaindia.org/papless_notification.aspx".freeze
+  DEFAULT_APP_URL = "https://hr.asaindia.org/papl".freeze   # mail buttons open PAPL ESS, never ASA ESS
   TIMEOUT_SECONDS = 15
   MAX_REDIRECTS = 3
   KRAI_SENT = /email sent/i
@@ -35,7 +37,7 @@ class EssMailRelay
     "tour_info" => "information", "claim_info" => "information", "claim_query_info" => "information"
   }.freeze
 
-  def self.url = ENV["ESS_MAIL_RELAY_URL"].to_s.strip
+  def self.url = (ENV["ESS_MAIL_RELAY_URL"].presence || (Rails.env.production? ? DEFAULT_RELAY_URL : "")).to_s.strip
   def self.enabled? = url.present?
   def self.app_url = (ENV["ESS_MAIL_APP_URL"].presence || DEFAULT_APP_URL).chomp("/")
 

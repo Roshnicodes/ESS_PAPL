@@ -8,7 +8,7 @@ class EssMailRelayTest < ActiveSupport::TestCase
     @l1.update_columns(email: "l1.manager@ploughmanagro.com")
   end
 
-  def with_relay(url = "https://krai.ploughmanagro.com/ess_notification.aspx")
+  def with_relay(url = "https://krai.asaindia.org/papless_notification.aspx")
     old = ENV["ESS_MAIL_RELAY_URL"]; ENV["ESS_MAIL_RELAY_URL"] = url
     yield
   ensure
@@ -24,6 +24,15 @@ class EssMailRelayTest < ActiveSupport::TestCase
     assert_no_enqueued_jobs(only: EssMailJob) { send_tour }
   end
 
+  test "production uses krai's PAPL mail page by default" do
+    old, env = ENV.delete("ESS_MAIL_RELAY_URL"), Rails.env
+    Rails.env = "production"
+    assert_equal "https://krai.asaindia.org/papless_notification.aspx", EssMailRelay.url
+  ensure
+    Rails.env = env
+    ENV["ESS_MAIL_RELAY_URL"] = old
+  end
+
   test "every notification queues one mail with the tour details" do
     with_relay do
       tour = nil
@@ -35,10 +44,10 @@ class EssMailRelayTest < ActiveSupport::TestCase
       assert_equal @emp.emp_code, params["employee_code"]
       assert_equal "pending", params["action"]
       assert_equal %w[to_email to_name subject message link employee_name employee_code quarter month reviewer_role reviewer_name action remarks mail_type].sort, params.except("_aj_symbol_keys").keys.sort
-      assert_match %r{\Ahttps://hr\.ploughmanagro\.com/approvals/tours/#{tour.id}\z}, params["link"]
+      assert_match %r{\Ahttps://hr\.asaindia\.org/papl/approvals/tours/#{tour.id}\z}, params["link"]   # PAPL ESS, not ASA ESS
       assert params["subject"].start_with?("PAPL ESS:")
       uri = EssMailRelay.request_uri(params)
-      assert_equal "/ess_notification.aspx", uri.path
+      assert_equal "/papless_notification.aspx", uri.path
       assert_includes uri.query, "mail_type=tour_pending"
     end
   end

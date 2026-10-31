@@ -3,7 +3,7 @@ require "test_helper"
 class ItToolsTest < ActionDispatch::IntegrationTest
   setup do
     @emp = user("1025")
-    @keys = %w[KRA_SSO_SECRET GEOHUB_SSO_SECRET GEOHUB_URL KRA_PORTAL_URL OLD_ESS_SSO_SECRET OLD_ESS_URL]
+    @keys = %w[KRA_SSO_SECRET KRA_PORTAL_URL OLD_ESS_SSO_SECRET OLD_ESS_URL]
     @env = ENV.to_h.slice(*@keys)
   end
   teardown { @keys.each { |k| ENV[k] = @env[k] } }
@@ -11,7 +11,8 @@ class ItToolsTest < ActionDispatch::IntegrationTest
   test "menu shows the IT Tools for every employee" do
     sign_in @emp
     get authenticated_root_path
-    %w[guest_house help_desk training geohub old_ess].each { |t| assert_match it_tool_path(t), response.body }
+    %w[guest_house help_desk training old_ess].each { |t| assert_match it_tool_path(t), response.body }
+    assert_no_match "GeoHub", response.body
   end
 
   test "not connected yet → friendly message, no redirect away" do
@@ -37,29 +38,20 @@ class ItToolsTest < ActionDispatch::IntegrationTest
     assert_in_delta 2.minutes.from_now.to_i, q["expires_at"].to_i, 5
   end
 
-  test "GeoHub link is signed exactly the way GeoHub checks it" do
-    ENV["GEOHUB_SSO_SECRET"] = "geo-secret"; ENV["GEOHUB_URL"] = "https://geohub.ploughmanagro.com/"
-    sign_in @emp
-    get it_tool_path("geohub")
-    uri = URI.parse(response.location)
-    q = URI.decode_www_form(uri.query).to_h
-    assert_equal "/ess/login/#{@emp.emp_code}", uri.path
-    # document_portal SessionsController#valid_ess_signature?: "code:expires_at"
-    assert_equal OpenSSL::HMAC.hexdigest("sha256", "geo-secret", "#{@emp.emp_code}:#{q['expires_at']}"), q["signature"]
-  end
-
   test "unknown tool is not routed" do
     sign_in @emp
     get "/it-tools/payroll"
     assert_response :not_found
+    get "/it-tools/geohub"
+    assert_response :not_found
   end
 
   test "admin saves secrets in IT Tools Settings (stored encrypted) and the link works" do
-    ENV["KRA_SSO_SECRET"] = nil; ENV["GEOHUB_SSO_SECRET"] = nil; ENV["GEOHUB_URL"] = nil
+    ENV["KRA_SSO_SECRET"] = nil
     sign_in user("ADMIN")
     get masters_it_tool_settings_path
     assert_response :success
-    patch masters_it_tool_settings_path, params: { settings: { KRA_PORTAL_URL: "https://kra.ploughmanagro.com", KRA_SSO_SECRET: "from-admin", GEOHUB_URL: "https://geohub.ploughmanagro.com", GEOHUB_SSO_SECRET: "" } }
+    patch masters_it_tool_settings_path, params: { settings: { KRA_PORTAL_URL: "https://kra.ploughmanagro.com", KRA_SSO_SECRET: "from-admin" } }
     raw = AppSetting.find_by!(key: "KRA_SSO_SECRET").value
     refute_includes raw, "from-admin"
     assert_equal "from-admin", AppSetting.get("KRA_SSO_SECRET")
@@ -69,8 +61,6 @@ class ItToolsTest < ActionDispatch::IntegrationTest
     # blank secret field keeps the saved value
     patch masters_it_tool_settings_path, params: { settings: { KRA_SSO_SECRET: "" } }
     assert_equal "from-admin", AppSetting.get("KRA_SSO_SECRET")
-    get it_tool_path("geohub")
-    assert_redirected_to authenticated_root_path      # GeoHub secret not set yet
   end
 
   test "only admin opens IT Tools Settings" do
@@ -83,12 +73,12 @@ class ItToolsTest < ActionDispatch::IntegrationTest
     ENV["OLD_ESS_SSO_SECRET"] = nil
     sign_in @emp
     get it_tool_path("old_ess")
-    assert_redirected_to "https://ess.ploughmanagro.com/"
+    assert_redirected_to "https://ess.asaindia.org/papl/index.php"
     ENV["OLD_ESS_SSO_SECRET"] = "old-secret"
     get it_tool_path("old_ess")
     uri = URI.parse(response.location)
     q = URI.decode_www_form(uri.query).to_h
-    assert_equal [ "ess.ploughmanagro.com", "/ess_sso.php" ], [ uri.host, uri.path ]
+    assert_equal [ "ess.asaindia.org", "/papl/ess_sso.php" ], [ uri.host, uri.path ]
     assert_equal @emp.emp_code, q["emp_code"]
     # old_ess_sso/ess_sso.php: hash_hmac('sha256', "$emp_code:$expires_at", secret)
     assert_equal OpenSSL::HMAC.hexdigest("SHA256", "old-secret", "#{@emp.emp_code}:#{q['expires_at']}"), q["signature"]

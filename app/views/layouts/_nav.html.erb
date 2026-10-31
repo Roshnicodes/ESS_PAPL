@@ -33,7 +33,7 @@
   <% end %>
 
   <div class="nav-head">IT Tools</div>
-  <% [["guest_house", "Guest House", :building], ["help_desk", "Help Desk", :info], ["training", "Training", :sparkles], ["geohub", "GeoHub", :map], ["old_ess", "Old ESS", :home]].each do |key, label, ic| %>
+  <% [["guest_house", "Guest House", :building], ["help_desk", "Help Desk", :info], ["training", "Training", :sparkles], ["old_ess", "Old ESS", :home]].each do |key, label, ic| %>
     <%= link_to it_tool_path(key), class: "nav-link", target: "_blank", rel: "noopener", title: "Opens #{label} – no separate login needed" do %><%= icon(ic) %><span class="truncate"><%= label %></span><%= icon(:arrow_right, "ml-auto h-3.5 w-3.5 -rotate-45 opacity-50") %><% end %>
   <% end %>
 

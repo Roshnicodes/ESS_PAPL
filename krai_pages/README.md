@@ -1,6 +1,6 @@
 # PAPL ESS mail page for krai
 
-PAPL ESS (https://hr.ploughmanagro.com – Tour Plan, TA/DA claim, Local Mileage) sends every
+PAPL ESS (https://hr.asaindia.org/papl – Tour Plan, TA/DA claim, Local Mileage) sends every
 notification as an email through **one krai page, `ess_notification.aspx`** – the same way
 Apurti (`nemail.aspx`) and the KRA portal (`asakra_notification.aspx`) already use krai.
 The ESS server calls the page with GET parameters; the page sends one HTML mail to `to_email`.
@@ -38,7 +38,7 @@ reviewer_role, reviewer_name, action, remarks, mail_type`
 - `action` = pending, forwarded, approved, returned, rejected, cancelled, deleted, closed or information
   (please accept all of these – do not limit it to pending/approved/rejected).
 - `remarks` = the remark written by the approver / Finance (may be empty).
-- `link` becomes a button. It must start with `https://hr.ploughmanagro.com`.
+- `link` becomes a button. It must start with `https://hr.asaindia.org/papl`.
 - All values are HTML-encoded. The page writes the "Dear <to_name>," greeting itself.
 
 ## mail_type values
@@ -81,12 +81,12 @@ The ESS server treats anything other than 200 with `"success":true` as a failure
 Open in a browser after putting your own email in place of `YOUR_EMAIL` (more links in `ESS_krai_test_links.txt`):
 
 ```
-https://krai.ploughmanagro.com/ess_notification.aspx?to_email=YOUR_EMAIL%40ploughmanagro.com&to_name=Rajesh+Kumar&subject=PAPL+ESS%3A+Tour+for+your+approval+%28L1%29&message=Priya+Sharma+sent+Tour+plan+%2823%2F10%2F2026+to+27%2F10%2F2026%29.+Ref%3A+TR-2026-000017+%7C+Tour+Plan+23%2F10%2F2026+to+27%2F10%2F2026&link=https%3A%2F%2Fhr.ploughmanagro.com%2Fapprovals%2Ftours%2F17&employee_name=Priya+Sharma&employee_code=1752&quarter=&month=&reviewer_role=Employee&reviewer_name=Priya+Sharma&action=pending&remarks=&mail_type=tour_pending
+https://krai.asaindia.org/papless_notification.aspx?to_email=YOUR_EMAIL%40ploughmanagro.com&to_name=Rajesh+Kumar&subject=PAPL+ESS%3A+Tour+for+your+approval+%28L1%29&message=Priya+Sharma+sent+Tour+plan+%2823%2F10%2F2026+to+27%2F10%2F2026%29.+Ref%3A+TR-2026-000017+%7C+Tour+Plan+23%2F10%2F2026+to+27%2F10%2F2026&link=https%3A%2F%2Fhr.asaindia.org/papl%2Fapprovals%2Ftours%2F17&employee_name=Priya+Sharma&employee_code=1752&quarter=&month=&reviewer_role=Employee&reviewer_name=Priya+Sharma&action=pending&remarks=&mail_type=tour_pending
 ```
 
 The page should show `{"success":true,"message":"Email sent"}` and the mail should arrive.
 
 ## After the page is live
 
-Tell the ESS team. They set `ESS_MAIL_RELAY_URL=https://krai.ploughmanagro.com/ess_notification.aspx`
+Tell the ESS team. They set `ESS_MAIL_RELAY_URL=https://krai.asaindia.org/papless_notification.aspx`
 on the ESS server and restart it – every ESS notification then also goes as an email.

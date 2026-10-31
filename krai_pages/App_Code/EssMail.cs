@@ -8,7 +8,7 @@ using System.Text;
 using System.Web;
 using System.Web.UI;
 
-// Sends the PAPL ESS (hr.ploughmanagro.com – Tour Plan, TA/DA and Local Mileage) notification mails.
+// Sends the PAPL ESS (hr.asaindia.org/papl – Tour Plan, TA/DA and Local Mileage) notification mails.
 // The ESS server calls ess_notification.aspx with GET parameters:
 //
 //   to_email, to_name, subject, message, link, employee_name, employee_code,
@@ -25,10 +25,10 @@ using System.Web.UI;
 //       - leave EssSmtpHost empty to use <system.net><mailSettings> of the site
 //   EssMailFrom, EssMailFromName - sender address and name
 //   EssAllowedIps  - comma separated IPs allowed to call the page (the ESS server); empty = anyone
-//   EssLinkBase    - links in the mail must start with this (default https://hr.ploughmanagro.com)
+//   EssLinkBase    - links in the mail must start with this (default https://hr.asaindia.org/papl)
 public static class EssMail
 {
-    private const string DefaultLinkBase = "https://hr.ploughmanagro.com";
+    private const string DefaultLinkBase = "https://hr.asaindia.org/papl";
     private const string Blue = "#1d4ed8";
     private const string Green = "#15803d";
     private const string Red = "#b91c1c";
@@ -82,7 +82,7 @@ public static class EssMail
 
             using (MailMessage mail = new MailMessage())
             {
-                mail.From = new MailAddress(Setting("EssMailFrom", "noreply@ploughmanagro.com"), Setting("EssMailFromName", "PAPL ESS"));
+                mail.From = new MailAddress(Setting("EssMailFrom", "notification@ploughmanagro.com"), Setting("EssMailFromName", "PAPL ESS"));
                 mail.To.Add(new MailAddress(toEmail, OneLine(Param(request, "to_name"))));
                 mail.Subject = subject;
                 mail.SubjectEncoding = Encoding.UTF8;
@@ -146,7 +146,7 @@ public static class EssMail
         html.Append("<p style=\"margin:0;font-size:12px;color:#6b7280;\">Or open: ").Append(Enc(link)).Append("</p>");
 
         html.Append("</td></tr>");
-        html.Append("<tr><td style=\"padding:14px 24px;background:#f9fafb;font-size:12px;color:#6b7280;\">This is an automatic mail from PAPL ESS (hr.ploughmanagro.com). Please do not reply.</td></tr>");
+        html.Append("<tr><td style=\"padding:14px 24px;background:#f9fafb;font-size:12px;color:#6b7280;\">This is an automatic mail from PAPL ESS (hr.asaindia.org/papl). Please do not reply.</td></tr>");
         html.Append("</table></td></tr></table></body></html>");
         return html.ToString();
     }

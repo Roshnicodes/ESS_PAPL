@@ -1,7 +1,7 @@
 # Admin-editable settings (IT Tools links). Secret values are encrypted with a key derived from the
 # app's secret_key_base, so the database never holds them in plain text. ENV always wins over the table.
 class AppSetting < ApplicationRecord
-  SECRET_KEYS = %w[KRA_SSO_SECRET GEOHUB_SSO_SECRET OLD_ESS_SSO_SECRET].freeze
+  SECRET_KEYS = %w[KRA_SSO_SECRET OLD_ESS_SSO_SECRET].freeze
 
   belongs_to :updated_by, class_name: "User", optional: true
   validates :key, presence: true, uniqueness: true, length: { maximum: 100 }

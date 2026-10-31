@@ -1,4 +1,4 @@
-# IT Tools menu: sends the logged-in employee to Guest House / Help Desk / Training / GeoHub already signed in.
+# IT Tools menu: sends the logged-in employee to Guest House / Help Desk / Training / Old ESS already signed in.
 class ItToolsController < ApplicationController
   def open
     key = params[:tool].to_s

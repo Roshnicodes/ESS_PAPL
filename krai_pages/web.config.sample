@@ -8,20 +8,20 @@
     <!-- SMTP that krai already uses. Leave EssSmtpHost empty to use <system.net><mailSettings>. -->
     <add key="EssSmtpHost" value="smtp.example.com" />
     <add key="EssSmtpPort" value="587" />
-    <add key="EssSmtpUser" value="noreply@ploughmanagro.com" />
+    <add key="EssSmtpUser" value="notification@ploughmanagro.com" />
     <add key="EssSmtpPassword" value="CHANGE_ME" />
     <add key="EssSmtpEnableSsl" value="true" />
 
     <!-- Sender shown in the mail (the notification id) -->
-    <add key="EssMailFrom" value="noreply@ploughmanagro.com" />
+    <add key="EssMailFrom" value="notification@ploughmanagro.com" />
     <add key="EssMailFromName" value="PAPL ESS" />
 
-    <!-- Public IP of the ESS server (hr.ploughmanagro.com). Only it may call the page.
+    <!-- Public IP of the ESS server (hr.asaindia.org/papl). Only it may call the page.
          Comma separated; empty = anyone can call it. -->
     <add key="EssAllowedIps" value="" />
 
     <!-- Links in the mail must start with this -->
-    <add key="EssLinkBase" value="https://hr.ploughmanagro.com" />
+    <add key="EssLinkBase" value="https://hr.asaindia.org/papl" />
   </appSettings>
 
   <!-- The ESS server calls the page without logging in. If krai uses Forms login, keep the page open. -->

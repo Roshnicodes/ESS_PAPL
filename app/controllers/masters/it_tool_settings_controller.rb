@@ -1,4 +1,4 @@
-# Admin: addresses and single sign-on secrets for IT Tools (Key Result portal, GeoHub).
+# Admin: addresses and single sign-on secrets for IT Tools (Key Result portal, Old ESS).
 # A secret field left blank keeps the saved value; secrets are stored encrypted and never shown again.
 class Masters::ItToolSettingsController < ApplicationController
   before_action { raise CanCan::AccessDenied, "Only admin can change IT Tools settings" unless current_user.admin? }
@@ -6,9 +6,7 @@ class Masters::ItToolSettingsController < ApplicationController
   FIELDS = {
     "KRA_PORTAL_URL"    => [ "Key Result portal address", "https://kra.ploughmanagro.com" ],
     "KRA_SSO_SECRET"    => [ "Key Result secret (ESS_SSO_SECRET on the Key Result server)", nil ],
-    "GEOHUB_URL"        => [ "GeoHub address", "https://geohub.ploughmanagro.com" ],
-    "GEOHUB_SSO_SECRET" => [ "GeoHub secret (ESS_LOGIN_SECRET on the GeoHub server)", nil ],
-    "OLD_ESS_URL"        => [ "Old ESS address", "https://ess.ploughmanagro.com" ],
+    "OLD_ESS_URL"        => [ "Old ESS address", "https://ess.asaindia.org/papl" ],
     "OLD_ESS_SSO_SECRET" => [ "Old ESS secret (same value inside ess_sso.php on the old ESS) – blank = old ESS opens its login page", nil ]
   }.freeze
 

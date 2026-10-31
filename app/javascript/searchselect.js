@@ -4,11 +4,12 @@ const TomSelect = window.TomSelect
 // Every <select> in the app becomes a searchable dropdown (search box inside the list).
 // The original <select> stays in the DOM (hidden) and keeps its value, options and data-* attributes,
 // and still fires "change" – so forms, Stimulus controllers and calculations work unchanged.
-// Add data-no-search to a <select> to keep it native.
+// Add data-no-search to a <select> to keep it native. The date picker's own month list (inside
+// .flatpickr-calendar) is always left native – turning it into a search box froze the calendar on one month.
 
 function enhance(root) {
   root.querySelectorAll?.("select:not([data-no-search]):not([multiple])").forEach((el) => {
-    if (el.tomselect || el.closest("template")) return
+    if (el.tomselect || el.closest("template") || el.closest(".flatpickr-calendar")) return
     new TomSelect(el, {
       plugins: ["dropdown_input"],
       // render the list above everything (glass cards / sticky bars create stacking contexts)
