@@ -1,22 +1,22 @@
 {
-  "name": "Ess",
+  "name": "PAPL ESS",
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "<%= request.script_name %>/icon.png",
       "type": "image/png",
       "sizes": "512x512"
     },
     {
-      "src": "/icon.png",
+      "src": "<%= request.script_name %>/icon.png",
       "type": "image/png",
       "sizes": "512x512",
       "purpose": "maskable"
     }
   ],
-  "start_url": "/",
+  "start_url": "<%= request.script_name %>/",
   "display": "standalone",
-  "scope": "/",
-  "description": "Ess.",
+  "scope": "<%= request.script_name %>/",
+  "description": "PAPL Employee Self Service",
   "theme_color": "red",
   "background_color": "red"
 }

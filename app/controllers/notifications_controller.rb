@@ -7,7 +7,8 @@ class NotificationsController < ApplicationController
   def show
     n = current_user.notifications.find(params[:id])
     n.mark_read!
-    redirect_to n.url
+    # saved paths ("/approvals/…") have no sub-path; add it when the app runs under one (/papl)
+    redirect_to n.url.to_s.start_with?("/") ? "#{request.script_name}#{n.url}" : n.url
   end
 
   # Tour History: opening a tour's history marks its (and its claim's) notifications as read
