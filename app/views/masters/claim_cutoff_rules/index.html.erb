@@ -1,0 +1,33 @@
+<% content_for :title, "Local Claim Cutoff Day" %>
+<%= page_header("Local Mileage Cutoff Day", "Decides which month an employee sees in Local Mileage Claim.", icon_name: :calendar) do %>
+  <%= print_button %>
+  <%= render "shared/activity_button", id: "cutoff-history", title: "Change history", sections: [["Changes", @logs]] %>
+<% end %>
+<% day = @global&.cutoff_day || ClaimCutoffRule::DEFAULT_DAY %>
+<div class="grid gap-5 lg:grid-cols-3">
+  <div class="card overflow-hidden fade-up">
+    <div class="bg-gradient-to-br from-brand-600 to-brand-800 p-5 text-white">
+      <div class="text-xs uppercase tracking-wider text-brand-100">All employees</div>
+      <div class="mt-1 flex items-end gap-2"><span class="text-6xl font-extrabold leading-none"><%= day %></span><span class="pb-1 text-sm text-brand-100"><%= day.ordinalize.delete(day.to_s) %> of month</span></div>
+    </div>
+    <div class="card-body space-y-3 text-sm">
+      <p class="text-slate-600">Till day <b><%= day %></b> the <b>previous month</b> is shown; from day <b><%= day + 1 %></b> the current month opens.</p>
+      <div class="rounded-lg bg-white/50 p-3 text-xs text-slate-600"><b>Example:</b> on <%= day > 1 ? "#{day - 1}" : "1" %>-Nov → Oct month · on <%= day + 1 %>-Nov → Nov month</div>
+      <%= link_to(@global ? edit_masters_claim_cutoff_rule_path(@global) : new_masters_claim_cutoff_rule_path, class: "btn-primary w-full") do %><%= icon(:pencil) %> Change day<% end %>
+    </div>
+  </div>
+  <div class="card overflow-hidden lg:col-span-2 fade-up">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-violet-50 text-violet-600"><%= icon(:users) %></span>Employee-wise overrides</span>
+      <%= link_to new_masters_claim_cutoff_rule_path(employee: 1), class: "btn-soft btn-xs" do %><%= icon(:plus) %> Add employee rule<% end %></div>
+    <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack"><thead><tr><th>Employee</th><th>Cutoff day</th><th>Remark</th><th>Updated</th><th></th></tr></thead>
+    <tbody><% @overrides.each do |r| %>
+      <tr><td data-label="Employee"><div class="flex items-center gap-2"><%= avatar(r.user, size: "h-8 w-8 text-xs") %><div class="leading-tight"><b><%= r.user.name %></b><div class="muted"><%= r.user.emp_code %></div></div></div></td>
+        <td data-label="Day"><span class="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-violet-100 font-bold text-violet-700"><%= r.cutoff_day %></span></td>
+        <td data-label="Remark"><%= r.remark %></td>
+        <td data-label="Updated" class="muted"><%= dt(r.updated_at) %><br>by <%= r.updated_by %></td>
+        <td><div class="flex justify-end gap-1.5"><%= link_to edit_masters_claim_cutoff_rule_path(r), class: "btn-light btn-xs" do %><%= icon(:pencil) %><% end %>
+          <%= button_to masters_claim_cutoff_rule_path(r), method: :delete, class: "btn-soft-danger btn-xs", form_class: "inline", data: { turbo_confirm: "Remove override for #{r.user.name}?" } do %><%= icon(:trash) %><% end %></div></td></tr>
+    <% end %>
+    <%= empty_row(5, "No employee-wise rule. Everyone follows the common day.", icon_name: :users) if @overrides.empty? %></tbody></table></div>
+  </div>
+</div>

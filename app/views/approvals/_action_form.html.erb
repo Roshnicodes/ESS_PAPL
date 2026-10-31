@@ -1,0 +1,15 @@
+<%# locals: (approve_url:, return_url:, reject_url:, approve_label: "Approve", extra: nil, id:) %>
+<%# One remark box shared by the three actions; remark is mandatory for Approve / Return / Reject. %>
+<%= form_with url: approve_url, method: :patch, class: "space-y-3" do %>
+  <%= extra %>
+  <div>
+    <label class="lbl" for="remark_<%= id %>">Remark <span class="text-rose-500">*</span></label>
+    <%= text_area_tag :remark, nil, id: "remark_#{id}", rows: 2, required: true, class: "inp", placeholder: "Write your remark – required for Approve, Return and Reject" %>
+  </div>
+  <div class="grid gap-2 sm:grid-cols-3">
+    <%= button_tag formaction: reject_url, class: "btn-soft-danger", data: { turbo_confirm: "Reject? This is final – it cannot be sent again." } do %><%= icon(:x_circle) %> Reject<% end %>
+    <%= button_tag formaction: return_url, class: "btn bg-orange-50 text-orange-700 border-transparent hover:bg-orange-100", data: { turbo_confirm: "Return to employee for correction?" } do %><%= icon(:arrow_right, "h-4 w-4 rotate-180") %> Return<% end %>
+    <%= button_tag class: "btn-success whitespace-normal text-center leading-tight" do %><%= icon(:check) %> <%= approve_label %><% end %>
+  </div>
+  <p class="text-[11px] text-slate-500"><b>Return</b> = back to employee to correct &amp; send again · <b>Reject</b> = final, cannot be sent again</p>
+<% end %>

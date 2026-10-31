@@ -1,0 +1,9 @@
+<%# locals: (f:, total_input: false) %>
+<%# DEDUCTION AMT. / DEDUCTION REMARK are filled by reviewers only (read-only for the employee, as on live ESS) %>
+<td data-label="Deduction"><input type="number" readonly tabindex="-1" class="inp px-2 text-right" value="<%= '%.2f' % f.object.deduction_amount.to_d %>" data-calc="deduction" data-value="<%= f.object.deduction_amount %>"></td>
+<td data-label="Deduction Remark"><input type="text" readonly tabindex="-1" class="inp px-2" value="<%= f.object.deduction_remark %>"></td>
+<% if total_input %>
+  <td data-label="Total"><%= f.number_field :amount, step: "0.01", min: 0, value: (f.object.amount.to_d.zero? ? nil : f.object.amount), placeholder: "0.00", class: "inp px-2 text-right font-semibold", data: { calc: "amount" } %><span hidden data-calc="total"></span><%= f.hidden_field :_destroy %></td>
+<% else %>
+  <td data-label="Total" class="font-semibold text-slate-900 xl:text-right" data-calc="total"><%= inr(f.object.total_amount) %><%= f.hidden_field :_destroy %></td>
+<% end %>

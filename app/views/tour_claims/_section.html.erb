@@ -1,0 +1,26 @@
+<%# locals: (f:, assoc:, key:, title: nil, heads: [], icon_name:, tone:, hint: nil) %>
+<% tones = { "brand" => "bg-brand-50 text-brand-600 border-l-brand-500", "leaf" => "bg-leaf-50 text-leaf-600 border-l-leaf-500",
+             "violet" => "bg-violet-50 text-violet-600 border-l-violet-500", "amber" => "bg-amber-50 text-amber-600 border-l-amber-500",
+             "sky" => "bg-sky-50 text-sky-600 border-l-sky-500" } %>
+<div class="card overflow-hidden border-l-4 <%= tones[tone].split(" ").last %>" data-controller="nested-rows" data-claim-calc-target="section" data-section="<%= key %>">
+  <div class="card-head">
+    <% if title %>
+      <span class="card-title"><span class="icon-chip <%= tones[tone].split(" ").first(2).join(" ") %>"><%= icon(icon_name) %></span>
+        <span class="leading-tight"><%= title %><% if hint %><span class="block text-xs font-normal text-slate-500"><%= hint %></span><% end %></span></span>
+    <% else %><span></span><% end %>
+    <div class="flex items-center gap-3">
+      <span class="text-sm text-slate-500">Sub total <b class="ml-1 text-slate-900" data-subtotal><%= inr(f.object.public_send(TourClaim::SECTIONS[assoc])) %></b></span>
+      <button type="button" class="btn-soft btn-xs print:hidden" data-action="nested-rows#add"><%= icon(:plus) %> Add row</button>
+    </div>
+  </div>
+  <%# same table as live ESS: one line per entry on wide screens; each line becomes a card on phones / small screens %>
+  <table class="tbl tbl-review tbl-entry xl:table-fixed">
+    <thead><tr><% heads.each do |h| %><th><%= h %></th><% end %><th class="w-16"></th></tr></thead>
+    <tbody data-nested-rows-target="container">
+      <%= f.fields_for assoc do |lf| %><%= render "tour_claims/lines/#{key}", f: lf %><% end %>
+    </tbody>
+  </table>
+  <template data-nested-rows-target="template">
+    <%= f.fields_for assoc, f.object.public_send(assoc).klass.new, child_index: "NEW_RECORD" do |lf| %><%= render "tour_claims/lines/#{key}", f: lf %><% end %>
+  </template>
+</div>

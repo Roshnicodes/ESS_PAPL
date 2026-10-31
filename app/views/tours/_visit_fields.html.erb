@@ -1,0 +1,27 @@
+<div data-nested-row data-new-record="<%= f.object.new_record? %>" class="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-[10rem_1fr_13rem_1.4fr_auto] lg:items-start lg:py-3 sm:px-5">
+  <div><%= f.label :visit_date, "Date", class: "lbl lg:sr-only" %><%= f.date_field :visit_date, class: "inp", data: { visit_date: true }, min: f.object.tour&.from_date, max: f.object.tour&.to_date %></div>
+  <div><%= f.label :place, "Place To Visit", class: "lbl lg:sr-only" %><%= f.text_field :place, class: "inp", maxlength: 200, placeholder: "Place to visit", list: "place-suggestions", autocomplete: "off" %></div>
+  <% modes = (@tour_plan_modes ||= TravelMode.tour_plan.includes(mode_approvers: :user).to_a) %>
+  <% train_ids = (@train_mode_ids ||= modes.select(&:is_train?).map(&:id)) %>
+  <% approval_routes = (@tour_mode_approval_routes ||= modes.to_h { |mode| [ mode.id, { approvers: mode.approver_chain.map { |approver| approver.user.designation.presence || approver.user.name }.uniq, tatkal_approvers: mode.tatkal_chain.map { |approver| approver.user.designation.presence || approver.user.name }.uniq } ] }) %>
+  <div data-controller="train-quota" data-train-quota-trains-value="<%= train_ids.to_json %>" data-train-quota-approvals-value="<%= json_escape(approval_routes.to_json) %>">
+    <%= f.label :travel_mode_id, "Mode of Travel", class: "lbl lg:sr-only" %>
+    <%= f.collection_select :travel_mode_id, modes, :id, :name, { include_blank: "Mode of travel" }, class: "inp", data: { train_quota_target: "mode", action: "change->train-quota#toggle" } %>
+    <div class="mt-1.5" data-train-quota-target="quota" <%= "hidden" unless f.object.travel_mode&.is_train? %>>
+      <div class="flex items-center gap-2">
+        <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500" for="<%= f.field_id(:ticket_quota) %>">Ticket</label>
+        <%= f.select :ticket_quota, TourVisit::QUOTAS, {}, class: "inp py-1 text-sm", data: { no_search: true, train_quota_target: "ticket", action: "change->train-quota#toggle" } %>
+      </div>
+    </div>
+    <p hidden class="mt-1.5 flex items-start gap-1.5 text-xs font-medium text-indigo-700" data-train-quota-target="approval" aria-live="polite"><%= icon(:info, "mt-px h-4 w-4 shrink-0") %><span data-train-quota-target="approvalText"></span></p>
+  </div>
+  <div data-controller="char-count" data-char-count-max-value="<%= Tour::ACTIVITY_MAX %>">
+    <%= f.label :planned_activity, "Planned activities", class: "lbl lg:sr-only" %>
+    <%= f.text_area :planned_activity, rows: 1, maxlength: Tour::ACTIVITY_MAX, class: "inp", placeholder: "Planned activities / tasks to be completed", data: { char_count_target: "input", action: "input->char-count#update" } %>
+    <div class="mt-1 text-right text-[11px] text-slate-400" data-char-count-target="counter"></div>
+  </div>
+  <div class="flex justify-end gap-1 lg:pt-0.5"><%= f.hidden_field :_destroy %>
+    <button type="button" class="rounded-lg p-2 text-brand-600 hover:bg-brand-50" data-action="nested-rows#addAfter" title="Add visit below"><%= icon(:plus, "h-4 w-4") %><span class="sr-only">Add visit</span></button>
+    <button type="button" class="rounded-lg p-2 text-rose-500 hover:bg-rose-50" data-action="nested-rows#remove" title="Remove"><%= icon(:trash, "h-4 w-4") %><span class="sr-only">Remove</span></button>
+  </div>
+</div>

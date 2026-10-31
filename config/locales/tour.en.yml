@@ -1,0 +1,11 @@
+en:
+  activerecord:
+    attributes:
+      tour/tour_visits:
+        visit_date: "Visit date"
+        place: "Place to visit"
+        planned_activity: "Planned activities / tasks"
+      tour_visit:
+        visit_date: "Visit date"
+        place: "Place to visit"
+        planned_activity: "Planned activities / tasks"

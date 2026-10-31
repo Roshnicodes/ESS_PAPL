@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+  <head>
+    <title><%= safe_join([content_for(:title), "PAPL ESS"].compact, " · ") %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="theme-color" content="#1f7a3a">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <%# Caveat / Kalam are only used by the login page %>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800<%= "&family=Caveat:wght@600&family=Kalam:wght@400;700" unless user_signed_in? %>&display=swap" rel="stylesheet">
+    <%= yield :head %>
+    <link rel="icon" href="/icon.png" type="image/png">
+    <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
+    <%= javascript_importmap_tags %>
+  </head>
+
+  <% app_scene = Rails.application.assets.load_path.find("login-rural-farmer.jpg") ? "login-rural-farmer.jpg" : "login-scene.svg" %>
+  <body class="app-bg h-full text-slate-800" style="--scene: url('<%= image_path(app_scene) %>')">
+    <% if user_signed_in? %>
+      <div data-controller="sidebar" class="app-shell min-h-full">
+        <%# mobile backdrop %>
+        <div data-sidebar-target="backdrop" data-action="click->sidebar#close"
+             class="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity lg:hidden"></div>
+
+        <aside data-sidebar-target="panel"
+               class="app-sidebar fixed inset-y-0 left-0 z-50 flex w-72 -translate-x-full flex-col border-r border-white/70 text-slate-800 backdrop-blur-2xl backdrop-saturate-150 transition-transform duration-300 lg:translate-x-0 print:hidden">
+          <div class="flex items-start gap-2 px-5 pb-2 pt-4">
+            <%= link_to authenticated_root_path, class: "block min-w-0 flex-1" do %>
+              <%= image_tag "papl_logo_full.png", class: "h-auto w-full max-w-[13.5rem]", alt: "Ploughman Agro – Sustainable by Design" %>
+              <div class="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-700">Employee Self Service</div>
+            <% end %>
+            <button type="button" class="ml-auto rounded-lg p-1.5 text-slate-500 hover:bg-white/70 lg:hidden" data-action="sidebar#close" aria-label="Close menu"><%= icon(:x) %></button>
+          </div>
+          <div class="flex-1 overflow-y-auto px-3 pb-4"><%= render "layouts/nav" %></div>
+          <div class="sidebar-user m-3 rounded-2xl p-3">
+            <div class="flex items-center gap-3">
+              <%= avatar(current_user) %>
+              <div class="min-w-0 leading-tight">
+                <div class="truncate text-sm font-semibold text-slate-900"><%= current_user.name %></div>
+                <div class="truncate text-[11px] text-slate-500"><%= current_user.designation %> · <%= role_label(current_user) %></div>
+              </div>
+              <%= button_to destroy_user_session_path, method: :delete, class: "ml-auto rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-rose-600", form: { data: { turbo: false } }, title: "Logout" do %><%= icon(:logout) %><% end %>
+            </div>
+          </div>
+        </aside>
+
+        <div class="lg:pl-72">
+          <header class="app-header sticky top-0 z-30 flex items-center gap-3 border-b border-white/70 px-4 py-3 backdrop-blur-xl backdrop-saturate-150 sm:px-6 print:hidden">
+            <button type="button" class="-ml-1 rounded-lg p-2 text-slate-600 hover:bg-slate-100 lg:hidden" data-action="sidebar#open" aria-label="Open menu"><%= icon(:menu, "h-6 w-6") %></button>
+            <% unless current_page?(authenticated_root_path) %>
+              <button type="button" onclick="if (history.length > 1) { history.back() } else { location.href = '<%= authenticated_root_path %>' }"
+                      class="inline-flex items-center gap-1 rounded-lg border border-slate-200/80 bg-white/60 px-2.5 py-1.5 text-sm font-medium text-slate-600 hover:bg-white hover:text-brand-700" title="Back">
+                <%= icon(:arrow_right, "h-4 w-4 rotate-180") %><span class="hidden sm:inline">Back</span>
+              </button>
+            <% end %>
+            <div class="min-w-0">
+              <div class="truncate text-[15px] font-semibold text-slate-800"><%= content_for(:title) || "Dashboard" %></div>
+              <div class="hidden text-xs text-slate-400 sm:block"><%= Date.current.strftime("%A, %d %B %Y") %></div>
+            </div>
+            <div class="ml-auto flex items-center gap-2">
+              <%= render "layouts/bell" %>
+              <%= render "layouts/profile" %>
+            </div>
+          </header>
+
+          <%= render "layouts/flash" %>
+          <main class="app-main mx-auto max-w-[1540px] px-3 py-5 sm:px-6 sm:py-7">
+            <%# letter-head on every printed page %>
+            <div class="print-only mb-3 border-b-2 border-brand-700 pb-2">
+              <div class="flex items-center justify-between gap-4">
+                <%= image_tag "papl_logo_full.png", class: "h-14 w-auto", alt: "Ploughman Agro" %>
+                <div class="text-right leading-tight">
+                  <div class="text-base font-extrabold text-brand-800">Ploughman Agro Private Limited</div>
+                  <div class="text-[11px] text-slate-600">Employee Self Service · <%= content_for(:title) %></div>
+                  <div class="text-[10px] text-slate-500">Printed by <%= current_user.name %> (<%= current_user.emp_code %>) on <%= Time.current.strftime("%d/%m/%Y %I:%M %p") %></div>
+                </div>
+              </div>
+            </div>
+            <%= yield %>
+          </main>
+        </div>
+      </div>
+    <% else %>
+      <%= render "layouts/flash" %>
+      <%= yield %>
+    <% end %>
+  </body>
+</html>

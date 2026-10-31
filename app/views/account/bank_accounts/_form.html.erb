@@ -1,0 +1,29 @@
+<% locked = @account.persisted? && @account.used_on_sent_claim? %>
+<%= error_box(@account) %>
+<%= form_with model: [:account, @account], class: "card max-w-4xl fade-up", html: { multipart: true } do |f| %>
+  <% if locked %>
+    <div class="flex gap-2 border-b border-amber-100 bg-amber-50/80 px-5 py-3 text-sm text-amber-900"><%= icon(:lock, "h-5 w-5 shrink-0 text-amber-500") %>
+      This account is used on a sent claim, so its number, IFSC, bank and holder name are locked. You can still change branch, type or passbook copy.</div>
+  <% end %>
+  <div class="card-body grid gap-4 sm:grid-cols-2">
+    <div><%= f.label :account_holder_name, "Account holder name", class: "lbl" %><%= f.text_field :account_holder_name, class: "inp", required: true, disabled: locked, maxlength: 150 %></div>
+    <div><%= f.label :bank_name, "Bank name", class: "lbl" %><%= f.text_field :bank_name, class: "inp", required: true, disabled: locked, maxlength: 100, placeholder: "e.g. State Bank of India",
+           list: "bank-names" %>
+      <datalist id="bank-names"><% ["State Bank of India", "Punjab National Bank", "Bank of Baroda", "Bank of India", "Canara Bank", "Union Bank of India", "Central Bank of India", "Indian Bank", "HDFC Bank", "ICICI Bank", "Axis Bank", "Kotak Mahindra Bank", "IDBI Bank", "Madhya Pradesh Gramin Bank", "Madhyanchal Gramin Bank"].each do |b| %><option value="<%= b %>"><% end %></datalist></div>
+    <div><%= f.label :account_number, "Account number", class: "lbl" %><%= f.text_field :account_number, class: "inp font-mono tracking-wider", required: true, disabled: locked, inputmode: "numeric", pattern: "[0-9 ]{6,24}", maxlength: 24, autocomplete: "off", placeholder: "Digits only" %></div>
+    <% unless locked %>
+      <div><%= f.label :account_number_confirmation, "Confirm account number", class: "lbl" %><%= f.text_field :account_number_confirmation, class: "inp font-mono tracking-wider", required: true, inputmode: "numeric", pattern: "[0-9 ]{6,24}", maxlength: 24, autocomplete: "off", placeholder: "Type again",
+             value: params.dig(:bank_account, :account_number_confirmation) || (@account.persisted? ? @account.account_number : nil) %></div>
+    <% end %>
+    <div><%= f.label :ifsc_code, "IFSC code", class: "lbl" %><%= f.text_field :ifsc_code, class: "inp font-mono uppercase", required: true, disabled: locked, maxlength: 11, pattern: "[A-Za-z]{4}0[A-Za-z0-9]{6}", placeholder: "e.g. SBIN0001234" %></div>
+    <div><%= f.label :branch_name, "Branch", class: "lbl" %><%= f.text_field :branch_name, class: "inp", maxlength: 100, placeholder: "Branch name / city" %></div>
+    <div><%= f.label :account_type, "Account type", class: "lbl" %><%= f.select :account_type, BankAccount::TYPES.keys.map { |k| [k.to_s.humanize, k] }, {}, class: "inp" %></div>
+    <div class="sm:col-span-2">
+      <%= f.label :passbook, "Passbook / cancelled cheque copy", class: "lbl" %>
+      <%= f.file_field :passbook, class: "inp file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:font-semibold file:text-brand-700", accept: "application/pdf,image/jpeg,image/png", required: !(@account.persisted? && @account.passbook.attached?) %>
+      <p class="mt-1 text-xs text-slate-500">PDF, JPG or PNG · max 5 MB · first page showing name, account number and IFSC.
+        <% if @account.persisted? && @account.passbook.attached? %>Current: <%= link_to @account.passbook.filename.to_s, passbook_account_bank_account_path(@account), target: "_blank", class: "link" %> – choose a file only to replace it.<% end %></p>
+    </div>
+  </div>
+  <div class="flex justify-end gap-2 border-t border-white/70 px-5 py-3"><%= link_to "Cancel", account_bank_accounts_path, class: "btn-ghost" %><%= f.button class: "btn-primary" do %><%= icon(:check) %> Save<% end %></div>
+<% end %>

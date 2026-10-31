@@ -1,0 +1,8 @@
+<tr data-nested-row data-new-record="<%= f.object.new_record? %>">
+  <td data-label="Date"><%= f.date_field :expense_date, class: "inp", min: @tour.from_date, max: @tour.to_date %></td>
+  <td data-label="Particular"><%= f.text_field :particular, class: "inp" %></td>
+  <td data-label="Bill No"><%= f.text_field :bill_no, class: "inp" %></td>
+  <td data-label="Amount (Rs.)"><%= f.number_field :amount, step: "0.01", min: 0, value: (f.object.amount.to_d.zero? ? nil : f.object.amount), placeholder: "0.00", class: "inp text-right", data: { calc: "amount" } %></td>
+  <%= render "tour_claims/lines/tail", f: f %>
+  <td class="w-16 whitespace-nowrap text-right"><%= render "tour_claims/lines/row_actions" %></td>
+</tr>

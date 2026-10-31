@@ -1,0 +1,68 @@
+<% content_for :title, "Tour Approval" %>
+<% t = @tour %>
+<div class="mb-4 flex flex-wrap items-center gap-2 print:hidden">
+  <%= link_to approvals_tours_path, class: "btn-light btn-xs" do %><%= icon(:arrow_right, "h-4 w-4 rotate-180") %> All pending (<%= @queue_size %>)<% end %>
+  <%= link_to done_approvals_tours_path, class: "btn-light btn-xs btn-icon", title: "Tour Approval History", aria: { label: "Tour Approval History" } do %><%= icon(:clock) %><% end %>
+  <span class="ml-auto flex flex-wrap gap-2">
+    <%= print_button("Print", css: "btn-light btn-xs") %>
+    <% if @next_id %><%= link_to approvals_tour_path(@next_id), class: "btn-light btn-xs" do %>Next pending <%= icon(:arrow_right, "h-4 w-4") %><% end %><% end %>
+  </span>
+</div>
+
+<%# printed employee block – the paper has no sidebar to say whose tour this is %>
+<% u = t.user %>
+<div class="print-only mb-2 text-[11px]">
+  <b><%= u.name %></b> (<%= u.emp_code %>) · <%= u.designation %> · <%= u.department %> · <%= u.branch.presence || u.location %>
+  <span class="float-right">Ref. <%= t.reference_no %></span>
+</div>
+
+<div class="card overflow-hidden fade-up">
+  <%# one line summary %>
+  <div class="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-white/70 px-4 py-3 sm:px-5">
+    <span class="text-base font-bold text-slate-900">Tour Plan</span>
+    <%= status_badge(t.status, label: { "submitted" => "Pending L1", "l1_approved" => "Forwarded to L2", "l2_approved" => "Forwarded to #{t.l3_label}" }[t.status]) %>
+    <span class="text-sm"><b><%= t.user.name %></b> <span class="text-slate-500">(<%= t.user.emp_code %>) · <%= t.user.designation %> · <%= t.user.branch || t.user.location %></span></span>
+    <span class="text-sm text-slate-700"><%= icon(:calendar, "mr-1 inline h-4 w-4 text-slate-400") %><%= t.duration_label %> <span class="text-slate-400">(<%= t.days %>d · <%= t.tour_visits.size %> visits)</span></span>
+  </div>
+  <div class="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-white/70 px-4 py-2.5 text-sm sm:px-5">
+    <span class="flex flex-wrap items-center"><span class="mr-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Approval</span><%= approver_chain(t.approver, t.l2_approver, t.approval_steps) %></span>
+    <% if t.general_description.present? %><span><span class="text-xs font-semibold uppercase tracking-wide text-slate-400">Description:</span> <%= t.general_description %></span><% end %>
+  </div>
+  <% if t.extra_reason %>
+    <div class="flex flex-wrap items-center gap-2 border-b border-indigo-100 bg-indigo-50/70 px-4 py-2.5 text-sm text-indigo-900 sm:px-5">
+      <%= icon(:info, "h-5 w-5 shrink-0 text-indigo-500") %>
+      <span>Employee is using <b><%= t.extra_reason %></b> on this tour – needs extra approval:
+        <%= safe_join(t.approval_steps.map { |s| tag.b(s.label) + (s.done? ? " ✓" : "") }, " → ") %></span>
+    </div>
+  <% end %>
+
+  <div class="overflow-x-auto">
+    <table class="tbl tbl-stack">
+      <thead><tr><th class="w-10">#</th><th>Date</th><th>Place To Visit</th><th>Mode of Travel</th><th>Planned activities / tasks</th></tr></thead>
+      <tbody><% t.tour_visits.each_with_index do |v, i| %>
+        <tr><td data-label="#" class="text-slate-400"><%= i + 1 %></td><td data-label="Date" class="whitespace-nowrap"><%= d(v.visit_date) %></td>
+          <td data-label="Place" class="font-medium"><%= v.place %></td><td data-label="Mode"><%= v.travel_mode || "—" %><% if v.tatkal? %> <span class="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-orange-700">Tatkal</span><% end %></td><td data-label="Activities" class="text-slate-600"><%= v.planned_activity %></td></tr>
+      <% end %></tbody>
+    </table>
+  </div>
+
+  <div class="flex flex-wrap items-center gap-4 border-t border-white/70 bg-white/30 px-4 py-3 sm:px-5">
+    <div class="min-w-0 flex-1"><%= render "shared/history_lines", logs: t.activity_logs, title: "History (maker → L1 → L2)" %></div>
+    <%= approval_seal(t, css: "ml-auto mr-6 shrink-0") %>
+  </div>
+</div>
+
+<% if @pending %>
+  <div class="glass-bar sticky bottom-3 z-20 mt-5 rounded-2xl p-4">
+    <%= render "approvals/action_form", id: "t#{t.id}",
+          approve_url: approve_approvals_tour_path(t), return_url: send_back_approvals_tour_path(t), reject_url: reject_approvals_tour_path(t),
+          approve_label: (t.next_approver ? "Forward to #{t.next_approver_label}" : "Approve") %>
+  </div>
+<% else %>
+  <div class="mt-5 rounded-2xl bg-white/60 px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-200/70 print:hidden"><%= icon(:info, "mr-1 inline h-4 w-4") %>This tour is not pending with you – <%= t.stage_label %>.</div>
+<% end %>
+
+<%= render "shared/print_signatures", rows: [ [ "Employee", t.user.name, t.submitted_at ],
+      [ "L1 · Reporting Manager", t.approver&.name, t.l1_approved_at ],
+      ([ "L2 · Functional Manager", t.l2_approver.name, t.l2_approver_id == t.decided_by_id ? t.approved_at : t.l2_approved_at ] if t.l2_approver) ].compact +
+      t.approval_steps.map { |s| [ s.label, s.approver.name, s.acted_at ] } %>

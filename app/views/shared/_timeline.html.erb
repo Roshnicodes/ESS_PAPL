@@ -1,0 +1,27 @@
+<%# locals: (logs:, title: "Activity / Audit trail") %>
+<%
+  visible_logs = logs.select { |log| history_log_visible?(log, logs) }
+  tone = { "approved" => "bg-emerald-500", "self_sanctioned" => "bg-emerald-500", "claim_approved" => "bg-emerald-500", "rejected" => "bg-rose-500", "claim_rejected" => "bg-rose-500",
+           "cancelled" => "bg-slate-400", "claim_cancelled" => "bg-slate-400", "claim_l1_approved" => "bg-sky-500", "claim_l2_approved" => "bg-violet-500", "l1_approved" => "bg-sky-500" }
+%>
+<div class="card">
+  <div class="card-head"><span class="card-title"><span class="icon-chip bg-slate-100 text-slate-600"><%= icon(:clock) %></span><%= title %></span></div>
+  <% if visible_logs.blank? %>
+    <div class="empty-state"><%= icon(:clock) %>No activity yet</div>
+  <% else %>
+    <ol class="card-body relative space-y-5 before:absolute before:bottom-6 before:left-[27px] before:top-6 before:w-px before:bg-slate-200 sm:before:left-[31px]">
+      <% visible_logs.each do |log| %>
+        <% actor_label = history_actor_label(log) %>
+        <% deduction_details = history_deduction_details(log) %>
+        <li class="relative flex gap-3">
+          <span class="relative z-10 mt-1 h-3 w-3 shrink-0 rounded-full ring-4 ring-white <%= tone.fetch(log.action, 'bg-brand-500') %>"></span>
+          <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm font-semibold text-slate-800"><%= action_label(log) %><% if log.to_status && !self_sanction_log?(log) %><%= status_badge(log.to_status) %><% end %></div>
+            <div class="mt-0.5 text-xs text-slate-500"><%= dt(log.created_at) %><%= " · #{actor_label}" if actor_label %></div>
+            <% if deduction_details.any? %><div class="mt-1.5 rounded-lg bg-rose-50/70 px-3 py-2 text-sm font-medium text-rose-800 ring-1 ring-rose-100"><%= safe_join(deduction_details, tag.span(" · ", class: "text-rose-300")) %></div><% end %>
+          </div>
+        </li>
+      <% end %>
+    </ol>
+  <% end %>
+</div>

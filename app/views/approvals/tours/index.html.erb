@@ -1,0 +1,41 @@
+<% content_for :title, "Pending Tour Approval" %>
+<%= page_header("Pending Tour Approval", "#{@tours.size} pending with you · click 👁 to open, see everything and act", icon_name: :check_badge) do %>
+  <%= print_button %>
+<% end %>
+
+<div class="card mb-6 overflow-hidden fade-up">
+  <% if @tours.empty? %>
+    <div class="empty-state"><%= icon(:check_circle) %><span class="font-medium text-slate-500">All caught up!</span><span class="text-sm">No tour is waiting for your approval.</span></div>
+  <% else %>
+    <div class="overflow-x-auto">
+      <table class="tbl tbl-hover tbl-stack">
+        <thead><tr><th>Employee</th><th>Tour</th><th>Duration</th><th>Places</th><th>Sent On</th><th>Status</th><th class="text-right no-print">View</th></tr></thead>
+        <tbody>
+          <% @tours.each do |t| %>
+            <tr>
+              <td data-label="Employee" class="whitespace-nowrap"><b><%= t.user.name %></b> <span class="muted">(<%= t.user.emp_code %>)</span></td>
+              <td data-label="Tour" class="whitespace-nowrap font-semibold text-brand-700">Tour Plan</td>
+              <td data-label="Duration" class="whitespace-nowrap"><%= t.duration_label %> <span class="muted">· <%= t.days %>d</span></td>
+              <td data-label="Places" class="max-w-64 truncate text-slate-600"><%= t.tour_visits.map(&:place).uniq.join(", ") %></td>
+              <td data-label="Sent On" class="whitespace-nowrap text-xs text-slate-500"><%= dt(t.submitted_at) %></td>
+              <td data-label="Status">
+                <div class="leading-tight">
+                  <%= status_badge(t.status, label: { "submitted" => "Pending with you (L1)", "l1_approved" => "Pending with you (L2)", "l2_approved" => "Pending with you (#{t.l3_label})" }[t.status]) %>
+                  <% if t.l2_approved? %><div class="muted mt-1">Forwarded by <%= t.l2_approved_by %> · <%= dt(t.l2_approved_at) %></div>
+                  <% elsif t.l1_approved? %><div class="muted mt-1">Forwarded by L1 <%= t.l1_approved_by %> · <%= dt(t.l1_approved_at) %></div><% end %>
+                  <% if (nxt = t.next_approver_label) %><div class="muted">Next: <%= nxt %></div><% end %>
+                </div>
+              </td>
+              <td class="md:text-right no-print">
+                <%= link_to approvals_tour_path(t), class: "ml-auto inline-flex rounded-lg p-2 text-brand-600 hover:bg-brand-50", title: "Open & act" do %><%= icon(:eye) %><span class="sr-only">Open</span><% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+  <% end %>
+</div>
+
+<p class="mt-3 text-sm text-slate-500">Already acted on? See <%= link_to "Tour Approval History", done_approvals_tours_path, class: "link" %>.</p>

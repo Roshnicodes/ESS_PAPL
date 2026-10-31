@@ -1,0 +1,15 @@
+<%= error_box(@city) %>
+<%= form_with model: [:masters, @city], class: "card max-w-2xl fade-up" do |f| %>
+  <div class="card-body grid gap-4 sm:grid-cols-2">
+    <div><%= f.label :name, "City", class: "lbl" %><%= f.text_field :name, class: "inp", required: true, maxlength: 100, placeholder: "e.g. Sehore" %></div>
+    <div><%= f.label :state, "State (optional)", class: "lbl" %><%= f.text_field :state, class: "inp", maxlength: 60, placeholder: "e.g. Madhya Pradesh" %></div>
+    <div><%= f.label :da_rate, "DA Rate per day (₹)", class: "lbl" %>
+      <div class="relative"><span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">₹</span>
+        <%= f.number_field :da_rate, step: "0.01", min: 0, required: true, class: "inp pl-7", placeholder: "550" %></div></div>
+    <label class="flex cursor-pointer items-start gap-3 self-end rounded-xl border border-slate-200/80 bg-white/50 p-3 has-[:checked]:border-brand-400 has-[:checked]:bg-brand-50/60">
+      <%= f.check_box :active, class: "check mt-0.5" %><span class="leading-tight"><span class="block text-sm font-semibold">Enabled</span><span class="muted">Show in the claim form</span></span>
+    </label>
+    <p class="text-xs text-slate-500 sm:col-span-2">Changing a rate applies to new / unsent claims; claims already sent keep the rate they were made with.</p>
+  </div>
+  <div class="flex justify-end gap-2 border-t border-white/70 px-5 py-3"><%= link_to "Cancel", masters_cities_path, class: "btn-ghost" %><%= f.button class: "btn-primary" do %><%= icon(:check) %> Save<% end %></div>
+<% end %>

@@ -1,0 +1,33 @@
+<% content_for :title, "Tour Approval History" %>
+<%= page_header("Tour Approval History", "Tours you have forwarded, approved, returned or rejected", icon_name: :clock) do %>
+  <%= print_button %>
+<% end %>
+<% labels = { "l1_approved" => ["Forwarded", "bg-sky-50 text-sky-700 ring-sky-300/60"], "l2_approved" => ["Forwarded", "bg-sky-50 text-sky-700 ring-sky-300/60"], "extra_forwarded" => ["Forwarded", "bg-sky-50 text-sky-700 ring-sky-300/60"], "approved" => ["Approved", "bg-emerald-50 text-emerald-700 ring-emerald-300/60"],
+              "returned" => ["Returned", "bg-orange-50 text-orange-700 ring-orange-300/60"], "rejected" => ["Rejected", "bg-rose-50 text-rose-700 ring-rose-300/60"] } %>
+<div class="card overflow-hidden fade-up">
+  <div class="card-head">
+    <%= form_with url: done_approvals_tours_path, method: :get, class: "flex w-full flex-wrap gap-2" do %>
+      <div class="relative w-full sm:w-72"><span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400"><%= icon(:search, "h-4 w-4") %></span>
+        <%= search_field_tag :q, params[:q], placeholder: "Employee name or code…", class: "inp pl-9" %></div>
+      <%= select_tag :action_type, options_for_select([["All my actions", ""]] + labels.map { |k, (l, _)| [l, k] }, params[:action_type]), class: "inp w-48" %>
+      <%= button_tag class: "btn-light" do %><%= icon(:filter) %> Filter<% end %>
+    <% end %>
+  </div>
+  <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">
+    <thead><tr><th>Employee</th><th>Tour</th><th>Duration</th><th>My Action</th><th>Current Status</th><th class="text-right no-print">View</th></tr></thead>
+    <tbody>
+    <% @tours.each do |t| log = @my_last[t.id]; lbl, css = labels[log&.action] %>
+      <tr>
+        <td data-label="Employee" class="whitespace-nowrap"><b><%= t.user.name %></b> <span class="muted">(<%= t.user.emp_code %>)</span></td>
+        <td data-label="Tour" class="whitespace-nowrap font-semibold text-brand-700">Tour Plan</td>
+        <td data-label="Duration" class="whitespace-nowrap"><%= t.duration_label %></td>
+        <td data-label="My Action"><div><% if lbl %><span class="badge <%= css %>"><%= lbl %></span><% end %><div class="muted mt-0.5 whitespace-nowrap"><%= dt(log&.created_at) %></div></div></td>
+        <td data-label="Status"><div><%= status_badge(t.status) %><div class="muted mt-0.5"><%= t.stage_label %></div></div></td>
+        <td class="md:text-right no-print"><%= link_to approvals_tour_path(t), class: "ml-auto inline-flex rounded-lg p-2 text-brand-600 hover:bg-brand-50", title: "History" do %><%= icon(:clock) %><span class="sr-only">History</span><% end %></td>
+      </tr>
+    <% end %>
+    <%= empty_row(6, "Nothing yet") if @tours.empty? %>
+    </tbody>
+  </table></div>
+  <% if @tours.total_pages > 1 %><div class="border-t border-white/70 px-4 py-3"><%= paginate @tours %></div><% end %>
+</div>

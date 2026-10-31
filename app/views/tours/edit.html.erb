@@ -1,0 +1,3 @@
+<% content_for :title, "Edit Tour Plan" %>
+<%= page_header("Edit Tour Plan", @admin_edit ? "Admin edit – #{@tour.user.name} (#{@tour.user.emp_code})" : "Saved tours can be changed and sent for approval.", icon_name: :map) %>
+<%= render "form" %>

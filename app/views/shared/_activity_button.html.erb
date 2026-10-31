@@ -1,0 +1,19 @@
+<%# locals: (id:, title:, sections:, subtitle: nil, css: "btn-light") %>
+<%# History icon → popup with one line per action. sections: [[heading, logs], ...] %>
+<span data-controller="dialog" class="contents">
+  <button type="button" class="<%= css %> btn-icon" title="<%= title %>" aria-label="<%= title %>" data-action="dialog#open" data-dialog-id-param="<%= id %>"><%= icon(:clock) %></button>
+  <dialog id="<%= id %>" data-action="click->dialog#backdrop"
+          class="m-auto w-[min(44rem,calc(100vw-1.5rem))] max-h-[85vh] overflow-y-auto rounded-2xl border border-white/80 bg-white/95 p-0 text-left shadow-2xl backdrop:bg-slate-900/40 backdrop:backdrop-blur-sm">
+    <div class="sticky top-0 flex items-center gap-3 border-b border-slate-200/70 bg-white/95 px-5 py-3 backdrop-blur">
+      <span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:clock) %></span>
+      <div class="min-w-0">
+        <div class="font-bold text-slate-900"><%= title %></div>
+        <% if subtitle %><div class="truncate text-xs text-slate-500"><%= subtitle %></div><% end %>
+      </div>
+      <button type="button" class="ml-auto rounded-lg p-1.5 text-slate-500 hover:bg-slate-100" data-action="dialog#close" aria-label="Close"><%= icon(:x) %></button>
+    </div>
+    <div class="space-y-6 px-5 py-4">
+      <% sections.each do |heading, logs| %><%= render "shared/history_lines", logs: logs, title: heading %><% end %>
+    </div>
+  </dialog>
+</span>

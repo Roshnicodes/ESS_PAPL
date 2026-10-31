@@ -1,0 +1,69 @@
+<%# Outstation tour plan – used by new + edit (draft / rejected) %>
+<% u = @tour.user || current_user %>
+<% l1 = u.reporting_manager; l2 = (u.l2_manager unless u.l2_manager_id == u.reporting_manager_id) %>
+<%= error_box(@tour) %>
+<% if @tour.returned? %>
+  <div class="mb-5 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900"><%= icon(:warning, "h-5 w-5 shrink-0 text-amber-500") %>
+    <div>Returned by <b><%= @tour.returned_by %></b> on <%= dt(@tour.returned_at) %><div class="mt-1 italic">“<%= @tour.return_remark %>”</div><div class="mt-1 text-xs">Correct and send again.</div></div></div>
+<% end %>
+<%= form_with model: @tour, data: { controller: "nested-rows date-range", action: "change->date-range#apply nested-rows:changed->date-range#apply" }, class: "space-y-5 fade-up" do |f| %>
+  <div class="card">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:calendar) %></span>Visit Details</span>
+      <% if @tour.persisted? %><span class="flex items-center gap-2 text-xs"><%= tour_type_label(@tour) %> <%= status_badge(@tour.status, label: @tour.draft? ? "Saved" : nil) %></span><% end %></div>
+    <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div><%= f.label :from_date, "Tour From-Date", class: "lbl" %><%= f.date_field :from_date, class: "inp", required: true, data: { date_range_target: "from" } %></div>
+      <div><%= f.label :to_date, "Tour To-Date", class: "lbl" %><%= f.date_field :to_date, class: "inp", required: true, data: { date_range_target: "to" } %></div>
+      <div class="sm:col-span-2">
+        <span class="lbl">Approval</span>
+        <div class="grid gap-2 sm:grid-cols-2">
+          <% [["L1 · Reporting Manager", l1], ["L2 · Functional Manager", l2]].each do |label, m| %>
+            <div class="flex items-center gap-3 rounded-xl bg-white/60 px-3 py-2 ring-1 ring-slate-200/70">
+              <% if m %><%= avatar(m, size: "h-8 w-8 text-xs") %><div class="min-w-0 text-sm leading-tight"><div class="muted"><%= label %></div><b class="block truncate"><%= m.name %></b><span class="text-[11px] text-slate-500"><%= m.emp_code %><%= " · #{m.designation}" if m.designation %></span></div>
+              <% else %><%= icon(label.start_with?("L1") ? :warning : :info, "h-5 w-5 #{label.start_with?('L1') ? 'text-amber-500' : 'text-slate-400'}") %><div class="text-sm leading-tight"><div class="muted"><%= label %></div><span class="<%= label.start_with?('L1') ? 'text-amber-700' : 'text-slate-500' %>"><%= label.start_with?("L1") ? "Not set – contact PD HR" : "Not set (L1 approval is final)" %></span></div><% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+      <div class="sm:col-span-2 lg:col-span-4"><%= f.label :general_description, "General Description", class: "lbl" %><%= render "shared/blocked_textarea", f: f, attr: :general_description, record: @tour, rows: 2, placeholder: "Purpose of the tour…" %></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title"><span class="icon-chip bg-leaf-50 text-leaf-600"><%= icon(:pin) %></span>Visits <span class="muted font-normal">Date · Place · Mode · Planned activity</span></span>
+      <button type="button" class="btn-soft btn-xs" data-action="nested-rows#add"><%= icon(:plus) %> Add visit</button>
+    </div>
+    <div class="hidden grid-cols-[10rem_1fr_13rem_1.4fr_auto] gap-3 border-b border-white/70 bg-white/40 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 lg:grid">
+      <span>Date</span><span>Place to visit</span><span>Mode of travel</span><span>Planned activities / tasks to be completed</span><span>Actions</span>
+    </div>
+    <div class="divide-y divide-white/70" data-nested-rows-target="container">
+      <%= f.fields_for :tour_visits do |vf| %><%= render "visit_fields", f: vf %><% end %>
+    </div>
+    <template data-nested-rows-target="template">
+      <%= f.fields_for :tour_visits, TourVisit.new, child_index: "NEW_RECORD" do |vf| %><%= render "visit_fields", f: vf %><% end %>
+    </template>
+    <datalist id="place-suggestions"><% TourVisit.place_suggestions.each do |p| %><option value="<%= p %>"><% end %></datalist>
+  </div>
+
+  <% if @admin_edit %>
+  <div class="glass-bar sticky bottom-3 z-20 flex flex-wrap items-center justify-end gap-2 rounded-2xl p-3">
+    <span class="mr-auto flex items-center gap-2 text-xs font-semibold text-amber-700"><%= icon(:lock, "h-4 w-4") %>Admin edit – status stays <%= @tour.status.humanize %>; every change is logged</span>
+    <%= text_field_tag :admin_remark, nil, placeholder: "Reason for change (optional)", class: "inp w-64" %>
+    <%= link_to "Cancel", @tour, class: "btn-soft-danger" %>
+    <%= f.button name: "commit_action", value: "save", class: "btn-warning btn-lg" do %><%= icon(:check) %> Save changes<% end %>
+  </div>
+  <% elsif @tour.persisted? && @tour.needs_reapproval_on_edit? %>
+  <div class="glass-bar sticky bottom-3 z-20 flex flex-wrap items-center justify-end gap-2 rounded-2xl p-3">
+    <span class="mr-auto flex items-center gap-2 text-xs font-semibold text-amber-700"><%= icon(:warning, "h-4 w-4") %>This tour is <%= @tour.approved? ? "already approved" : "pending approval" %> – saving changes sends it again to L1 <%= l1&.name %> for approval.</span>
+    <%= link_to "Cancel", @tour, class: "btn-soft-danger" %>
+    <%= f.button name: "commit_action", value: "send", class: "btn-success btn-lg", data: { turbo_confirm: "Save changes and send for approval again? Earlier approval will be cleared." } do %><%= icon(:send) %> Save &amp; Send Again<% end %>
+  </div>
+  <% else %>
+  <div class="glass-bar sticky bottom-3 z-20 flex flex-wrap items-center justify-end gap-2 rounded-2xl p-3">
+    <span class="mr-auto hidden text-xs text-slate-500 sm:block"><b>Save</b> keeps it as draft · <b>Save &amp; Send</b> goes to L1<%= l2 ? " then L2" : "" %></span>
+    <%= link_to "Cancel", tours_path, class: "btn-soft-danger" %>
+    <%= f.button name: "commit_action", value: "save", formnovalidate: true, class: "btn-warning btn-lg" do %><%= icon(:check) %> Save<% end %>
+    <%= f.button name: "commit_action", value: "send", class: "btn-success btn-lg", data: { turbo_confirm: "Send this tour to #{l1&.name || 'L1'} for approval?" } do %><%= icon(:send) %> Save &amp; Send for Approval<% end %>
+  </div>
+  <% end %>
+<% end %>

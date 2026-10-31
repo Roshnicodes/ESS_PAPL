@@ -1,0 +1,26 @@
+<%= error_box(@user) %>
+<% people = User.active.ordered.where.not(id: @user.id) %>
+<%= form_with model: [:masters, @user], class: "card max-w-4xl fade-up" do |f| %>
+  <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+  <div><%= f.label :emp_code, "Employee code (login)", class: "lbl" %><%= f.text_field :emp_code, class: "inp", required: true %></div>
+  <div><%= f.label :name, class: "lbl" %><%= f.text_field :name, class: "inp", required: true %></div>
+  <div><%= f.label :email, class: "lbl" %><%= f.email_field :email, class: "inp" %></div>
+  <div><%= f.label :designation, class: "lbl" %><%= f.text_field :designation, class: "inp" %></div>
+  <div><%= f.label :short_designation, "Short designation (AM, MIS…)", class: "lbl" %><%= f.text_field :short_designation, class: "inp" %></div>
+  <div><%= f.label :level, class: "lbl" %><%= f.text_field :level, class: "inp" %></div>
+  <div><%= f.label :mobile, class: "lbl" %><%= f.text_field :mobile, class: "inp" %></div>
+  <div><%= f.label :location_id, class: "lbl" %><%= f.collection_select :location_id, Location.active.ordered, :id, :name, { include_blank: "Select" }, class: "inp" %></div>
+  <% if current_user.admin? %><div><%= f.label :role, class: "lbl" %><%= f.select :role, User::ROLES.keys.map { |r| [r.to_s.humanize, r] }, {}, class: "inp" %></div><% end %>
+  <div><%= f.label :department, class: "lbl" %><%= f.text_field :department, class: "inp" %></div>
+  <div><%= f.label :branch, class: "lbl" %><%= f.text_field :branch, class: "inp" %></div>
+  <div><%= f.label :sub_branch, class: "lbl" %><%= f.text_field :sub_branch, class: "inp" %></div>
+  <div><%= f.label :date_of_joining, class: "lbl" %><%= f.date_field :date_of_joining, class: "inp" %></div>
+  <div><%= f.label :reporting_manager_id, "L-1 · Reporting manager (tour + claim L1)", class: "lbl" %><%= f.collection_select :reporting_manager_id, people, :id, ->(p) { "#{p.name} (#{p.emp_code})" }, { include_blank: "None" }, class: "inp" %></div>
+  <div><%= f.label :finance_approver_id, "Finance · PD Finance for this employee's claims", class: "lbl" %><%= f.collection_select :finance_approver_id, people, :id, ->(p) { "#{p.name} (#{p.emp_code})" }, { include_blank: "Any PD Finance" }, class: "inp" %></div>
+  <div><%= f.label :l2_manager_id, "L-2 · Functional manager (tour + claim L2)", class: "lbl" %><%= f.collection_select :l2_manager_id, people, :id, ->(p) { "#{p.name} (#{p.emp_code})" }, { include_blank: "None" }, class: "inp" %></div>
+  <label class="flex items-center gap-2 self-end rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium"><%= f.check_box :active, class: "check" %> Active (can log in)</label>
+  <div><%= f.label :password, (@user.new_record? ? "Password" : "New password (leave blank to keep)"), class: "lbl" %><%= f.password_field :password, class: "inp", autocomplete: "new-password" %></div>
+  <div><%= f.label :password_confirmation, class: "lbl" %><%= f.password_field :password_confirmation, class: "inp", autocomplete: "new-password" %></div>
+  </div>
+  <div class="flex justify-end gap-2 border-t border-white/70 px-5 py-3"><%= link_to "Back", masters_users_path, class: "btn-ghost" %><%= f.button class: "btn-primary" do %><%= icon(:check) %> Save<% end %></div>
+<% end %>

@@ -1,0 +1,86 @@
+<% content_for :title, tour_type_label(@tour) %>
+<% c = @tour.tour_claim %>
+<% logs = (@logs.to_a + @claim_logs.to_a).sort_by(&:created_at) %>
+
+<%# printed employee block %>
+<% u = @tour.user %>
+<div class="print-only mb-2 text-[11px]">
+  <b><%= u.name %></b> (<%= u.emp_code %>) · <%= u.designation %> · <%= u.department %> · <%= u.branch.presence || u.location %>
+  <span class="float-right">Ref. <%= @tour.reference_no %></span>
+</div>
+<%# one compact card: summary line · visits · history %>
+<div class="card overflow-hidden fade-up" data-controller="dialog">
+  <%# summary line %>
+  <div class="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-white/70 px-4 py-3 sm:px-5">
+    <span class="text-base font-bold text-slate-900"><%= tour_type_label(@tour) %></span>
+    <%= tour_status_badge(@tour, label: { "draft" => "Saved", "submitted" => "Pending L1", "l1_approved" => "Forwarded to L2", "l2_approved" => "Forwarded to #{@tour.l3_label}" }[@tour.status]) %>
+    <span class="text-sm text-slate-700"><%= icon(:calendar, "mr-1 inline h-4 w-4 text-slate-400") %><%= @tour.duration_label %> <span class="text-slate-400">(<%= @tour.days %>d)</span></span>
+    <% unless @tour.type_local? %>
+      <span class="flex flex-wrap items-center"><%= approver_chain(@tour.approver, @tour.l2_approver, @tour.approval_steps) %></span>
+    <% end %>
+    <span class="text-xs text-slate-500"><%= @tour.stage_label %></span>
+
+    <span class="ml-auto flex flex-wrap gap-1.5 print:hidden">
+      <% if @tour.user_id == current_user.id && @tour.maker_editable? %>
+        <%= link_to edit_tour_path(@tour), class: "btn-light btn-xs" do %><%= icon(:pencil) %> Edit<% end %>
+      <% end %>
+      <% if @tour.user_id == current_user.id && @tour.editable? && @tour.type_tour? %>
+        <%= button_to submit_tour_path(@tour), method: :patch, class: "btn-primary btn-xs", form_class: "inline" do %><%= icon(:send) %> Send<% end %>
+      <% end %>
+      <% if @tour.user_id == current_user.id %>
+        <% if c.nil? && @tour.claimable? %><%= link_to new_tour_claim_path(@tour), class: "btn-primary btn-xs" do %><%= icon(:receipt) %> Make Claim<% end %>
+        <% elsif c&.employee_editable? %><%= link_to edit_tour_claim_path(@tour), class: "btn-primary btn-xs" do %><%= icon(:pencil) %> Edit Claim<% end %>
+        <% elsif c %><%= link_to tour_claim_path(@tour), class: "btn-light btn-xs" do %><%= icon(:eye) %> Claim<% end %><% end %>
+      <% end %>
+      <% if c&.current_reviewer?(current_user) %><%= link_to approvals_claim_path(c), class: "btn-primary btn-xs" do %><%= icon(:clipboard) %> Review Claim<% end %><% end %>
+      <%= print_button("Print", css: "btn-light btn-xs") %>
+      <% if current_user.admin? %>
+        <%= link_to edit_tour_path(@tour), class: "btn-light btn-xs" do %><%= icon(:pencil) %> Admin Edit<% end %>
+        <button type="button" class="btn-soft-danger btn-xs" data-action="dialog#open" data-dialog-id-param="del-tour"><%= icon(:trash) %> Delete</button>
+      <% end %>
+    </span>
+  </div>
+
+  <% notes = [
+       (["Description", @tour.general_description] if @tour.general_description.present?),
+       (["Returned", "#{@tour.return_remark} – #{@tour.returned_by&.name}"] if @tour.returned?),
+       (["Cancelled", "#{@tour.cancel_remark} (#{dt(@tour.cancelled_at)})"] if @tour.cancelled?),
+       (["Claim", "#{c.stage_label} · #{inr(c.grand_total)}"] if c),
+       (["Bank", c.bank_account.label] if c&.bank_account && (@tour.user_id == current_user.id || can?(:read, c.bank_account)))
+     ].compact %>
+  <% if notes.any? %>
+    <div class="flex flex-wrap gap-x-6 gap-y-1 border-b border-white/70 px-4 py-2 text-sm sm:px-5">
+      <% notes.each do |label, text| %><span><span class="text-xs font-semibold uppercase tracking-wide text-slate-400"><%= label %>:</span> <%= text %></span><% end %>
+    </div>
+  <% end %>
+
+  <%# visits %>
+  <% if @tour.tour_visits.any? %>
+    <div class="overflow-x-auto">
+      <table class="tbl tbl-stack">
+        <thead><tr><th class="w-10">#</th><th>Date</th><th>Place To Visit</th><th>Mode of Travel</th><th>Planned activities / tasks</th></tr></thead>
+        <tbody>
+          <% @tour.tour_visits.each_with_index do |v, i| %>
+            <tr><td data-label="#" class="text-slate-400"><%= i + 1 %></td><td data-label="Date" class="whitespace-nowrap"><%= d(v.visit_date) %></td>
+              <td data-label="Place" class="font-medium"><%= v.place %></td><td data-label="Mode"><%= v.travel_mode || "—" %><% if v.tatkal? %> <span class="ml-1 rounded bg-orange-100 px-1.5 py-0.5 text-[10px] font-bold uppercase text-orange-700">Tatkal</span><% end %></td><td data-label="Activities" class="text-slate-600"><%= v.planned_activity %></td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+
+  <%# history – one line per action %>
+  <div class="flex flex-wrap items-center gap-4 bg-white/30 px-4 py-3 sm:px-5">
+    <div class="min-w-0 flex-1 print:hidden"><%= render "shared/history_lines", logs: logs %></div>
+    <%= approval_seal(tour_seal_record(@tour), css: "ml-auto mr-6 shrink-0") %>
+  </div>
+  <% if current_user.admin? %>
+    <%= render "shared/delete_dialog", id: "del-tour", url: tour_path(@tour), title: "Delete this #{tour_type_label(@tour).downcase}?", note: "#{@tour.user.name} · #{@tour.duration_label}" %>
+  <% end %>
+</div>
+<% unless @tour.type_local? %>
+  <%= render "shared/print_signatures", rows: [ [ "Employee", u.name, @tour.submitted_at ],
+        [ "L1 · Reporting Manager", @tour.approver&.name, @tour.l1_approved_at ],
+        ([ "L2 · Functional Manager", @tour.l2_approver.name, @tour.l2_approver_id == @tour.decided_by_id ? @tour.approved_at : @tour.l2_approved_at ] if @tour.l2_approver) ].compact +
+        @tour.approval_steps.map { |s| [ s.label, s.approver.name, s.acted_at ] } %>
+<% end %>

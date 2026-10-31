@@ -1,0 +1,59 @@
+<% content_for :title, "Employee List" %>
+<%= page_header("Employee List", "L-1 (reporting manager) and L-2 (functional manager) drive tour approval.", icon_name: :users) do %>
+  <%= print_button %>
+  <%= link_to export_masters_users_path, class: "btn-light", data: { turbo: false } do %><%= icon(:receipt) %> Download Excel<% end %>
+  <%= link_to new_masters_user_path, class: "btn-primary" do %><%= icon(:plus) %> Add employee<% end %>
+<% end %>
+
+<% if flash[:import_errors].present? %>
+  <div class="mb-5 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900 backdrop-blur">
+    <div class="mb-1 flex items-center gap-2 font-semibold"><%= icon(:warning, "h-5 w-5 text-amber-500") %>Some rows need attention</div>
+    <ul class="list-disc space-y-0.5 pl-6 text-xs"><% flash[:import_errors].each do |e| %><li><%= e %></li><% end %></ul>
+  </div>
+<% end %>
+
+<%= form_with url: import_masters_users_path, multipart: true, class: "card mb-5 fade-up", data: { turbo: false, controller: "upload", action: "submit->upload#start" } do %>
+  <div class="card-head"><span class="card-title"><span class="icon-chip bg-leaf-50 text-leaf-600"><%= icon(:inbox) %></span>Upload Excel <span class="muted font-normal">from HR application (.xlsx / .csv)</span></span></div>
+  <div class="card-body grid items-end gap-4 lg:grid-cols-[1fr_auto_auto]">
+    <div>
+      <label class="lbl" for="file">Employee Excel file</label>
+      <input type="file" name="file" id="file" required accept=".xlsx,.csv" class="inp file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-sm file:font-semibold file:text-brand-700">
+      <p class="mt-1.5 text-xs text-slate-500">Reads the sheet having <b>Employee Code, L-1, L-2</b> columns. Existing employees stay the same – only new employee codes are added. Blank L-1 / L-2 of existing employees are filled. New employees get password <code class="rounded bg-slate-100 px-1">123456</code> (they can change it from Change Password).</p>
+      <p class="mt-1 text-xs text-slate-500"><b>Password column:</b> fill it to set that employee's login password – it works even without ticking “update existing”. Leave it blank to keep the current password. Minimum <b>3 characters</b>; format the column as <b>Text</b> in Excel so leading zeros are not lost.</p>
+    </div>
+    <label class="flex items-center gap-2 rounded-lg border border-slate-200/80 bg-white/60 px-3 py-2 text-sm"><%= check_box_tag :update_existing, "1", false, class: "check" %> Also update existing employees</label>
+    <div class="text-right">
+      <%= button_tag class: "btn-success", data: { turbo_confirm: "Upload and update employee details and passwords?", upload_target: "button" } do %><%= icon(:send) %> <span data-upload-target="label">Upload</span><% end %>
+      <p hidden data-upload-target="progress" class="mt-1.5 text-xs font-medium text-brand-700">Updating employee passwords securely… please keep this page open.</p>
+    </div>
+  </div>
+<% end %>
+
+<div class="card overflow-hidden fade-up">
+  <div class="card-head">
+    <%= form_with url: masters_users_path, method: :get, class: "relative w-full sm:w-80" do %>
+      <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400"><%= icon(:search, "h-4 w-4") %></span>
+      <%= search_field_tag :q, params[:q], placeholder: "Search name, code, designation, department, branch, L1/L2…", class: "inp pl-9" %>
+    <% end %>
+    <span class="muted"><%= @users.total_count %> employees</span>
+  </div>
+  <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">
+    <thead><tr><th>Employee</th><th>Designation</th><th>Department</th><th>Branch</th><th>Level</th><th>L-1 (Reporting)</th><th>L-2 (Functional)</th><th>Finance</th><th>Role</th><th>Status</th><th class="no-print"></th></tr></thead>
+    <tbody><% @users.each do |u| %>
+      <tr class="<%= 'opacity-50' unless u.active? %>">
+        <td data-label="Employee"><div class="flex items-center gap-2.5"><%= avatar(u, size: "h-8 w-8 text-xs") %><div class="leading-tight"><b><%= u.name %></b><div class="muted"><%= u.emp_code %><%= " · #{u.email}" if u.email %></div></div></div></td>
+        <td data-label="Designation"><%= u.designation %></td>
+        <td data-label="Department"><%= u.department %></td>
+        <td data-label="Branch"><%= u.branch || u.location %><%= tag.div(u.sub_branch, class: "muted") if u.sub_branch && u.sub_branch != u.branch %></td>
+        <td data-label="Level"><%= u.level %></td>
+        <td data-label="L-1"><%= u.reporting_manager ? tag.span("#{u.reporting_manager.name} (#{u.reporting_manager.emp_code})") : tag.span("—", class: "text-slate-300") %></td>
+        <td data-label="L-2"><%= u.l2_manager ? tag.span("#{u.l2_manager.name} (#{u.l2_manager.emp_code})") : tag.span("—", class: "text-slate-300") %></td>
+        <td data-label="Finance"><%= u.finance_approver ? "#{u.finance_approver.name}" : tag.span("Any PD Finance", class: "text-xs text-slate-400") %></td>
+        <td data-label="Role"><span class="rounded-full bg-brand-50 px-2 py-0.5 text-xs font-semibold text-brand-700"><%= role_label(u) %></span></td>
+        <td data-label="Status"><%= u.active? ? status_badge("approved", label: "Active") : status_badge("cancelled", label: "Inactive") %></td>
+        <td class="no-print"><%= link_to edit_masters_user_path(u), class: "btn-light btn-xs ml-auto" do %><%= icon(:pencil) %> Edit<% end %></td></tr>
+    <% end %>
+    <%= empty_row(11, "No employee found", icon_name: :users) if @users.empty? %></tbody>
+  </table></div>
+  <% if @users.total_pages > 1 %><div class="border-t border-white/70 px-4 py-3"><%= paginate @users %></div><% end %>
+</div>

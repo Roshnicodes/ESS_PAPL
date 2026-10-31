@@ -1,0 +1,121 @@
+<% content_for :title, "Review Claim" %>
+<% step = @claim.review_step %>
+<%= page_header("Review Claim", @claim.tour.duration_label, icon_name: :clipboard) do %>
+  <%= history_link(@claim.tour, target: "_blank") %>
+  <%= print_button %>
+<% end %>
+<%= error_box(@claim) %>
+
+<%# progress stepper %>
+<% stages = [["Prepared", @claim.created_at], ["Sent", @claim.submitted_at], ["L1 · #{@claim.l1_approver&.name || '—'}", @claim.l1_approved_at]]
+   stages << ["L2 · #{@claim.l2_approver.name}", @claim.l2_approved_at] if @claim.l2_approver
+   @claim.approval_steps.each { |s| stages << [s.label, s.acted_at] }   # COO / Director (Flight, Four Wheeler, Train AC / Tatkal)
+   stages << ["PD Finance", @claim.approved_at] %>
+<div class="card mb-4 print:hidden"><ol class="flex flex-wrap items-center gap-x-2 gap-y-2 px-4 py-2.5 sm:px-5">
+  <% stages.each_with_index do |(label, at), i| %>
+    <li class="flex min-w-[9rem] flex-1 items-center gap-2">
+      <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold <%= at ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-400 ring-1 ring-slate-200' %>"><%= at ? icon(:check, "h-3.5 w-3.5", stroke: 2.5) : i + 1 %></span>
+      <span class="leading-tight"><span class="block whitespace-nowrap text-xs font-semibold <%= at ? 'text-slate-800' : 'text-slate-400' %>"><%= label %></span><span class="block whitespace-nowrap text-[11px] text-slate-400"><%= at&.strftime("%d/%m, %I:%M %p") %></span></span>
+      <% if i < stages.size - 1 %><span class="h-px flex-1 <%= stages[i + 1][1] ? 'bg-emerald-400' : 'bg-slate-200' %>"></span><% end %>
+    </li>
+  <% end %>
+</ol></div>
+
+<%# Project / BLI / Code – PD Finance step only. Options are tied to the
+    uploaded mapping, so a project cannot be approved with another project's BLI. %>
+<% finance_fields = capture do %>
+  <% if step == :finance %>
+    <% mappings = ProjectBudgetLineItem.active.includes(:project, :budget_line_item, :budget_line_item_code).map { |m| { project_id: m.project_id, line_item_id: m.budget_line_item_id, line_item_name: m.budget_line_item.name, code_id: m.budget_line_item_code_id, code_name: m.budget_line_item_code.name } } %>
+    <% project_ids = mappings.pluck(:project_id).uniq %>
+    <div class="grid gap-3 sm:grid-cols-3" data-controller="finance-coding" data-finance-coding-mappings-value="<%= json_escape(mappings.to_json) %>">
+      <div><%= label_tag :project_id, "Project", class: "lbl" %>
+        <%= select_tag :project_id, options_for_select(Project.active.where(id: project_ids).ordered.pluck(:name, :id), params[:project_id] || @claim.project_id), include_blank: "Select project", required: true, class: "inp", data: { finance_coding_target: "project", action: "change->finance-coding#projectChanged" } %></div>
+      <div><%= label_tag :budget_line_item_id, "Budget Line Item (BLI)", class: "lbl" %>
+        <%= select_tag :budget_line_item_id, options_for_select([], params[:budget_line_item_id] || @claim.budget_line_item_id), required: true, class: "inp", data: { finance_coding_target: "lineItem", selected: (params[:budget_line_item_id] || @claim.budget_line_item_id), action: "change->finance-coding#lineItemChanged" } %></div>
+      <div><%= label_tag :budget_line_item_code_id, "BLI Code", class: "lbl" %>
+        <%= select_tag :budget_line_item_code_id, options_for_select([], params[:budget_line_item_code_id] || @claim.budget_line_item_code_id), required: true, class: "inp", data: { finance_coding_target: "code", selected: (params[:budget_line_item_code_id] || @claim.budget_line_item_code_id) } %></div>
+    </div>
+    <% if mappings.empty? %><p class="sm:col-span-3 text-xs text-amber-700">No BLI mapping is uploaded yet. Ask the administrator to upload the BLI list from Masters.</p><% end %>
+  <% end %>
+<% end %>
+<% approve_label = step == :finance ? "Approve" : "Forward to #{@claim.next_reviewer_label}" %>
+<% if @claim.extra_reason && step.in?(%i[l1 l2 extra]) %>
+  <div class="card mb-4 flex flex-wrap items-center gap-2 border-l-4 border-l-indigo-400 px-4 py-2.5 text-sm text-indigo-900 fade-up">
+    <%= icon(:info, "h-5 w-5 shrink-0 text-indigo-500") %>
+    <span>Uses <b><%= @claim.extra_reason %></b> – needs extra approval:
+      <%= safe_join(@claim.approval_steps.map { |s| tag.b(s.label) + (s.done? ? " ✓" : "") }, " → ") %> before Finance.</span>
+  </div>
+<% end %>
+
+<%# Finance's questions to L1 / L2 and their replies %>
+<% if @claim.claim_queries.any? %>
+  <div class="card mb-4 overflow-hidden fade-up">
+    <div class="card-head"><span class="card-title text-sm"><span class="icon-chip bg-orange-50 text-orange-600"><%= icon(:info) %></span>Finance queries</span></div>
+    <ul class="divide-y divide-white/70 text-sm">
+      <% @claim.claim_queries.each do |q| %>
+        <li class="grid gap-1.5 px-4 py-3 sm:px-5">
+          <div><span class="text-xs font-semibold uppercase text-orange-700">Question</span> <span class="text-xs text-slate-500">· <%= q.asked_by.name %> → <%= q.role_label %> <%= q.asked_to.name %> · <%= dt(q.created_at) %></span>
+            <div class="mt-0.5 text-slate-800">“<%= q.question %>”</div></div>
+          <% if q.open? %>
+            <div class="text-xs font-semibold text-amber-700"><%= icon(:clock, "mr-1 inline h-4 w-4") %>Waiting for reply from <%= q.asked_to.name %></div>
+          <% else %>
+            <div class="rounded-lg bg-emerald-50/70 px-3 py-2"><span class="text-xs font-semibold uppercase text-emerald-700">Reply</span> <span class="text-xs text-slate-500">· <%= q.asked_to.name %> · <%= dt(q.answered_at) %></span>
+              <div class="mt-0.5 text-slate-800">“<%= q.answer %>”</div></div>
+          <% end %>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<% if @replying %>
+  <%= render "tour_claims/summary", claim: @claim %>
+  <% q = @claim.open_query %>
+  <%= form_with url: reply_approvals_claim_path(@claim), method: :patch, class: "glass-bar z-20 space-y-3 rounded-2xl p-4 xl:sticky xl:bottom-3" do %>
+    <div class="flex flex-wrap items-center gap-2 text-sm"><span class="font-semibold text-slate-700">Finance asked you (<%= q.role_label %>):</span>
+      <span class="rounded-lg bg-orange-50 px-2 py-1 text-orange-800">“<%= q.question %>”</span><span class="text-xs text-slate-500">– <%= q.asked_by.name %>, <%= dt(q.created_at) %></span></div>
+    <div class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">
+      <div><label class="lbl" for="reply_remark">Your reply – why it should be approved <span class="text-rose-500">*</span></label>
+        <%= text_area_tag :remark, nil, id: "reply_remark", rows: 2, required: true, maxlength: 2000, class: "inp", placeholder: "Reply (required)" %></div>
+      <%= button_tag class: "btn-success", data: { turbo_confirm: "Send your reply? The claim goes back to Finance for approval." } do %><%= icon(:send) %> Reply &amp; send to Finance<% end %>
+    </div>
+  <% end %>
+<% elsif @reviewing %>
+  <%# ONE form: typed deductions are saved first, then the chosen action runs %>
+  <%= form_with model: @claim, url: (step == :finance ? approve_approvals_claim_path(@claim) : forward_approvals_claim_path(@claim)), method: :patch do |f| %>
+    <%= render "tour_claims/summary", claim: @claim, f: f %>
+
+    <div class="glass-bar z-20 space-y-3 rounded-2xl p-4 xl:sticky xl:bottom-3">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <span class="text-sm font-semibold text-slate-700"><%= { l1: "L1 – review & forward", l2: "L2 – review & forward", extra: "#{@claim.extra_label} – review & forward", finance: "Finance – final approval" }[step] %></span>
+        <span class="text-sm text-slate-500">Claim total <b class="ml-1 text-lg text-slate-900" data-review-header-total><%= inr(@claim.grand_total) %></b></span>
+      </div>
+      <%= finance_fields %>
+      <div class="grid gap-3 2xl:grid-cols-[1fr_auto] 2xl:items-end">
+        <div><label class="lbl" for="remark_c<%= @claim.id %>">Remark <span class="text-rose-500">*</span></label>
+          <%= text_area_tag :remark, params[:remark], id: "remark_c#{@claim.id}", rows: 2, required: true, class: "inp", placeholder: "Remark – required for Approve / Forward, Return and Reject" %></div>
+        <div class="flex flex-wrap justify-end gap-2">
+          <%= f.button formaction: approvals_claim_path(@claim), formnovalidate: true, class: "btn-light" do %><%= icon(:check) %> Save deductions<% end %>
+          <%= button_tag formaction: reject_approvals_claim_path(@claim), formnovalidate: true, class: "btn-soft-danger", data: { turbo_confirm: "Reject? This is final – it cannot be sent again." } do %><%= icon(:x_circle) %> Reject<% end %>
+          <% if step == :finance %>
+            <span class="inline-flex items-stretch overflow-hidden rounded-xl ring-1 ring-orange-200">
+              <%= select_tag :return_to, options_for_select(@claim.finance_return_options, params[:return_to]), class: "border-0 bg-orange-50/60 px-2 text-sm text-orange-900 focus:ring-0", title: "Return to whom", aria: { label: "Return to" } %>
+              <%= button_tag formaction: send_back_approvals_claim_path(@claim), formnovalidate: true, class: "btn rounded-none bg-orange-50 text-orange-700 border-transparent hover:bg-orange-100", data: { turbo_confirm: "Return with this remark to the selected person?" } do %><%= icon(:arrow_right, "h-4 w-4 rotate-180") %> Return<% end %>
+            </span>
+          <% else %>
+            <%= button_tag formaction: send_back_approvals_claim_path(@claim), formnovalidate: true, class: "btn bg-orange-50 text-orange-700 border-transparent hover:bg-orange-100", data: { turbo_confirm: "Return to employee for correction?" } do %><%= icon(:arrow_right, "h-4 w-4 rotate-180") %> Return<% end %>
+          <% end %>
+          <%= button_tag class: "btn-success whitespace-normal text-center leading-tight" do %><%= icon(:check) %> <%= approve_label %><% end %>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% else %>
+  <%= render "tour_claims/summary", claim: @claim %>
+<% end %>
+
+<div class="seal-foot"><%= approval_seal(@claim) %></div>
+<%= render "shared/print_signatures", rows: [ [ "Employee", @claim.user.name, @claim.submitted_at ],
+      [ "L1", (@claim.l1_approved_by || @claim.l1_approver)&.name, @claim.l1_approved_at ],
+      ([ "L2", (@claim.l2_approved_by || @claim.l2_approver)&.name, @claim.l2_approved_at ] if @claim.l2_approver_id),
+      [ "Finance", (@claim.approved_by || @claim.finance_approver)&.name, @claim.approved_at ] ].compact %>

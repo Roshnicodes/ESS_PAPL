@@ -1,0 +1,42 @@
+<% content_for :title, "Project BLI Upload" %>
+<%= page_header("Project · BLI · Code", "Upload the finance BLI CSV. PD Finance will only see BLI and codes that belong to the selected project.", icon_name: :clipboard) do %>
+  <%= print_button %>
+  <%= link_to template_masters_finance_codes_path, class: "btn-light", data: { turbo: false } do %><%= icon(:receipt) %> Download CSV Format<% end %>
+<% end %>
+
+<% if flash[:import_errors].present? %>
+  <div class="mb-5 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900">
+    <div class="mb-1 flex items-center gap-2 font-semibold"><%= icon(:warning, "h-5 w-5 text-amber-500") %>Some rows need attention</div>
+    <ul class="list-disc space-y-0.5 pl-6 text-xs"><% flash[:import_errors].each do |error| %><li><%= error %></li><% end %></ul>
+  </div>
+<% end %>
+
+<%= form_with url: import_masters_finance_codes_path, multipart: true, class: "card mb-5 fade-up", data: { turbo: false } do %>
+  <div class="card-head"><span class="card-title"><span class="icon-chip bg-leaf-50 text-leaf-600"><%= icon(:inbox) %></span>Upload BLI CSV <span class="muted font-normal">columns: Project_Name, BLI_Name, BLI Code</span></span></div>
+  <div class="card-body grid items-end gap-4 lg:grid-cols-[1fr_auto]">
+    <div>
+      <label class="lbl" for="file">BLI list CSV</label>
+      <input type="file" name="file" id="file" required accept=".csv,text/csv" class="inp file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-sm file:font-semibold file:text-brand-700">
+      <p class="mt-1.5 text-xs text-slate-500">Duplicate rows are safely ignored. A re-upload reactivates an existing mapping; it does not remove previously uploaded mappings.</p>
+    </div>
+    <%= button_tag class: "btn-success", data: { turbo_confirm: "Upload this BLI mapping file?" } do %><%= icon(:send) %> Upload BLI List<% end %>
+  </div>
+<% end %>
+
+<div class="card overflow-hidden fade-up">
+  <div class="card-head"><span class="card-title">Current finance mapping</span><span class="muted"><%= @mapping_count %> BLI-code mappings across <%= @project_count %> projects</span></div>
+  <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">
+    <thead><tr><th>Project</th><th>Budget Line Item (BLI)</th><th>BLI Code</th><th>Status</th></tr></thead>
+    <tbody><% @mappings.each do |mapping| %>
+      <tr>
+        <td data-label="Project" class="font-medium"><%= mapping.project.name %></td>
+        <td data-label="BLI"><%= mapping.budget_line_item.name %></td>
+        <td data-label="BLI Code" class="font-mono text-sm"><%= mapping.budget_line_item_code.name %></td>
+        <td data-label="Status"><%= mapping.active? ? status_badge("approved", label: "Active") : status_badge("cancelled", label: "Inactive") %></td>
+      </tr>
+    <% end %>
+    <%= empty_row(4, "No BLI mapping uploaded yet", icon_name: :clipboard) if @mappings.empty? %>
+    </tbody>
+  </table></div>
+  <% if @mappings.total_pages > 1 %><div class="border-t border-white/70 px-4 py-3"><%= paginate @mappings %></div><% end %>
+</div>

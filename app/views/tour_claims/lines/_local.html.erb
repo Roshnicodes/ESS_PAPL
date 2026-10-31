@@ -1,0 +1,18 @@
+<% modes = local_travel_modes %>
+<% o = f.object %>
+<tr data-nested-row data-new-record="<%= o.new_record? %>">
+  <td data-label="Date"><%= f.date_field :travel_date, class: "inp", min: @tour.from_date, max: @tour.to_date %></td>
+  <td data-label="Place From"><%= f.text_field :place_from, class: "inp" %></td>
+  <td data-label="Place To"><%= f.text_field :place_to, class: "inp" %></td>
+  <td data-label="Mode of Travel"><%= f.select :travel_mode_id,
+        modes.map { |m| [m.name, m.id, { "data-rate" => ((o.travel_mode_id == m.id && o.rate_per_km) || m.current_rate || 0), "data-km" => m.km_based?, "data-manual" => m.manual_total? }] },
+        { include_blank: "Select" }, required: true, class: "inp", data: { calc: "mode" } %></td>
+  <td data-label="Met. Reading from"><%= f.number_field :meter_from, step: "0.1", min: 0, class: "inp", data: { calc: "metfrom" } %></td>
+  <td data-label="Met. Reading to"><%= f.number_field :meter_to, step: "0.1", min: 0, class: "inp", data: { calc: "metto" } %></td>
+  <td data-label="KM"><%= f.number_field :kilometers, value: (f.object.kilometers.to_d.zero? ? nil : f.object.kilometers), placeholder: "0", step: "0.01", min: 0, class: "inp", data: { calc: "km" } %></td>
+  <td data-label="Purpose/Bill or Ticket Ref"><%= f.text_field :purpose, class: "inp", required: o.manual?, data: { calc: "purpose" } %></td>
+  <td data-label="₹/km"><input type="number" readonly tabindex="-1" class="inp text-right" value="<%= '%.2f' % (o.rate_per_km || o.travel_mode&.current_rate || 0) %>" data-calc="rate"></td>
+  <td data-label="Amount"><%= f.number_field :amount, step: "0.01", min: 0, value: (o.amount.to_d.zero? ? nil : o.amount), placeholder: "0.00", class: "inp text-right", data: { calc: "amount" } %></td>
+  <%= render "tour_claims/lines/tail", f: f %>
+  <td class="w-16 whitespace-nowrap text-right"><%= render "tour_claims/lines/row_actions" %></td>
+</tr>

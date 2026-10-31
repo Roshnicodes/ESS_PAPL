@@ -1,0 +1,16 @@
+<% o = f.object %>
+<tr data-nested-row data-new-record="<%= o.new_record? %>">
+  <td data-label="Departure City"><%= f.text_field :departure_city, class: "inp" %></td>
+  <td data-label="From Date"><%= f.datetime_field :departure_at, class: "inp", data: { calc: "dep" }, min: "#{@tour.from_date}T00:00", max: "#{@tour.to_date}T23:59" %></td>
+  <td data-label="Arrival City">
+    <%= f.select :city_id, claim_cities.map { |c| [c.name, c.id, { "data-rate" => c.da_rate }] }, { include_blank: "Select City" }, class: "inp", data: { calc: "city" } %>
+    <%= f.text_field :arrival_city_name, placeholder: "Enter city", class: ["inp mt-1.5", ("hidden" unless o.city&.name == "Other")], data: { calc: "other" } %>
+  </td>
+  <td data-label="To Date"><%= f.datetime_field :arrival_at, class: "inp", data: { calc: "arr" }, min: "#{@tour.from_date}T00:00", max: "#{@tour.to_date}T23:59" %></td>
+  <td data-label="No of Days"><%= f.number_field :no_of_days, value: (f.object.no_of_days.to_d.zero? ? nil : f.object.no_of_days.to_d.to_s("F").sub(/\.0\z/, "")), placeholder: "auto", step: "0.25", min: 0, readonly: true, tabindex: -1, class: "inp bg-slate-50", title: "Counted from From / To date-time: every full 24 h = 1 day; remaining ≤6 h = 25 %, above 6 h and under 10 h = 50 %, 10 h or more = 100 %", data: { calc: "days" } %></td>
+  <td data-label="DA Rate"><%= f.number_field :da_rate, value: (f.object.da_rate.to_d.zero? ? nil : f.object.da_rate), placeholder: "city rate", step: "0.01", min: 0, readonly: true, tabindex: -1, class: "inp bg-slate-50", title: "From City & DA Rate master", data: { calc: "rate_in" } %></td>
+  <td data-label="Applicable Rate"><%= f.select :applicable_percent, ClaimDailyAllowance::PERCENTS, {}, class: "inp", data: { calc: "pct" } %></td>
+  <td data-label="Amount (Rs.)"><%= f.number_field :amount, step: "0.01", min: 0, readonly: true, class: "inp text-right", data: { calc: "amount" } %></td>
+  <%= render "tour_claims/lines/tail", f: f %>
+  <td class="w-16 whitespace-nowrap text-right"><%= render "tour_claims/lines/row_actions" %></td>
+</tr>

@@ -1,0 +1,55 @@
+<%
+  path_now = request.fullpath
+  link = ->(label, path, ic, count: nil, alert: false, title: nil) {
+    link_to(path, class: ["nav-link", ("active" if path_now == path)], title: title) { icon(ic) + tag.span(label, class: "truncate") + (count.to_i.positive? ? tag.span(count, class: ["nav-count", ("is-alert" if alert)]) : "".html_safe) }
+  }
+  claim_due = current_user.tours.claim_due.count
+  tour_appr  = current_user.tour_approver?
+  claim_appr = current_user.claim_approver?
+  pending_tours  = tour_appr ? Tour.pending_for(current_user).count : 0
+  pending_claims = claim_appr ? TourClaim.in_queue_of(current_user).group(:claim_type).count : {}
+%>
+<nav class="space-y-0.5">
+  <%= link.("Dashboard", authenticated_root_path, :home) %>
+
+  <%= link.("Tour Plan", new_tour_path, :map) %>
+  <%= link.("Tour History", tours_path, :clock, count: claim_due, alert: true, title: (claim_due.positive? ? "#{claim_due} tour(s) approved – make the claim" : nil)) %>
+  <%= link.("Local Mileage Claim", new_local_mileage_path, :truck) %>
+  <%= link.("Local Mileage History", tours_path(type: "local"), :receipt) %>
+
+  <%# Approvals only for L1 / L2 / L3 / Finance / PD Finance / HR / admin %>
+  <% if tour_appr || claim_appr %>
+    <div class="nav-head">Approvals</div>
+    <% if tour_appr %>
+      <%= link.("Pending Tour Approval", approvals_tours_path, :check_badge, count: pending_tours) %>
+      <%= link.("Tour Approval History", done_approvals_tours_path, :clock) %>
+    <% end %>
+    <% if claim_appr %>
+      <%= link.("TA/DA Recommendation", approvals_claims_path, :clipboard, count: pending_claims["tour"]) %>
+      <%= link.("Local Mileage Recommendation", approvals_claims_path(type: "local"), :clipboard, count: pending_claims["local"]) %>
+      <%= link.("Tour Claim Approved List", approvals_claims_path(scope: "approved"), :check_circle) %>
+      <%= link.("Local Mileage Approved List", approvals_claims_path(type: "local", scope: "approved"), :check_circle) %>
+    <% end %>
+  <% end %>
+
+  <div class="nav-head">IT Tools</div>
+  <% [["guest_house", "Guest House", :building], ["help_desk", "Help Desk", :info], ["training", "Training", :sparkles], ["geohub", "GeoHub", :map], ["old_ess", "Old ESS", :home]].each do |key, label, ic| %>
+    <%= link_to it_tool_path(key), class: "nav-link", target: "_blank", rel: "noopener", title: "Opens #{label} – no separate login needed" do %><%= icon(ic) %><span class="truncate"><%= label %></span><%= icon(:arrow_right, "ml-auto h-3.5 w-3.5 -rotate-45 opacity-50") %><% end %>
+  <% end %>
+
+  <div class="nav-head">Settings</div>
+  <%= link.("Bank Details", account_bank_accounts_path, :banknotes) %>
+  <%= link.("Change Password", edit_account_password_path, :lock) %>
+
+  <% if can?(:manage, TravelMode) || can?(:create, MileageRate) || can?(:manage, ClaimCutoffRule) || can?(:create, User) || can?(:manage, City) %>
+    <div class="nav-head">Masters</div>
+    <%= link.("Mode of Travel", masters_travel_modes_path, :route) if can?(:manage, TravelMode) %>
+    <%= link.("City & DA Rate", masters_cities_path, :building) if can?(:manage, City) %>
+    <%= link.("Per KM Rate", masters_mileage_rates_path, :rupee) if can?(:create, MileageRate) %>
+    <%= link.("Local Claim Cutoff Day", masters_claim_cutoff_rules_path, :calendar) if can?(:manage, ClaimCutoffRule) %>
+    <%= link.("Employee List", masters_users_path, :users) if can?(:create, User) %>
+    <%= link.("All Tours", masters_all_tours_path, :map) if current_user.admin? %>
+    <%= link.("IT Tools Settings", masters_it_tool_settings_path, :cog) if current_user.admin? %>
+    <%= link.("Project BLI Upload", masters_finance_codes_path, :clipboard) if current_user.admin? %>
+  <% end %>
+</nav>

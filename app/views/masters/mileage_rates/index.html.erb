@@ -1,0 +1,31 @@
+<% content_for :title, "Per KM Rate" %>
+<%= page_header("Per KM Rate", "Only PD Finance can change. Every change is stored with its effective date.", icon_name: :rupee) do %>
+  <%= print_button %>
+<% end %>
+<%= error_box(@rate) %>
+<div class="grid gap-5 lg:grid-cols-[360px_1fr]">
+  <%= form_with model: [:masters, @rate], class: "card h-fit lg:sticky lg:top-20 fade-up" do |f| %>
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-emerald-50 text-emerald-600"><%= icon(:plus) %></span>Set new rate</span></div>
+    <div class="card-body space-y-4">
+      <div><%= f.label :travel_mode_id, "Mode", class: "lbl" %><%= f.collection_select :travel_mode_id, @modes, :id, :name, {}, class: "inp" %></div>
+      <div><%= f.label :rate_per_km, "Rate per KM", class: "lbl" %>
+        <div class="relative"><span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">₹</span><%= f.number_field :rate_per_km, step: "0.01", min: 0, class: "inp pl-7", required: true %></div></div>
+      <div><%= f.label :effective_from, class: "lbl" %><%= f.date_field :effective_from, class: "inp", required: true %></div>
+      <div><%= f.label :remark, class: "lbl" %><%= f.text_field :remark, class: "inp", placeholder: "e.g. Fuel price revision" %></div>
+      <p class="flex gap-2 rounded-lg bg-white/50 px-3 py-2 text-xs text-slate-600"><%= icon(:info, "h-4 w-4 shrink-0") %>Claims use the rate effective on the travel date. Old rates are never overwritten.</p>
+      <%= f.button class: "btn-primary w-full" do %><%= icon(:check) %> Save rate<% end %>
+    </div>
+  <% end %>
+  <div class="space-y-5">
+    <% @modes.each do |m| %>
+      <div class="card overflow-hidden fade-up">
+        <div class="card-head"><span class="card-title"><span class="icon-chip bg-leaf-50 text-leaf-600"><%= icon(:truck) %></span><%= m.name %></span>
+          <span class="rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-600 px-3 py-1.5 text-white shadow"><span class="text-xs opacity-80">Current</span> <b class="text-lg"><%= m.current_rate ? "₹#{m.current_rate}" : "—" %></b><span class="text-xs opacity-80">/km</span></span></div>
+        <div class="overflow-x-auto"><table class="tbl tbl-stack"><thead><tr><th>Effective From</th><th>Rate/KM</th><th>Set By</th><th>Set On</th><th>Remark</th></tr></thead>
+        <tbody><% m.mileage_rates.each_with_index do |r, i| %><tr class="<%= 'bg-emerald-50/40' if r.rate_per_km == m.current_rate && r.effective_from <= Date.current && i == m.mileage_rates.index { |x| x.effective_from <= Date.current } %>">
+          <td data-label="Effective"><%= d(r.effective_from) %><%= tag.span(" upcoming", class: "text-xs font-semibold text-amber-600") if r.effective_from > Date.current %></td><td data-label="Rate" class="font-semibold">₹<%= r.rate_per_km %></td><td data-label="Set by"><%= r.created_by %></td><td data-label="Set on" class="muted"><%= dt(r.created_at) %></td><td data-label="Remark"><%= r.remark %></td></tr><% end %>
+        <%= empty_row(5, "No rate set yet") if m.mileage_rates.empty? %></tbody></table></div>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,90 @@
+<%# locals: (claim:, f: nil) %>
+<%# pass f (form builder) to let reviewers edit deductions %>
+<% tour = claim.tour; u = claim.user %>
+<div data-controller="review-calc" data-review-calc-advance-value="<%= claim.advance_amount.to_d %>">
+<div class="card mb-4 flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2.5 text-sm sm:px-5">
+  <span class="flex items-center gap-2"><%= avatar(u, size: "h-8 w-8 text-xs") %><b><%= u.name %></b><span class="text-slate-500"><%= [u.designation, u.level, u.emp_code].compact.join(" · ") %></span></span>
+  <span><span class="text-xs font-semibold uppercase text-slate-400">Duration</span> <%= claim.type_local? ? tour.claim_month.strftime("%b-%Y") : tour.duration_label %></span>
+  <span><span class="text-xs font-semibold uppercase text-slate-400">Location</span> <%= u.location || "—" %></span>
+  <% if claim.type_local? %>
+    <span><span class="text-xs font-semibold uppercase text-slate-400">Claim amount</span> <b class="text-slate-900" data-review-balance><%= inr(claim.balance_amount) %></b></span>
+    <span class="flex items-center gap-1.5 text-xs font-medium <%= claim.helmet_declaration? ? 'text-emerald-700' : 'text-slate-500' %>">
+      <%= icon(claim.helmet_declaration? ? :check_circle : :x_circle, "h-4 w-4") %>
+      Helmet declaration: <%= claim.helmet_declaration? ? "Yes" : "No" %>
+    </span>
+  <% end %>
+  <% if current_user.finance? && claim.project %><span><span class="text-xs font-semibold uppercase text-slate-400">Project</span> <%= claim.project %> · <%= claim.budget_line_item %> · <%= claim.budget_line_item_code %></span><% end %>
+  <span class="ml-auto"><%= status_badge(claim.status) %></span>
+</div>
+
+<%# Payment account – visible to the employee and to this claim's Finance (PD Finance / admin) %>
+<% bank = claim.bank_account %>
+<% if bank && (claim.user_id == current_user.id || can?(:read, bank)) %>
+  <div class="card mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 border-l-4 border-l-brand-500 px-4 py-2.5 text-sm sm:px-5">
+    <span class="flex items-center gap-2 font-semibold text-slate-800"><span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:banknotes) %></span>Pay to</span>
+    <% [["Bank", bank.bank_name], ["A/c holder", bank.account_holder_name], ["A/c no.", bank.account_number], ["IFSC", bank.ifsc_code], ["Branch", bank.branch_name], ["Type", bank.account_type.humanize]].each do |label, value| %>
+      <% next if value.blank? %>
+      <span><span class="text-xs font-semibold uppercase text-slate-400"><%= label %></span> <b class="<%= 'font-mono' if label.in?(['A/c no.', 'IFSC']) %> text-slate-900"><%= value %></b></span>
+    <% end %>
+    <% unless bank.active? %><span class="badge bg-slate-100 text-slate-600">Deactivated later by employee</span><% end %>
+    <% if bank.passbook.attached? %><%= link_to passbook_account_bank_account_path(bank), target: "_blank", class: "btn-light btn-xs ml-auto print:hidden" do %><%= icon(:eye) %> Passbook copy<% end %><% end %>
+  </div>
+<% elsif bank.nil? && claim.employee_editable? == false && (current_user.finance? || claim.finance_approver_id == current_user.id) %>
+  <div class="card mb-4 px-4 py-2.5 text-sm text-amber-800">No bank account chosen on this claim (sent before Bank Details existed).</div>
+<% end %>
+
+<% claim_sections.each do |assoc, (title, heads, cells)| %>
+  <% lines = claim.public_send(assoc) %>
+  <% next if lines.empty? %>
+  <div class="card mb-4 overflow-hidden" data-review-section>
+    <div class="card-head"><span class="card-title text-sm"><%= title %></span><span class="text-sm text-slate-500">Sub total <b class="ml-1 text-slate-900" data-review-sub><%= inr(claim.public_send(TourClaim::SECTIONS[assoc])) %></b></span></div>
+    <%# one line per expense: fixed table fits the width (text wraps inside cells) – no sideways scroll %>
+    <table class="tbl tbl-review xl:table-fixed">
+      <thead><tr><% heads.each do |h| %><th><%= h %></th><% end %>
+        <th class="w-24 text-right">Amount</th><th class="w-28">Deduction</th><th class="w-40">Deduction Remark</th><th class="w-28 text-right">Total</th></tr></thead>
+      <tbody>
+        <% if f %><%= f.fields_for(assoc) do |lf| %><% l = lf.object %>
+          <tr data-review-row data-amount="<%= l.amount.to_d %>">
+            <% cells.(l).each_with_index do |c, i| %><td data-label="<%= heads[i] %>" class="[overflow-wrap:anywhere]"><%= c.presence || "—" %></td><% end %>
+            <td data-label="Amount" class="md:text-right"><%= inr(l.amount) %></td>
+            <td data-label="Deduction"><%= lf.number_field :deduction_amount, step: "0.01", min: 0, max: l.amount, value: (l.deduction_amount.to_d.zero? ? nil : l.deduction_amount), placeholder: "0.00", class: "inp px-2 text-right", data: { review_deduction: true, action: "input->review-calc#recalc" } %></td>
+            <td data-label="Deduction Remark"><%= lf.text_field :deduction_remark, class: "inp px-2", placeholder: "Reason" %></td>
+            <td data-label="Total" class="font-bold text-slate-900 md:text-right" data-review-total><%= inr(l.total_amount) %></td>
+          </tr>
+        <% end %><% end %>
+        <% unless f %>
+          <% lines.each do |l| %>
+            <tr data-review-row data-amount="<%= l.amount.to_d %>">
+              <% cells.(l).each_with_index do |c, i| %><td data-label="<%= heads[i] %>" class="[overflow-wrap:anywhere]"><%= c.presence || "—" %></td><% end %>
+              <td data-label="Amount" class="md:text-right"><%= inr(l.amount) %></td>
+              <td data-label="Deduction"><%= l.deduction_amount.to_d.positive? ? tag.span("−#{inr(l.deduction_amount)}", class: "font-semibold text-rose-600") : "—" %></td>
+              <td data-label="Deduction Remark" class="break-words"><%= l.deduction_remark.presence || "—" %></td>
+              <td data-label="Total" class="font-bold text-slate-900 md:text-right" data-review-total><%= inr(l.total_amount) %></td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
+<% if claim.type_local? %>
+  <%# Amount and helmet status live in the compact claimant line above; no separate panel. %>
+<% else %>
+<%# totals + description in one compact line %>
+<div class="card mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 text-sm sm:px-5">
+  <span>Grand total <b class="ml-1 text-lg text-slate-900" data-review-grand><%= inr(claim.grand_total) %></b></span>
+  <span class="text-slate-500">− Advance <b class="ml-1 text-slate-700"><%= inr(claim.advance_amount) %></b></span>
+  <span class="rounded-lg bg-brand-600 px-3 py-1 text-white">Balance <b class="ml-1 text-lg" data-review-balance><%= inr(claim.balance_amount) %></b></span>
+  <% if claim.general_description.present? %><span class="min-w-0 flex-1 truncate text-slate-600" title="<%= claim.general_description %>"><span class="text-xs font-semibold uppercase text-slate-400">Description</span> <%= claim.general_description %></span><% end %>
+  <% if claim.two_wheeler_used? %><span class="flex items-center gap-1 text-xs"><%= icon(claim.helmet_declaration? ? :check_circle : :x_circle, "h-4 w-4 #{claim.helmet_declaration? ? 'text-emerald-500' : 'text-rose-500'}") %>Helmet declaration</span><% end %>
+</div>
+
+<% if claim.claim_visit_reports.any? %>
+<div class="card mb-4 overflow-hidden"><div class="card-head"><span class="card-title text-sm">Brief detail of travel</span></div>
+  <table class="tbl tbl-stack"><thead><tr><th>Date</th><th>Place Visited</th><th>Tour Visit Created Date</th><th>Tasks Accomplished</th><th>Action Points from the Visit</th><th>Time frame</th><th>Remark</th></tr></thead>
+  <tbody><% claim.claim_visit_reports.each do |r| %><tr><td data-label="Date"><%= nd(r.visit_date) %></td><td data-label="Place Visited"><%= r.place_visited %></td><td data-label="Tour Visit Created"><%= nd(r.planned_date) %></td><td data-label="Tasks"><%= r.tasks_accomplished %></td><td data-label="Action points"><%= r.action_points %></td><td data-label="Time frame"><%= r.time_frame %></td><td data-label="Remark"><%= r.remark %></td></tr><% end %></tbody></table>
+</div>
+<% end %>
+<% end %>
+</div>

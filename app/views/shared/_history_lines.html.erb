@@ -1,0 +1,16 @@
+<%# locals: (logs:, title: "History") %>
+<% visible_logs = logs.select { |log| history_log_visible?(log, logs) } %>
+<div>
+  <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400"><%= title %></div>
+  <ol class="space-y-1 text-sm">
+    <% visible_logs.each do |log| %>
+      <li class="flex flex-wrap items-baseline gap-x-2">
+        <span class="w-40 shrink-0 text-xs text-slate-500"><%= dt(log.created_at) %></span>
+        <span class="font-medium text-slate-800"><%= action_label(log) %></span>
+        <% if (actor = history_actor_label(log)) %><span class="text-xs text-slate-500">· <%= actor %></span><% end %>
+        <% history_deduction_details(log).each do |detail| %><span class="text-xs font-medium text-rose-700"><%= detail %></span><% end %>
+      </li>
+    <% end %>
+    <% if visible_logs.blank? %><li class="text-xs text-slate-400">No activity yet</li><% end %>
+  </ol>
+</div>

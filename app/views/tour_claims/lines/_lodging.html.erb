@@ -1,0 +1,17 @@
+<% o = f.object %>
+<tr data-nested-row data-new-record="<%= o.new_record? %>">
+  <td data-label="Date"><%= f.date_field :lodging_date, class: "inp", min: @tour.from_date, max: @tour.to_date %></td>
+  <td data-label="Place">
+    <%= f.select :city_id, claim_cities.map { |c| [c.name, c.id] }, { include_blank: "Select City" }, class: "inp", data: { calc: "city" } %>
+    <%= f.text_field :place_name, placeholder: "Enter place", class: ["inp mt-1.5", ("hidden" unless o.city&.name == "Other")], data: { calc: "other" } %>
+  </td>
+  <td data-label="From Date"><%= f.datetime_field :from_date, class: "inp", min: "#{@tour.from_date}T00:00", max: "#{@tour.to_date}T23:59", data: { calc: "dep" } %></td>
+  <td data-label="To Date"><%= f.datetime_field :to_date, class: "inp", min: "#{@tour.from_date}T00:00", max: "#{@tour.to_date}T23:59", data: { calc: "arr" } %></td>
+  <td data-label="No of Days"><%= f.number_field :no_of_days, value: (o.no_of_days.to_d.zero? ? nil : o.no_of_days.to_d.to_s("F").sub(/\.0\z/, "")), placeholder: "auto", step: "0.25", min: 0, readonly: true, tabindex: -1, class: "inp bg-slate-50",
+        title: "Counted from From / To date-time: every full 24 h = 1 day; remaining ≤6 h = 25 %, above 6 h and under 10 h = 50 %, 10 h or more = 100 %", data: { calc: "days" } %></td>
+  <td data-label="Lodging Rate"><%= f.number_field :rate, step: "0.01", min: 0, value: (o.rate.to_d.zero? ? nil : o.rate), placeholder: "Enter rate", class: "inp", title: "Lodging rate per day – enter the actual rate", data: { calc: "rate_in" } %></td>
+  <td data-label="Remark"><%= f.text_field :remark, class: "inp" %></td>
+  <td data-label="Amount (Rs.)"><%= f.number_field :amount, step: "0.01", min: 0, readonly: true, class: "inp text-right", data: { calc: "amount" } %></td>
+  <%= render "tour_claims/lines/tail", f: f %>
+  <td class="w-16 whitespace-nowrap text-right"><%= render "tour_claims/lines/row_actions" %></td>
+</tr>

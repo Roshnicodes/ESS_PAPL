@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Merge these settings into krai's existing web.config. Do not replace the file.
+  (Same pattern as the KRA portal's Asakra* settings – the same SMTP values can be used.)
+-->
+<configuration>
+  <appSettings>
+    <!-- SMTP that krai already uses. Leave EssSmtpHost empty to use <system.net><mailSettings>. -->
+    <add key="EssSmtpHost" value="smtp.example.com" />
+    <add key="EssSmtpPort" value="587" />
+    <add key="EssSmtpUser" value="noreply@ploughmanagro.com" />
+    <add key="EssSmtpPassword" value="CHANGE_ME" />
+    <add key="EssSmtpEnableSsl" value="true" />
+
+    <!-- Sender shown in the mail (the notification id) -->
+    <add key="EssMailFrom" value="noreply@ploughmanagro.com" />
+    <add key="EssMailFromName" value="PAPL ESS" />
+
+    <!-- Public IP of the ESS server (hr.ploughmanagro.com). Only it may call the page.
+         Comma separated; empty = anyone can call it. -->
+    <add key="EssAllowedIps" value="" />
+
+    <!-- Links in the mail must start with this -->
+    <add key="EssLinkBase" value="https://hr.ploughmanagro.com" />
+  </appSettings>
+
+  <!-- The ESS server calls the page without logging in. If krai uses Forms login, keep the page open. -->
+  <location path="ess_notification.aspx"><system.web><authorization><allow users="*" /></authorization></system.web></location>
+</configuration>

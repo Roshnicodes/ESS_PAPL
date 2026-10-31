@@ -1,0 +1,28 @@
+<% content_for :title, "IT Tools Settings" %>
+<%= page_header("IT Tools Settings", "Guest House, Help Desk, Training (Key Result) and GeoHub open from ESS without a second login.", icon_name: :cog) %>
+<% fields = Masters::ItToolSettingsController::FIELDS %>
+<%= form_with url: masters_it_tool_settings_path, method: :patch, class: "card max-w-3xl fade-up" do %>
+  <div class="card-body grid gap-5">
+    <% fields.each do |key, (label, default)| %>
+      <% secret = key.in?(AppSetting::SECRET_KEYS) %>
+      <div>
+        <label class="lbl" for="settings_<%= key %>"><%= label %></label>
+        <% if secret %>
+          <%= password_field_tag "settings[#{key}]", nil, id: "settings_#{key}", class: "inp font-mono", autocomplete: "new-password",
+                placeholder: (AppSetting.present?(key) ? "Saved ✓ – leave blank to keep" : "Not set – paste the secret") %>
+          <p class="mt-1 flex items-center gap-2 text-xs <%= AppSetting.present?(key) ? 'text-emerald-700' : 'text-amber-700' %>">
+            <%= AppSetting.present?(key) ? "✓ Saved (hidden)" : "Not set – this tool shows “not connected yet”" %>
+            <% if AppSetting.present?(key) && ENV[key].blank? %><label class="ml-3 text-slate-500"><%= check_box_tag "clear[#{key}]", "1", false, class: "check" %> remove</label><% end %>
+          </p>
+        <% else %>
+          <%= url_field_tag "settings[#{key}]", AppSetting.get(key).presence || default, id: "settings_#{key}", class: "inp" %>
+        <% end %>
+      </div>
+    <% end %>
+    <div class="rounded-xl border border-slate-200 bg-slate-50/70 p-3 text-xs text-slate-600">
+      <b>New secret, if the other server has none yet</b> – put the same value there and here:
+      <div class="mt-1 select-all break-all rounded bg-white px-2 py-1 font-mono text-slate-800 ring-1 ring-slate-200"><%= @suggested_secret %></div>
+    </div>
+  </div>
+  <div class="flex justify-end gap-2 border-t border-white/70 px-5 py-3"><%= button_tag class: "btn-primary" do %><%= icon(:check) %> Save<% end %></div>
+<% end %>

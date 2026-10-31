@@ -1,0 +1,13 @@
+<%= error_box(@claim_cutoff_rule) %>
+<%= form_with model: [:masters, @claim_cutoff_rule], class: "card max-w-lg fade-up" do |f| %>
+  <div class="card-body space-y-4">
+    <% if @claim_cutoff_rule.new_record? && (params[:employee] || @claim_cutoff_rule.user_id) %>
+      <div><%= f.label :user_id, "Employee", class: "lbl" %><%= f.collection_select :user_id, User.active.ordered.where.not(id: ClaimCutoffRule.overrides.select(:user_id)), :id, ->(u) { "#{u.name} (#{u.emp_code})" }, { include_blank: "Select employee" }, class: "inp", required: true %></div>
+    <% else %>
+      <div><span class="lbl">Applies to</span><div class="inp-static"><%= @claim_cutoff_rule.user ? @claim_cutoff_rule.user.name : "All employees" %></div></div>
+    <% end %>
+    <div><%= f.label :cutoff_day, "Cutoff day of month (1–28)", class: "lbl" %><%= f.number_field :cutoff_day, min: 1, max: 28, class: "inp text-lg font-bold", required: true %></div>
+    <div><%= f.label :remark, class: "lbl" %><%= f.text_field :remark, class: "inp", placeholder: "Why is this being changed?" %></div>
+  </div>
+  <div class="flex justify-end gap-2 border-t border-white/70 px-5 py-3"><%= link_to "Back", masters_claim_cutoff_rules_path, class: "btn-ghost" %><%= f.button class: "btn-primary" do %><%= icon(:check) %> Save<% end %></div>
+<% end %>

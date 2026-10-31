@@ -1,0 +1,76 @@
+<% local = params[:type] == "local" %>
+<% content_for :title, local ? "Local Mileage History" : "Tour History" %>
+<%= page_header(local ? "Local Mileage History" : "My Tour History", "Status of every plan and its claim, with dates.", icon_name: local ? :receipt : :clock) do %>
+  <%= print_button %>
+  <%= link_to new_tour_path(type: local ? "local" : nil), class: "btn-primary" do %><%= icon(:plus) %> <%= local ? "Local Mileage Claim" : "Tour Plan" %><% end %>
+<% end %>
+<div class="card overflow-hidden fade-up" data-controller="dialog">
+  <div class="overflow-x-auto">
+  <table class="tbl tbl-hover tbl-stack">
+    <thead><tr><th>Tour Created By</th><th>Tour Duration</th><th>Comment</th><th>Sanction Status</th><th>Tour Status</th><th>TA/DA Comment</th><th>TA/DA Status</th><th class="text-right no-print">Action</th></tr></thead>
+    <tbody>
+    <% @tours.each do |t| c = t.tour_claim %>
+      <tr class="<%= 'bg-slate-50/70' if t.cancelled? %>">
+        <td data-label="Created By"><div class="leading-tight"><span class="text-xs text-slate-500">Created By:</span> <b><%= t.user.name %></b><div class="muted">Location: <%= t.user.location %></div><div class="mt-1"><span class="text-xs font-semibold text-brand-700"><%= tour_type_label(t) %></span> <span class="muted">· <%= dt(t.submitted_at) %></span></div></div></td>
+        <td data-label="Duration"><span class="font-medium whitespace-nowrap"><%= t.duration_label %></span></td>
+        <td data-label="Comment" class="max-w-56 text-xs text-slate-600"><%= t.cancel_remark.presence || t.return_remark.presence || t.decision_remark.presence || t.l1_remark.presence || "NA" %></td>
+        <td data-label="Sanction">
+          <div class="text-sm">
+          <% if t.approved? && t.type_local? %><span class="font-semibold text-brand-700">Self-sanctioned</span><div class="muted"><%= dt(t.approved_at) %></div>
+          <% elsif t.approved? %><% if t.decided_by_id == t.user_id %><span class="font-semibold text-brand-700">Approved</span><% else %>Approved by <b><%= t.approval_steps.find { |st| st.approver_id == t.decided_by_id }&.label || t.decided_by %></b><% end %><div class="muted"><%= dt(t.approved_at) %></div>
+          <% elsif t.returned? %>Returned by <b><%= t.returned_by %></b><div class="muted"><%= dt(t.returned_at) %></div><div class="text-xs text-amber-700">“<%= t.return_remark %>”</div>
+          <% elsif t.rejected? %>Rejected by <b><%= t.decided_by %></b><div class="text-xs text-rose-600">“<%= t.decision_remark %>”</div>
+          <% elsif t.cancelled? %><span class="font-semibold text-rose-700">Cancelled</span> <span class="muted"><%= dt(t.cancelled_at) %></span><div class="text-xs italic text-slate-600">“<%= t.cancel_remark %>”</div>
+          <% elsif t.draft? %><span class="font-semibold text-slate-600">Saved – not sent</span>
+          <% elsif t.l1_approved? %>Forwarded by L1 <b><%= t.l1_approved_by %></b><div class="muted"><%= dt(t.l1_approved_at) %></div><div class="text-xs">Pending with L2 <b><%= t.l2_approver %></b><%= " then #{t.approval_steps.map(&:label).join(' → ')}" if t.approval_steps.any? %></div>
+          <% elsif t.l2_approved? %>Forwarded by <b><%= t.l2_approved_by %></b><div class="muted"><%= dt(t.l2_approved_at) %></div><div class="text-xs">Pending with <b><%= t.l3_label %></b><%= " then #{t.pending_steps.drop(1).map(&:label).join(' → ')}" if t.pending_steps.size > 1 %></div>
+          <% else %>Pending with L1 <b><%= t.approver %></b><%= tag.div(["then", (t.l2_approver && "L2 #{t.l2_approver}"), (t.approval_steps.any? && t.approval_steps.map(&:label).join(" → "))].compact.join(" "), class: "muted") if t.l2_approver || t.l3_approver %><% end %>
+          </div>
+        </td>
+        <td data-label="Tour"><%= tour_status_badge(t, label: { "draft" => "Saved", "l1_approved" => "Forwarded to L2", "l2_approved" => "Forwarded to #{t.l3_label}", "submitted" => "Pending L1" }[t.status]) %></td>
+        <td data-label="TA/DA Comment" class="max-w-56 text-xs text-slate-600"><%= c&.return_remark.presence || c&.reject_remark.presence || c&.activity_logs&.where&.not(remark: nil)&.last&.remark || "NA" %></td>
+        <td data-label="TA/DA"><% if c %><div><%= status_badge(c.status) %><div class="muted mt-1"><%= c.stage_label %></div></div><% else %><span class="muted">NA</span><% end %></td>
+        <td data-label="Action" class="no-print">
+          <div class="flex flex-wrap items-center justify-end gap-1.5">
+            <% n = @unread[t.id] %>
+            <%= link_to t, class: "relative btn-light btn-xs btn-icon", title: "History", aria: { label: "History" } do %>
+              <%= icon(:clock) %>
+              <% if n.positive? %><span data-badge class="absolute -right-2 -top-2 min-w-5 rounded-full bg-rose-500 px-1 text-center text-[11px] font-bold leading-5 text-white shadow"><%= n %></span><% end %>
+            <% end %>
+            <% if t.maker_editable? %>
+              <%= link_to edit_tour_path(t), class: "btn-light btn-xs", title: (t.needs_reapproval_on_edit? ? "Edit – will go for approval again" : "Edit") do %><%= icon(:pencil) %> Edit<% end %>
+            <% end %>
+            <% if t.editable? && t.type_tour? %>
+              <%= button_to submit_tour_path(t), method: :patch, class: "btn-primary btn-xs", form_class: "inline", data: { turbo_confirm: "Send this tour plan for approval?" } do %><%= icon(:send) %> Send for Approval<% end %>
+            <% end %>
+            <% if c.nil? && t.claimable? %>
+              <%= link_to new_tour_claim_path(t), class: "btn-primary btn-xs relative", title: "Tour approved – make the claim now" do %><%= icon(:receipt) %> Make Claim Form<span class="claim-due-dot"></span><% end %>
+            <% elsif c.nil? && t.approved? %>
+              <span class="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-500"><%= icon(:lock, "h-3.5 w-3.5") %>Claim opens <%= d(t.claim_open_on) %></span>
+            <% elsif c&.employee_editable? %>
+              <%= link_to edit_tour_claim_path(t), class: "btn-primary btn-xs" do %><%= icon(:pencil) %> Edit Claim<% end %>
+            <% elsif c %>
+              <%= link_to tour_claim_path(t), class: "btn-light btn-xs" do %><%= icon(:eye) %> Claim Form<% end %>
+            <% end %>
+            <% if t.cancellable? %>
+              <details class="group relative">
+                <summary class="btn-soft-danger btn-xs"><%= icon(:x_circle) %> Cancel</summary>
+                <div class="absolute right-0 z-20 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-3 shadow-xl">
+                  <%= form_with url: cancel_tour_path(t), method: :patch, class: "space-y-2" do %>
+                    <label class="lbl">Reason for cancellation</label>
+                    <%= text_area_tag :cancel_remark, nil, required: true, rows: 2, placeholder: "Remark (required)", class: "inp" %>
+                    <%= button_tag class: "btn-danger btn-xs w-full", data: { turbo_confirm: "Cancel this #{tour_type_label(t).downcase}?" } do %>Confirm cancel<% end %>
+                  <% end %>
+                </div>
+              </details>
+            <% end %>
+          </div>
+        </td>
+      </tr>
+    <% end %>
+    <%= empty_row(8) if @tours.empty? %>
+    </tbody>
+  </table>
+  </div>
+  <% if @tours.total_pages > 1 %><div class="border-t border-white/70 px-4 py-3"><%= paginate @tours %></div><% end %>
+</div>

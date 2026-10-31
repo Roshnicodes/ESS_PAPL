@@ -1,0 +1,13 @@
+<tr data-nested-row data-new-record="<%= f.object.new_record? %>">
+  <td data-label="Date"><%= f.date_field :visit_date, class: "inp", min: @tour.from_date, max: @tour.to_date %></td>
+  <td data-label="Place Visited"><%= f.text_field :place_visited, class: "inp" %></td>
+  <td data-label="Tour Visit Created Date" class="text-sm text-slate-600"><%= f.object.planned_date ? d(f.object.planned_date) : "—" %></td>
+  <td data-label="Tasks Accomplished *"><%= f.text_area :tasks_accomplished, rows: 1, class: "inp", placeholder: "Required", maxlength: 2000 %></td>
+  <td data-label="Action Points from the Visit *"><%= f.text_area :action_points, rows: 1, class: "inp", placeholder: "Required" %></td>
+  <td data-label="Time frame *"><%= f.text_field :time_frame, class: "inp", placeholder: "Required", maxlength: 100 %></td>
+  <td data-label="Remark *"><%= f.text_area :remark, rows: 1, class: "inp", placeholder: "Required", maxlength: 500 %></td>
+  <td data-label="Actions" class="claim-row-actions"><%= f.hidden_field :_destroy %>
+    <button type="button" class="btn-soft btn-xs print:hidden" data-action="nested-rows#addAfter" title="Add row"><%= icon(:plus) %><span class="sr-only">Add row</span></button>
+    <button type="button" class="btn-soft-danger btn-xs print:hidden" data-action="nested-rows#remove" title="Remove"><%= icon(:trash) %><span class="sr-only">Remove</span></button>
+  </td>
+</tr>

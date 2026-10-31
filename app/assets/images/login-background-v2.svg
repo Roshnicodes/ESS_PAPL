@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#63b7ec"/>
+      <stop offset=".45" stop-color="#c7edfb"/>
+      <stop offset=".73" stop-color="#fff1ce"/>
+      <stop offset="1" stop-color="#e4f2d3"/>
+    </linearGradient>
+    <linearGradient id="ridge" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#79b5a5"/>
+      <stop offset=".48" stop-color="#b4d2a7"/>
+      <stop offset="1" stop-color="#71a994"/>
+    </linearGradient>
+    <linearGradient id="hillFar" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#b8dfa1"/>
+      <stop offset="1" stop-color="#7cbd67"/>
+    </linearGradient>
+    <linearGradient id="hillNear" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#6daf58"/>
+      <stop offset="1" stop-color="#347a43"/>
+    </linearGradient>
+    <linearGradient id="fieldLight" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#d9e99e"/>
+      <stop offset="1" stop-color="#91c768"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="74%" cy="39%" r="29%">
+      <stop offset="0" stop-color="#fffcef" stop-opacity=".96"/>
+      <stop offset=".16" stop-color="#fff6cb" stop-opacity=".82"/>
+      <stop offset=".55" stop-color="#ffe29b" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#ffe29b" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="mist" cx="50%" cy="48%" r="52%">
+      <stop offset="0" stop-color="#fff" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur20"><feGaussianBlur stdDeviation="20"/></filter>
+    <filter id="blur8"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#1b5e43" flood-opacity=".18"/></filter>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#sky)"/>
+  <rect width="1920" height="1080" fill="url(#sun)"/>
+
+  <g fill="#fff" opacity=".55" filter="url(#blur20)">
+    <ellipse cx="270" cy="196" rx="190" ry="40"/>
+    <ellipse cx="392" cy="178" rx="118" ry="48"/>
+    <ellipse cx="1180" cy="143" rx="195" ry="42"/>
+    <ellipse cx="1315" cy="123" rx="120" ry="50"/>
+  </g>
+  <path d="M0 548 C163 474 302 486 448 531 C605 579 715 509 872 512 C1052 516 1164 594 1342 546 C1535 494 1730 472 1920 539 L1920 708 L0 708Z" fill="url(#ridge)" opacity=".58" filter="url(#blur8)"/>
+  <path d="M0 616 C176 563 369 577 543 627 C721 678 833 566 1034 591 C1215 614 1392 700 1581 626 C1702 580 1816 585 1920 624 L1920 810 L0 810Z" fill="url(#hillFar)"/>
+  <path d="M0 745 C202 652 426 679 631 755 C839 832 996 655 1210 692 C1427 728 1633 814 1920 724 L1920 1080 L0 1080Z" fill="url(#hillNear)"/>
+
+  <g opacity=".20" stroke="#f8f7c7" stroke-width="8" fill="none">
+    <path d="M-44 842 C280 734 496 789 712 867 C982 965 1200 807 1544 827 C1710 837 1832 862 1974 834"/>
+    <path d="M-28 894 C270 786 508 842 729 920 C1000 1017 1223 858 1555 878 C1722 888 1855 915 1982 889"/>
+    <path d="M-14 948 C270 840 528 898 744 970 C1012 1060 1252 907 1570 926 C1734 937 1859 959 1987 937"/>
+  </g>
+  <path d="M0 0H1920V1080H0Z" fill="url(#mist)"/>
+
+  <g fill="#245e43" opacity=".34" filter="url(#softShadow)">
+    <path d="M0 740 C44 658 91 646 135 694 C101 635 129 576 187 555 C206 612 197 662 165 698 C219 645 281 663 310 712 C250 741 184 749 128 735 C91 776 49 785 0 790Z"/>
+    <path d="M1920 816 C1863 717 1814 704 1777 748 C1799 683 1763 628 1704 612 C1690 674 1713 720 1752 753 C1698 713 1642 738 1622 787 C1685 810 1746 805 1794 783 C1838 830 1880 843 1920 850Z"/>
+  </g>
+  <g fill="#d4edb8" opacity=".42">
+    <ellipse cx="90" cy="998" rx="172" ry="69"/>
+    <ellipse cx="1820" cy="1018" rx="200" ry="77"/>
+  </g>
+</svg>

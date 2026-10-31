@@ -1,0 +1,14 @@
+<%# locals: (rows:) %>
+<%# printed only: who signed / approved and when – rows: [[role, person, time], …] %>
+<div class="print-only mt-4 break-inside-avoid">
+  <div class="grid gap-3" style="grid-template-columns: repeat(<%= [rows.size, 1].max %>, minmax(0, 1fr));">
+    <% rows.each do |role, person, at| %>
+      <div class="rounded border border-slate-300 p-2 text-center">
+        <div class="h-10"></div>
+        <div class="border-t border-slate-400 pt-1 text-[10px] font-bold uppercase tracking-wide text-slate-700"><%= role %></div>
+        <div class="text-[10.5px] text-slate-800"><%= person || "—" %></div>
+        <div class="text-[9.5px] text-slate-500"><%= at ? dt(at) : "" %></div>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -1,0 +1,4 @@
+/log/test.log.0
+/log/*
+/tmp/*
+/storage/*

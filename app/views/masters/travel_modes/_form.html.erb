@@ -1,0 +1,45 @@
+<%= error_box(@travel_mode) %>
+<%= form_with model: [:masters, @travel_mode], class: "card max-w-3xl fade-up", data: { controller: "mode-form" } do |f| %>
+  <div class="card-body grid gap-4 sm:grid-cols-3">
+    <div class="sm:col-span-2"><%= f.label :name, "Mode of Travel", class: "lbl" %><%= f.text_field :name, class: "inp", required: true, placeholder: "e.g. Train(3A), Two Wheeler" %></div>
+    <div><%= f.label :position, "Display order", class: "lbl" %><%= f.number_field :position, class: "inp" %></div>
+    <div><%= f.label :category, class: "lbl" %><%= f.select :category, TravelMode::CATEGORIES.keys.map { |k| [k.to_s.humanize, k] }, {}, class: "inp" %></div>
+    <div class="sm:col-span-2" data-mode-form-target="rateBox">
+      <label class="lbl" for="travel_mode_rate_per_km">Per KM Amount (₹) <span class="font-normal normal-case text-slate-400">– local mileage only</span></label>
+      <% can_rate = can?(:create, MileageRate) %>
+      <div class="relative"><span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">₹</span>
+        <input type="number" step="0.01" min="0" name="travel_mode[rate_per_km]" id="travel_mode_rate_per_km" class="inp pl-7" data-mode-form-target="rate"
+               value="<%= @travel_mode.km_based? ? '%.2f' % @travel_mode.current_rate.to_d : '0.00' %>" <%= "readonly" unless can_rate %>></div>
+      <p class="mt-1 text-xs text-slate-500">
+        <%= can_rate ? "Two/Four Wheeler: e.g. 4.25 / 10.00. Put 0 for Public Transport (employee types KM and total). Every change is kept in rate history." : "Only PD Finance can change the per-km amount." %>
+      </p>
+    </div>
+    <% people = User.active.where.not(emp_code: "ADMIN").ordered.map { |u| ["#{u.name} (#{u.emp_code})#{" · #{u.designation}" if u.designation}", u.id] } %>
+    <% chain = @travel_mode.approver_chain.map(&:user_id) %>
+    <div class="sm:col-span-3 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
+      <span class="lbl">Extra approval for tour plans using this mode – in order, after L1 → L2</span>
+      <div class="grid gap-2 sm:grid-cols-3">
+        <% 3.times do |i| %>
+          <div><label class="text-[11px] font-semibold text-indigo-700" for="approver_<%= i %>"><%= %w[1st 2nd 3rd][i] %> approver</label>
+            <%= select_tag "approver_ids[]", options_for_select(people, chain[i]), include_blank: (i.zero? ? "None – L1 / L2 is enough" : "—"), id: "approver_#{i}", class: "inp" %></div>
+        <% end %>
+      </div>
+      <p class="mt-1.5 text-xs text-slate-500">e.g. Flight → Director · Personal Four Wheeler → COO, then Director. Each can Approve / Return / Reject with remark; shown by designation (COO, Director).</p>
+      <label class="mt-3 flex items-center gap-2 text-sm font-semibold text-slate-700"><%= f.check_box :is_train, class: "check" %> This is a train (ask Normal / Tatkal in tour plan)</label>
+      <label class="lbl mt-2" for="tatkal_ids">Tatkal booking needs approval by (trains)</label>
+      <%= select_tag "tatkal_ids[]", options_for_select(people, @travel_mode.tatkal_chain.map(&:user_id)), multiple: true, id: "tatkal_ids", class: "inp" %>
+      <p class="mt-1 text-xs text-slate-500">e.g. COO – a tour with a Tatkal ticket on this train also goes to this person after L1 → L2.</p>
+      <label class="lbl mt-3" for="notify_ids">Only notify (no approval)</label>
+      <%= select_tag "notify_ids[]", options_for_select(people, @travel_mode.watchers.map(&:user_id)), multiple: true, id: "notify_ids", class: "inp" %>
+      <p class="mt-1 text-xs text-slate-500">e.g. Administration – gets a notification when such a tour plan is approved.</p>
+    </div>
+    <div class="sm:col-span-3 grid gap-2 sm:grid-cols-2">
+      <% { for_tour_plan: ["Tour Plan", "Show in tour plan visits (₹0)"], for_city_travel: ["Claim A – City to City", "Amount typed in claim (₹0 per km)"], for_local_travel: ["Local Mileage", "Show in B. Local Travel with per-km amount"], active: ["Enabled", "Available for selection"] }.each do |attr, (label, help)| %>
+        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200/80 bg-white/50 p-3 hover:border-brand-300 has-[:checked]:border-brand-400 has-[:checked]:bg-brand-50/60">
+          <%= f.check_box attr, class: "check mt-0.5", data: (attr == :for_local_travel ? { mode_form_target: "local", action: "mode-form#toggle" } : {}) %><span class="leading-tight"><span class="block text-sm font-semibold"><%= label %></span><span class="muted"><%= help %></span></span>
+        </label>
+      <% end %>
+    </div>
+  </div>
+  <div class="flex justify-end gap-2 border-t border-white/70 px-5 py-3"><%= link_to "Back", masters_travel_modes_path, class: "btn-ghost" %><%= f.button class: "btn-primary" do %><%= icon(:check) %> Save<% end %></div>
+<% end %>

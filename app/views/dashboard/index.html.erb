@@ -1,0 +1,51 @@
+<% content_for :title, "Dashboard" %>
+<div class="grid gap-5 xl:grid-cols-3">
+  <div class="space-y-5 xl:col-span-2">
+    <%# action needed %>
+    <% if @pending_tour_approvals.positive? || @pending_claims.positive? || @claim_ready.any? %>
+      <div class="card">
+        <div class="card-head"><span class="card-title"><span class="icon-chip bg-amber-50 text-amber-600"><%= icon(:sparkles) %></span>Needs your attention</span></div>
+        <ul class="divide-y divide-white/70">
+          <% if @pending_tour_approvals.positive? %>
+            <li><%= link_to approvals_tours_path, class: "flex items-center gap-3 px-5 py-3.5 hover:bg-white/50" do %><%= icon(:check_badge, "h-5 w-5 text-brand-600") %><span class="flex-1 text-sm"><b><%= @pending_tour_approvals %></b> tour plan(s) waiting for your approval</span><%= icon(:arrow_right, "h-4 w-4 text-slate-400") %><% end %></li>
+          <% end %>
+          <% if @pending_claims.positive? %>
+            <li><%= link_to approvals_claims_path, class: "flex items-center gap-3 px-5 py-3.5 hover:bg-white/50" do %><%= icon(:clipboard, "h-5 w-5 text-violet-600") %><span class="flex-1 text-sm"><b><%= @pending_claims %></b> claim(s) pending with you</span><%= icon(:arrow_right, "h-4 w-4 text-slate-400") %><% end %></li>
+          <% end %>
+          <% @claim_ready.each do |t| %>
+            <li><%= link_to new_tour_claim_path(t), class: "flex items-center gap-3 px-5 py-3.5 hover:bg-white/50" do %><%= icon(:receipt, "h-5 w-5 text-emerald-600") %><span class="flex-1 text-sm">Claim form ready for <b>your tour</b> · <%= t.duration_label %></span><span class="btn-soft btn-xs">Make claim</span><% end %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="grid gap-5 md:grid-cols-2">
+      <div class="card">
+        <div class="card-head"><span class="card-title"><span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:map) %></span>My latest tour</span><%= link_to "History", tours_path, class: "link text-xs" %></div>
+        <div class="card-body">
+          <% if @last_tour %>
+            <div class="flex items-start justify-between gap-2"><div><div class="font-semibold"><%= link_to tour_type_label(@last_tour), @last_tour, class: "link" %></div><div class="text-sm text-slate-600"><%= @last_tour.duration_label %></div></div><%= status_badge(@last_tour.status, label: @last_tour.approved? ? "Accepted" : nil) %></div>
+            <div class="mt-3 flex flex-wrap gap-1.5"><% @last_tour.tour_visits.first(4).each do |v| %><span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600"><%= icon(:pin, "h-3.5 w-3.5") %><%= v.place %></span><% end %></div>
+          <% else %><div class="empty-state py-6"><%= icon(:map) %>No tour yet</div><% end %>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title"><span class="icon-chip bg-violet-50 text-violet-600"><%= icon(:receipt) %></span>My latest claim</span></div>
+        <div class="card-body">
+          <% if @last_claim %>
+            <div class="flex items-start justify-between gap-2"><div><div class="font-semibold"><%= link_to "Claim form", @last_claim.tour, class: "link" %></div><div class="text-sm text-slate-600"><%= @last_claim.tour.duration_label %></div></div><%= status_badge(@last_claim.status) %></div>
+            <div class="mt-3 flex items-end justify-between"><span class="muted"><%= @last_claim.stage_label %></span><span class="text-lg font-bold text-slate-900"><%= inr(@last_claim.grand_total) %></span></div>
+          <% else %><div class="empty-state py-6"><%= icon(:receipt) %>No claim yet</div><% end %>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="space-y-5">
+    <div class="card card-body flex items-center gap-4">
+      <span class="icon-chip h-12 w-12 bg-amber-50 text-amber-600"><%= icon(:building, "h-6 w-6") %></span>
+      <div><div class="text-2xl font-bold"><%= @on_tour_count %></div><div class="muted">Colleagues on tour today</div></div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,14 @@
+<% content_for :title, "Change Password" %>
+<%= page_header("Change Password", "Default password is 123456 – please set your own.", icon_name: :lock) %>
+<%= error_box(@user) %>
+<%= form_with model: @user, url: account_password_path, method: :patch, class: "card max-w-md fade-up" do |f| %>
+  <div class="card-body space-y-4">
+    <div><%= f.label :current_password, "Current password", class: "lbl" %><%= f.password_field :current_password, class: "inp", autocomplete: "current-password", required: true %></div>
+    <div><%= f.label :password, "New password (min 3 characters)", class: "lbl" %><%= f.password_field :password, class: "inp", autocomplete: "new-password", required: true, minlength: 3 %></div>
+    <div><%= f.label :password_confirmation, "Confirm new password", class: "lbl" %><%= f.password_field :password_confirmation, class: "inp", autocomplete: "new-password", required: true, minlength: 3 %></div>
+  </div>
+  <div class="flex justify-end gap-2 border-t border-white/70 px-5 py-3">
+    <%= link_to "Cancel", authenticated_root_path, class: "btn-ghost" %>
+    <%= f.button class: "btn-primary" do %><%= icon(:check) %> Change Password<% end %>
+  </div>
+<% end %>

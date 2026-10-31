@@ -1,0 +1,40 @@
+<% content_for :title, "Mode of Travel" %>
+<%= page_header("Mode of Travel Master", "Add modes, enable / disable them, and set per-km rate for local mileage.", icon_name: :route) do %>
+  <%= print_button %>
+  <%= link_to new_masters_travel_mode_path, class: "btn-primary" do %><%= icon(:plus) %> Add Mode of Travel<% end %>
+<% end %>
+<% yes = ->(b) { b ? icon(:check_circle, "h-5 w-5 text-emerald-500") : tag.span("—", class: "text-slate-300") } %>
+<div class="card overflow-hidden fade-up">
+  <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">
+    <thead><tr><th>#</th><th>Mode of Travel</th><th class="text-center">Tour Plan</th><th class="text-center">Claim A (City)</th><th class="text-center">Local Mileage</th><th>Per KM Amount</th><th>Extra approval / Notify</th><th>Enable / Disable</th><th class="no-print"></th></tr></thead>
+    <tbody><% @travel_modes.each do |m| %>
+      <tr class="<%= 'opacity-55' unless m.active? %>">
+        <td data-label="Order" class="text-slate-400"><%= m.position %></td>
+        <td data-label="Mode" class="font-semibold"><%= m.name %></td>
+        <% [["Tour Plan", m.for_tour_plan], ["Claim A", m.for_city_travel], ["Local", m.for_local_travel]].each do |l, b| %><td data-label="<%= l %>" class="md:text-center"><%= yes.(b) %></td><% end %>
+        <td data-label="Per KM">
+          <% if m.for_local_travel? %>
+            <% if m.km_based? %><span class="rounded-lg bg-emerald-50 px-2 py-1 text-sm font-bold text-emerald-700">₹<%= '%.2f' % m.current_rate.to_d %>/km</span>
+            <% else %><span class="rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600">₹0 · KM & total typed</span><% end %>
+          <% else %><span class="text-sm text-slate-500">₹0 (tour)</span><% end %>
+        </td>
+        <td data-label="Extra approval">
+          <% if m.needs_extra_approval? || m.watchers.any? || m.tatkal_chain.any? %>
+            <div class="leading-tight">
+              <% if m.needs_extra_approval? %><span class="rounded-lg bg-indigo-50 px-2 py-0.5 text-xs font-semibold text-indigo-700"><%= m.approver_chain.map { |a| a.user.designation.presence || a.user.name }.join(" → ") %></span><% end %>
+              <% if m.tatkal_chain.any? %><div class="mt-1 text-[11px] font-semibold text-orange-700">Tatkal → <%= m.tatkal_chain.map { |a| a.user.designation.presence || a.user.name }.join(" → ") %></div><% end %>
+              <% if m.watchers.any? %><div class="mt-1 text-[11px] text-slate-500">Notify: <%= m.watchers.map { |w| w.user.name }.join(", ") %></div><% end %>
+            </div>
+          <% else %><span class="text-slate-300">—</span><% end %>
+        </td>
+        <td data-label="Status">
+          <%= button_to toggle_masters_travel_mode_path(m), method: :patch, class: "group inline-flex items-center gap-2", form_class: "inline", title: m.active? ? "Disable" : "Enable" do %>
+            <span class="relative inline-flex h-6 w-11 items-center rounded-full transition <%= m.active? ? 'bg-emerald-500' : 'bg-slate-300' %>"><span class="absolute h-5 w-5 rounded-full bg-white shadow transition <%= m.active? ? 'left-[22px]' : 'left-0.5' %>"></span></span>
+            <span class="text-xs font-semibold <%= m.active? ? 'text-emerald-700' : 'text-slate-500' %>"><%= m.active? ? "Enabled" : "Disabled" %></span>
+          <% end %>
+        </td>
+        <td class="no-print"><%= link_to edit_masters_travel_mode_path(m), class: "btn-light btn-xs ml-auto" do %><%= icon(:pencil) %> Edit<% end %></td>
+      </tr>
+    <% end %></tbody>
+  </table></div>
+</div>

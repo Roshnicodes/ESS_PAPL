@@ -1,0 +1,22 @@
+<%# locals: (f:, user:, help: "Choose where this claim should be paid. Finance will see this account and its passbook copy.") %>
+<%# Employee picks the account the money should be paid into (from Bank Details) – Tour Plan, Tour Claim, Local Mileage %>
+<% accounts = user.bank_accounts.usable.ordered.to_a %>
+<div class="card overflow-hidden fade-up">
+  <div class="card-head">
+    <span class="card-title"><span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:banknotes) %></span>Payment Bank Account <span class="text-rose-500">*</span></span>
+    <%= link_to account_bank_accounts_path, class: "btn-light btn-xs", target: "_blank" do %><%= icon(:plus) %> Manage Bank Details<% end %>
+  </div>
+  <div class="card-body">
+    <% if accounts.empty? %>
+      <div class="flex flex-wrap items-center gap-3 rounded-xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-sm text-amber-900"><%= icon(:warning, "h-5 w-5 shrink-0 text-amber-500") %>
+        No active bank account. Add one (with passbook copy) – you can save now, but it cannot be sent without a bank account.
+        <%= link_to new_account_bank_account_path, class: "btn-primary btn-xs ml-auto", target: "_blank" do %><%= icon(:plus) %> Add Bank Account<% end %></div>
+    <% else %>
+      <div class="grid gap-3 md:grid-cols-[minmax(0,28rem)_1fr] md:items-center">
+        <%= f.select :bank_account_id, accounts.map { |a| ["#{a.bank_name} · #{a.masked_number} · #{a.ifsc_code}#{' (Primary)' if a.primary?}", a.id] },
+              { include_blank: "Select bank account" }, class: "inp" %>
+        <p class="text-xs text-slate-500"><%= help %></p>
+      </div>
+    <% end %>
+  </div>
+</div>

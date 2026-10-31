@@ -1,0 +1,52 @@
+<% local = @tour.type_local? %>
+<% content_for :title, local ? "Local Mileage Claim" : "Tour Plan" %>
+<%= page_header(local ? "Local Mileage Claim" : "New Tour Plan",
+      local ? "One mileage claim per month – fill the visits you made locally." : "Plan your visits. It goes to your reporting manager for approval.", icon_name: local ? :truck : :map) %>
+<%= error_box(@tour) if local %>
+
+<% if local %>
+  <% if @period.already_claimed? %>
+    <div class="card card-body flex flex-col items-center gap-3 py-10 text-center fade-up">
+      <span class="icon-chip h-14 w-14 bg-emerald-50 text-emerald-600"><%= icon(:check_circle, "h-7 w-7") %></span>
+      <div class="text-lg font-semibold">Local Milage Claim for <%= @period.month.strftime("%m-%Y") %> already created</div>
+      <p class="max-w-md text-sm text-slate-500">Till Date of <%= @period.cutoff_day.ordinalize %> of every month you will claim local milage for last month. After that you will be eligible for current month claim.</p>
+      <%= link_to tours_path(type: "local"), class: "btn-primary" do %>Open Local Mileage History <%= icon(:arrow_right) %><% end %>
+    </div>
+  <% else %>
+  <%= form_with model: @tour, url: tours_path(type: "local"), data: { controller: "nested-rows" }, class: "space-y-5 fade-up" do |f| %>
+    <div class="card">
+      <div class="card-head"><span class="card-title"><span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:calendar) %></span>Visit Details</span></div>
+      <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1.3fr]">
+        <div><span class="lbl">Month</span><div class="inp-static"><%= @period.label %></div></div>
+        <div><span class="lbl">Period</span><div class="inp-static"><%= d(@period.from_date) %> – <%= d(@period.to_date) %></div></div>
+        <div class="flex items-end"><div class="flex items-center gap-2 rounded-lg bg-brand-50/80 px-3 py-2 text-xs text-brand-800 ring-1 ring-brand-100"><%= icon(:info, "h-4 w-4 shrink-0") %>Month is fixed by the cutoff day (<%= @period.cutoff_day %>) set by PD HR. Till the <%= @period.cutoff_day.ordinalize %> you claim last month.</div></div>
+        <div class="sm:col-span-2 lg:col-span-3"><%= f.label :general_description, "General Description for local travel", class: "lbl" %><%= render "shared/blocked_textarea", f: f, attr: :general_description, record: @tour, rows: 2 %></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-title"><span class="icon-chip bg-leaf-50 text-leaf-600"><%= icon(:pin) %></span>Visits <span class="muted font-normal">(optional)</span></span>
+        <button type="button" class="btn-light btn-xs" data-action="nested-rows#add"><%= icon(:plus) %> Add visit</button>
+      </div>
+      <div class="hidden grid-cols-[10rem_1fr_13rem_1.4fr_auto] gap-3 border-b border-white/70 bg-white/40 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 lg:grid">
+        <span>Date</span><span>Place to visit</span><span>Mode of travel</span><span>Planned activities / tasks to be completed</span><span>Actions</span>
+      </div>
+      <div class="divide-y divide-white/70" data-nested-rows-target="container">
+        <%= f.fields_for :tour_visits do |vf| %><%= render "visit_fields", f: vf %><% end %>
+      </div>
+      <datalist id="place-suggestions"><% TourVisit.place_suggestions.each do |p| %><option value="<%= p %>"><% end %></datalist>
+      <template data-nested-rows-target="template">
+        <%= f.fields_for :tour_visits, TourVisit.new, child_index: "NEW_RECORD" do |vf| %><%= render "visit_fields", f: vf %><% end %>
+      </template>
+    </div>
+
+    <div class="glass-bar sticky bottom-3 z-20 flex flex-wrap items-center justify-end gap-2 rounded-2xl p-3">
+      <%= link_to "Cancel", tours_path(type: "local"), class: "btn-ghost" %>
+      <%= f.button class: "btn-primary btn-lg" do %><%= icon(:send) %> Save Local Mileage<% end %>
+    </div>
+  <% end %>
+  <% end %>
+<% else %>
+  <%= render "form" %>
+<% end %>

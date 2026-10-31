@@ -1,0 +1,22 @@
+<tr data-nested-row data-new-record="<%= f.object.new_record? %>">
+  <td data-label="Date"><%= f.date_field :travel_date, class: "inp", min: @tour.from_date, max: @tour.to_date %></td>
+  <td data-label="Departure City"><%= f.text_field :departure_city, class: "inp" %></td>
+  <td data-label="Arrived City"><%= f.text_field :arrival_city, class: "inp" %></td>
+  <% modes = city_travel_modes %>
+  <% trains = (@claim_train_ids ||= modes.select(&:is_train?).map(&:id)) %>
+  <% routes = (@claim_mode_routes ||= modes.to_h { |m| [ m.id, { approvers: m.approver_chain.map { |a| a.user.designation.presence || a.user.name }.uniq, tatkal_approvers: m.tatkal_chain.map { |a| a.user.designation.presence || a.user.name }.uniq } ] }) %>
+  <td data-label="Mode of Travel">
+    <div data-controller="train-quota" data-train-quota-trains-value="<%= trains.to_json %>" data-train-quota-approvals-value="<%= json_escape(routes.to_json) %>">
+      <%= f.collection_select :travel_mode_id, modes, :id, :name, {}, class: "inp", data: { train_quota_target: "mode", action: "change->train-quota#toggle" } %>
+      <div class="mt-1" data-train-quota-target="quota" <%= "hidden" unless f.object.travel_mode&.is_train? %>>
+        <%= f.select :ticket_quota, TourVisit::QUOTAS, {}, class: "inp py-1 text-xs", title: "Ticket", data: { no_search: true, train_quota_target: "ticket", action: "change->train-quota#toggle" } %>
+      </div>
+      <p hidden class="mt-1 text-[11px] font-medium text-indigo-700" data-train-quota-target="approval"><span data-train-quota-target="approvalText"></span></p>
+    </div>
+  </td>
+  <td data-label="Bill/Ticket No."><%= f.text_field :bill_ticket_no, class: "inp" %></td>
+  <td data-label="Remark"><%= f.text_field :remark, class: "inp" %></td>
+  <td data-label="Amt."><%= f.number_field :amount, step: "0.01", min: 0, value: (f.object.amount.to_d.zero? ? nil : f.object.amount), placeholder: "0.00", class: "inp text-right", data: { calc: "amount" } %></td>
+  <%= render "tour_claims/lines/tail", f: f %>
+  <td class="w-16 whitespace-nowrap text-right"><%= render "tour_claims/lines/row_actions" %></td>
+</tr>

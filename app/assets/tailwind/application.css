@@ -1,0 +1,453 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+
+  /* PAPL brand: field green (primary) + leaf-green accent */
+  --color-brand-50: #effaf2;
+  --color-brand-100: #d9f2df;
+  --color-brand-200: #b4e3c0;
+  --color-brand-300: #82cf98;
+  --color-brand-400: #4db56d;
+  --color-brand-500: #2a9a51;
+  --color-brand-600: #1f8445;
+  --color-brand-700: #1a6b39;
+  --color-brand-800: #185631;
+  --color-brand-900: #15472a;
+  --color-brand-950: #0a2816;
+
+  --color-leaf-50:  #f4fbe8;
+  --color-leaf-100: #e6f6cd;
+  --color-leaf-400: #a3d94f;
+  --color-leaf-500: #84c225;
+  --color-leaf-600: #659b19;
+
+  --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 16px -4px rgb(15 23 42 / 0.08);
+  --shadow-lift: 0 10px 30px -10px rgb(26 107 57 / 0.45);
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold border transition-all duration-150 cursor-pointer select-none whitespace-nowrap focus:outline-none focus-visible:ring-4 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[.98];
+}
+/* Glass surfaces – translucent white over the colourful app backdrop */
+@utility card {
+  @apply rounded-2xl border border-white/70 bg-white/50 shadow-[0_8px_32px_-12px_rgb(30_64_175/0.30)] ring-1 ring-slate-900/[0.04] backdrop-blur-xl backdrop-saturate-150;
+}
+@utility glass {
+  @apply border border-white/60 bg-white/55 backdrop-blur-xl backdrop-saturate-150;
+}
+
+@layer base {
+  html { -webkit-tap-highlight-color: transparent; }
+  body { @apply antialiased; }
+  /* colourful mesh behind the glass */
+  .app-bg {
+    background:
+      radial-gradient(50rem 34rem at 12% -6%, rgb(51 133 246 / .22), transparent 62%),
+      radial-gradient(44rem 30rem at 100% 0%, rgb(132 194 37 / .22), transparent 60%),
+      radial-gradient(40rem 32rem at 70% 105%, rgb(139 92 246 / .14), transparent 62%),
+      radial-gradient(36rem 28rem at 0% 100%, rgb(14 165 233 / .16), transparent 60%),
+      linear-gradient(135deg, #f3f8ec 0%, #f8faf4 55%, #eef6e6 100%);
+    background-attachment: fixed;
+  }
+  ::selection { @apply bg-brand-100 text-brand-900; }
+}
+
+@layer components {
+  /* ---------- surfaces ---------- */
+  .card-head  { @apply px-4 sm:px-5 py-3.5 border-b border-white/70 font-semibold text-slate-800 flex flex-wrap items-center justify-between gap-2; }
+  .card-title { @apply flex items-center gap-2.5 text-[15px]; }
+  .card-body  { @apply p-4 sm:p-5; }
+  .icon-chip  { @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl; }
+  .icon-chip svg { @apply h-5 w-5; }
+
+  /* ---------- forms ---------- */
+  .lbl { @apply block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5; }
+  .inp { @apply w-full min-w-0 rounded-lg border border-slate-300/70 bg-white/75 backdrop-blur px-3 py-2 text-sm text-slate-800 shadow-xs placeholder:text-slate-400 transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 outline-none read-only:bg-slate-100/60 read-only:text-slate-600 disabled:bg-slate-100 disabled:text-slate-500; }
+  .inp-static { @apply rounded-lg bg-white/50 border border-white/80 px-3 py-2 text-sm font-medium text-slate-700; }
+  .check { @apply h-4 w-4 rounded accent-brand-600; }
+  .inp.field-error, .field-error { @apply border-rose-400 bg-rose-50/70 ring-4 ring-rose-100; }
+
+  /* ---------- buttons ---------- */
+  .btn-primary { @apply btn border-transparent text-white bg-gradient-to-b from-brand-500 to-brand-600 shadow-sm hover:from-brand-600 hover:to-brand-700 hover:shadow-[var(--shadow-lift)] focus-visible:ring-brand-200; }
+  .btn-success { @apply btn border-transparent text-white bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-sm hover:from-emerald-600 hover:to-emerald-700 focus-visible:ring-emerald-200; }
+  .btn-warning { @apply btn border-transparent text-white bg-gradient-to-b from-amber-500 to-orange-500 shadow-sm hover:from-amber-600 hover:to-orange-600 focus-visible:ring-amber-200; }
+  .btn-danger  { @apply btn border-transparent text-white bg-gradient-to-b from-rose-500 to-rose-600 shadow-sm hover:from-rose-600 hover:to-rose-700 focus-visible:ring-rose-200; }
+  .btn-light   { @apply btn bg-white/70 backdrop-blur border-slate-300/70 text-slate-700 shadow-xs hover:bg-slate-50 hover:border-slate-400 focus-visible:ring-slate-200; }
+  .btn-ghost   { @apply btn border-transparent text-slate-600 hover:bg-slate-100; }
+  .btn-soft    { @apply btn border-transparent bg-brand-50 text-brand-700 hover:bg-brand-100; }
+  .btn-icon { @apply px-2!; }
+  .profile-menu > summary::-webkit-details-marker { display: none; }
+  .btn-soft-danger { @apply btn border-transparent bg-rose-50 text-rose-700 hover:bg-rose-100; }
+  .btn-xs { @apply px-2.5 py-1 text-xs rounded-md; }
+  .btn-lg { @apply px-5 py-2.5 text-[15px] rounded-xl; }
+  .btn svg, .btn-primary svg, .btn-light svg, .btn-soft svg, .btn-danger svg, .btn-success svg, .btn-warning svg, .btn-soft-danger svg, .btn-ghost svg { @apply h-4 w-4; }
+
+  /* ---------- tables ---------- */
+  .tbl    { @apply w-full text-sm; }
+  .tbl th { @apply bg-white/40 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 px-3 py-2.5 border-b border-white/80 whitespace-nowrap; }
+  .tbl td { @apply px-3 py-3 border-b border-slate-900/[0.05] align-top; }
+  .tbl tbody tr { @apply transition-colors; }
+  .tbl-hover tbody tr:hover { @apply bg-white/50; }
+  .tbl tfoot td { @apply bg-white/30 border-b-0; }
+  .tbl-edit td { @apply py-2 px-1.5; }
+
+  /* Claim rows stay fully visible on desktop instead of using a horizontal scrollbar. */
+  .claim-lines-wrap { @apply w-full; }
+  .claim-lines { table-layout: fixed; font-size: .75rem; }
+  .claim-lines th { padding: .5rem .25rem; white-space: normal; line-height: 1.15; }
+  .claim-lines td { min-width: 0; padding: .35rem .2rem; vertical-align: middle; }
+  .claim-lines .inp { min-width: 0; padding: .45rem .4rem; font-size: .75rem; }
+  .claim-lines input, .claim-lines select { max-width: 100%; }
+  .claim-row-actions { white-space: nowrap; text-align: center; }
+  .claim-row-actions .btn { padding: .4rem; }
+  .claim-row-actions .btn + .btn { margin-left: .15rem; }
+
+  /* ---------- badges ---------- */
+  .badge { @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset whitespace-nowrap; }
+  .badge-dot::before { content: ""; @apply h-1.5 w-1.5 rounded-full bg-current; }
+
+  /* ---------- navigation ---------- */
+  .nav-link { @apply flex items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] font-medium text-slate-600 transition hover:bg-white/70 hover:text-brand-700; }
+  .nav-link svg { @apply h-[18px] w-[18px] shrink-0 opacity-80; }
+  .nav-link.active { @apply bg-gradient-to-r from-brand-600 to-brand-500 text-white shadow-lg shadow-brand-500/30; }
+  .nav-link.active svg { @apply opacity-100; }
+  .nav-head { @apply px-3 pt-5 pb-1.5 text-[10.5px] font-bold uppercase tracking-[.14em] text-slate-400; }
+  .nav-count { @apply ml-auto rounded-full bg-amber-400 px-1.5 text-[11px] font-bold text-slate-900; }
+  .nav-count.is-alert { @apply bg-rose-500 text-white; }
+  .claim-due-dot { @apply absolute -right-1.5 -top-1.5 flex h-3.5 w-3.5; }
+  .claim-due-dot::before { content: ""; @apply absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75; }
+  .claim-due-dot::after { content: ""; @apply relative inline-flex h-3.5 w-3.5 rounded-full bg-rose-500 ring-2 ring-white; }
+
+  /* ---------- misc ---------- */
+  .glass-bar { @apply glass shadow-2xl shadow-brand-900/10; }
+  .stat-card { @apply card p-4 sm:p-5 flex flex-col gap-3 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg; }
+  .link { @apply font-semibold text-brand-600 hover:text-brand-800 hover:underline underline-offset-2; }
+  .muted { @apply text-xs text-slate-500; }
+  .empty-state { @apply flex flex-col items-center justify-center gap-2 py-12 text-center text-slate-400; }
+  .empty-state svg { @apply h-10 w-10 text-slate-300; }
+  details > summary { @apply list-none cursor-pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+}
+
+/* Lists become stacked cards on phones: put data-label on each <td>. */
+@media (width < 48rem) {
+  .tbl-stack thead { display: none; }
+  .tbl-stack, .tbl-stack tbody, .tbl-stack tr, .tbl-stack td { display: block; width: 100%; }
+  .tbl-stack tbody tr { margin: .75rem; width: auto; border-radius: .9rem; border: 1px solid rgb(255 255 255 / .8); background: rgb(255 255 255 / .55); padding: .75rem .9rem; box-shadow: 0 4px 16px -8px rgb(30 64 175 / .2); }
+  .tbl-stack tbody td { border: 0; padding: .35rem 0; display: flex; gap: .75rem; }
+  .tbl-stack tbody td[data-label]::before { content: attr(data-label); width: 6.5rem; flex-shrink: 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-slate-400); padding-top: .15rem; }
+  .tbl-stack tbody td.td-empty { justify-content: center; }
+  .tbl-stack tbody td > * { min-width: 0; }
+  .tbl-stack tbody td { overflow-wrap: anywhere; }
+  /* entry tables (inputs): label on top, input full width */
+  .tbl-edit tbody td { flex-direction: column; gap: .25rem; }
+  .tbl-edit tbody td[data-label]::before { width: auto; padding-top: 0; }
+  .tbl-edit tbody td > *, .tbl-edit tbody td .inp, .tbl-edit tbody td .ts-wrapper { width: 100%; }
+  .tbl-edit tbody td.claim-row-actions { flex-direction: row; justify-content: flex-end; gap: .4rem; padding-top: .5rem; }
+  .tbl-edit tbody td.claim-row-actions::before { display: none; }
+  .tbl-edit tbody td.claim-row-actions > * { width: auto; }
+  .claim-lines td { padding: .35rem 0; }
+  .claim-lines .inp { font-size: .875rem; }
+  .claim-row-actions { justify-content: center; }
+}
+
+/* Review tables: one line per expense on wide screens (≥1280px), stacked cards below that */
+.tbl-review th, .tbl-review td { padding: .55rem .5rem; font-size: 13px; }
+.tbl-review th { white-space: normal; }
+@media (width < 80rem) {
+  .tbl-review thead { display: none; }
+  .tbl-review, .tbl-review tbody, .tbl-review tr, .tbl-review td { display: block; width: 100%; }
+  .tbl-review tbody tr { margin: .6rem .75rem; width: auto; border-radius: .9rem; border: 1px solid rgb(255 255 255 / .8); background: rgb(255 255 255 / .55); padding: .5rem .8rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: .25rem .75rem; }
+  .tbl-review tbody td { border: 0; padding: .25rem 0; }
+  .tbl-review tbody td[data-label]::before { content: attr(data-label); display: block; font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-slate-400); }
+}
+
+/* claim entry tables: compact inputs so a whole line fits */
+.tbl-entry td { vertical-align: middle; }
+.tbl-entry .inp, .tbl-entry .ts-wrapper .ts-control { padding-left: .5rem; padding-right: .5rem; font-size: 13px; min-height: 34px; }
+.tbl-entry .ts-wrapper.single .ts-control { padding-right: 1.6rem; }
+@media (width < 80rem) {
+  .tbl-entry tbody tr { position: relative; padding-top: 2.1rem; }
+  .tbl-entry tbody td:last-child { position: absolute; top: .3rem; right: .4rem; width: auto; padding: 0; }
+  .tbl-entry tbody td:last-child::before { display: none; }
+}
+
+/* sticky action bars only on big screens – on phones they scroll with the page */
+@media (width < 64rem) {
+  .glass-bar.sticky { position: static; }
+}
+
+@keyframes toast-in { from { opacity: 0; transform: translateY(-8px) scale(.98); } to { opacity: 1; transform: none; } }
+.toast { animation: toast-in .25s ease-out; }
+@keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: fade-up .4s ease-out both; }
+
+/* ---------- approval stamp: printed on tours and claims ---------- */
+.seal-foot { display: flex; justify-content: flex-end; padding-right: .75rem; margin-top: 1.25rem; }
+.seal { transform: rotate(-9deg); opacity: .88; break-inside: avoid; }
+.seal-ring {
+  width: 112px; height: 112px; padding: 5px; border: 3px solid currentColor; border-radius: 9999px;
+}
+.seal-core {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; padding: 4px; text-align: center; line-height: 1.25;
+  border: 1.5px solid currentColor; border-radius: 9999px;
+}
+.seal-top  { font-size: 7px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; opacity: .75; }
+.seal-word { margin: 2px 0 3px; font-size: 11.5px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; }
+.seal-line { font-size: 8px; font-weight: 600; }
+.seal-line + .seal-line { opacity: .8; }
+.seal-ok   { color: #15803d; }
+.seal-wait { color: #b45309; }
+.seal-warn { color: #c2410c; }
+.seal-bad  { color: #be123c; }
+.seal-void { color: #475569; }
+
+/* ---------- print: always a proper table (the paper is narrow, so phone "card" layout must not kick in) ---------- */
+@page { size: A4; margin: 12mm 10mm; }
+@media print {
+  html, body { background: white !important; font-size: 11px; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .lg\:pl-72 { padding-left: 0 !important; }
+  .app-main { max-width: none !important; padding: 0 !important; }
+  .card { box-shadow: none !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; background: #fff !important; backdrop-filter: none !important; break-inside: avoid; }
+  .fade-up { animation: none !important; }
+  .page-heading { margin-bottom: .5rem !important; }
+  .page-heading-actions > *:not(.seal) { display: none !important; }
+  .toast, .glass-bar { display: none !important; }
+
+  .tbl-stack, .tbl-review { display: table !important; width: 100% !important; table-layout: auto !important; border-collapse: collapse; }
+  .tbl-stack thead, .tbl-review thead { display: table-header-group !important; }
+  .tbl-stack tbody, .tbl-review tbody { display: table-row-group !important; }
+  .tbl-stack tr, .tbl-review tr, .tbl-stack tbody tr, .tbl-review tbody tr {
+    display: table-row !important; margin: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 0 !important;
+    background: none !important; box-shadow: none !important; width: auto !important; break-inside: avoid; }
+  .tbl-stack th, .tbl-stack td, .tbl-review th, .tbl-review td, .tbl-stack tbody td, .tbl-review tbody td {
+    display: table-cell !important; width: auto !important; position: static !important; padding: 4px 6px !important;
+    border: 1px solid #cbd5e1 !important; font-size: 10.5px !important; vertical-align: top; }
+  .tbl-stack th, .tbl-review th { background: #eef6f0 !important; color: #14532d !important; font-weight: 700; text-transform: uppercase; font-size: 9.5px !important; }
+  .tbl-stack tbody td::before, .tbl-review tbody td::before { display: none !important; content: none !important; }
+  /* paper carries no action controls – only the record itself */
+  .no-print, .tbl .no-print, .tbl-stack .no-print, .tbl-review .no-print { display: none !important; }
+  .seal-foot { margin: 0 0 -14px; padding-right: .5rem; }
+  .print-only { display: block !important; }
+}
+.print-only { display: none; }
+
+/* ---------- claim rows: all fields visible, wrap instead of scrolling ---------- */
+.claim-row { position: relative; border-radius: .9rem; border: 1px solid rgb(226 232 240 / .9); background: rgb(255 255 255 / .55); padding: .75rem .9rem; counter-increment: claimrow; }
+.claim-row[hidden] { display: none; }
+[data-nested-rows-target="container"] { counter-reset: claimrow; }
+.claim-row::before { content: "Row " counter(claimrow); position: absolute; top: .55rem; left: .9rem; font-size: 11px; font-weight: 700; color: var(--color-slate-400); text-transform: uppercase; letter-spacing: .05em; }
+.claim-row-grid { display: grid; gap: .6rem .75rem; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); margin-top: 1.4rem; }
+.claim-row-grid .lbl { margin-bottom: .25rem; font-size: 10.5px; }
+.claim-row > .claim-row-actions { position: absolute; top: .3rem; right: .4rem; display: flex; gap: .15rem; }
+
+/* ---------- searchable dropdowns (Tom Select) look like .inp ---------- */
+.ts-wrapper.inp, .ts-wrapper.single { padding: 0 !important; border: 0 !important; box-shadow: none !important; background: transparent !important; min-height: 0; }
+.ts-wrapper .ts-control {
+  border: 1px solid rgb(203 213 225 / .7); border-radius: .5rem; background: rgb(255 255 255 / .8);
+  padding: .5rem 2rem .5rem .75rem; font-size: .875rem; line-height: 1.25rem; color: var(--color-slate-800);
+  box-shadow: 0 1px 2px rgb(0 0 0 / .04); min-height: 38px; cursor: pointer;
+}
+.ts-wrapper.focus .ts-control { border-color: var(--color-brand-500); box-shadow: 0 0 0 4px var(--color-brand-100); }
+.ts-wrapper.single .ts-control::after { border-color: var(--color-slate-400) transparent transparent; right: .75rem; }
+.ts-dropdown { border-radius: .75rem; border: 1px solid rgb(226 232 240); box-shadow: 0 20px 40px -12px rgb(15 23 42 / .25); overflow: hidden; z-index: 1000; font-size: .875rem; background: white; }
+.ts-dropdown .dropdown-input { border-bottom: 1px solid rgb(241 245 249); padding: .55rem .75rem; outline: none; }
+.ts-dropdown .option { padding: .45rem .75rem; }
+.ts-dropdown .active { background: var(--color-brand-50); color: var(--color-brand-800); }
+.ts-dropdown .selected { font-weight: 600; }
+.field-error + .ts-wrapper .ts-control { border-color: var(--color-rose-400); background: rgb(255 241 242 / .7); }
+dialog .ts-dropdown { z-index: 80; }
+/* tom-select.css loads after this file and sets z-index:10 – win explicitly; never narrower than its options */
+body > .ts-dropdown, .ts-wrapper .ts-dropdown { z-index: 1000 !important; min-width: 13rem; }
+.ts-dropdown .option { white-space: nowrap; }
+
+/* ---------- premium shared visual system ---------- */
+.app-bg {
+  background:
+    radial-gradient(48rem 30rem at -10% -10%, rgb(132 194 37 / .20), transparent 65%),
+    radial-gradient(42rem 28rem at 108% 0%, rgb(31 132 69 / .13), transparent 66%),
+    radial-gradient(32rem 25rem at 70% 112%, rgb(255 202 103 / .15), transparent 68%),
+    linear-gradient(135deg, #f7fbf1 0%, #fdfdf8 48%, #f1f8e9 100%);
+  background-attachment: fixed;
+  background-color: #f7fbf1;
+}
+.card {
+  border-color: rgb(255 255 255 / .9);
+  border-radius: 1.25rem;
+  background: linear-gradient(135deg, rgb(255 255 255 / .94), rgb(255 255 255 / .86));
+  box-shadow: 0 2px 4px rgb(16 54 110 / .04), 0 16px 38px -24px rgb(16 54 110 / .36);
+  backdrop-filter: blur(9px) saturate(1.08);
+}
+.card-head { border-color: rgb(218 232 225 / .88); background: rgb(255 255 255 / .26); }
+.inp {
+  border-radius: .75rem;
+  background: rgb(255 255 255 / .9);
+}
+.btn-primary {
+  background-image: linear-gradient(135deg, var(--color-brand-500), var(--color-brand-600) 55%, var(--color-brand-700));
+  box-shadow: 0 10px 24px -12px rgb(26 107 57 / .75);
+}
+.btn-primary:hover { box-shadow: 0 18px 40px -18px rgb(26 107 57 / .6); }
+.tbl th { background: rgb(240 248 241 / .78); }
+.nav-link { border: 1px solid transparent; }
+.nav-link:hover { border-color: rgb(255 255 255 / .85); }
+.nav-link.active { background-image: linear-gradient(90deg, var(--color-brand-700), var(--color-brand-600) 60%, var(--color-brand-500)); }
+.stat-card:hover { transform: translateY(-.25rem); box-shadow: 0 18px 40px -22px rgb(26 107 57 / .4); }
+
+/* The sign-in page has its own photographic scene.  Signed-in screens keep the
+   same green-and-cream palette without carrying the photo behind every table. */
+body.app-bg::before {
+  content: none;
+}
+.icon-chip { border-radius: 999px; box-shadow: inset 0 0 0 1px rgb(255 255 255 / .7); }
+.stat-card .icon-chip { height: 2.6rem; width: 2.6rem; }
+
+/* ---------- polished application shell ---------- */
+.app-shell { position: relative; }
+.app-sidebar {
+  overflow: hidden;
+  background: linear-gradient(165deg, rgb(255 255 255 / .96), rgb(244 250 245 / .92) 58%, rgb(235 248 226 / .9));
+  box-shadow: 14px 0 50px -30px rgb(18 51 111 / .56);
+  backdrop-filter: blur(18px) saturate(1.12);
+}
+.app-sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 11rem;
+  pointer-events: none;
+  background: radial-gradient(circle at 5% 0%, rgb(51 133 246 / .17), transparent 55%), radial-gradient(circle at 96% 12%, rgb(132 194 37 / .17), transparent 52%);
+}
+.app-sidebar > * { position: relative; }
+.app-header {
+  background: rgb(255 255 255 / .84);
+  box-shadow: 0 10px 28px -24px rgb(24 48 99 / .42);
+}
+.app-main { position: relative; }
+.brand-mark {
+  border: 1px solid rgb(255 255 255 / .9);
+  box-shadow: 0 10px 20px -13px rgb(26 107 57 / .45);
+}
+.sidebar-user {
+  border: 1px solid rgb(255 255 255 / .82);
+  background: rgb(255 255 255 / .8);
+  box-shadow: 0 10px 25px -18px rgb(20 38 84 / .34);
+}
+.page-heading { position: relative; }
+
+.page-heading-actions { align-self: flex-end; }
+
+/* ---------- dashboard focal point ---------- */
+.dashboard-hero {
+  min-height: 10.5rem;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 84% 12%, rgb(172 233 104 / .28), transparent 24%),
+    linear-gradient(90deg, rgb(10 66 34 / .97) 0%, rgb(22 108 57 / .91) 43%, rgb(24 103 53 / .62) 72%, rgb(13 67 34 / .25) 100%),
+    var(--scene) center 60% / cover no-repeat !important;
+  border: 1px solid rgb(255 255 255 / .34);
+  box-shadow: 0 28px 70px -28px rgb(20 38 84 / .42);
+}
+.dashboard-hero::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  right: -6rem;
+  bottom: -8rem;
+  width: 28rem;
+  height: 19rem;
+  border-radius: 52% 48% 0 0;
+  transform: rotate(-12deg);
+  background: linear-gradient(150deg, rgb(212 250 157 / .32), rgb(255 255 255 / .02));
+}
+
+/* ---------- login: PAPL rural theme – farmer photo, card in the middle, green wave ---------- */
+.login-scene { position: relative; isolation: isolate; min-height: 100dvh; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 7rem 1rem 8.5rem; background: #e9f3dc; }
+.login-photo { position: absolute; inset: 0; z-index: -2; background-size: cover; background-position: 50% 45%; background-repeat: no-repeat; background-color: #dfe9cf; }   /* PAPL watershed – fields & check dams */
+.login-scene::before { content: none; }   /* photo shown as it is – no white fade */
+.login-wave { position: absolute; inset: auto 0 0 0; z-index: 0; height: 9.5rem; pointer-events: none; }
+.login-wave svg { width: 100%; height: 100%; display: block; }
+.login-brand { position: absolute; top: 1.6rem; left: clamp(1rem, 3vw, 2.6rem); display: flex; align-items: center; gap: .9rem; }
+.login-brand img { height: 5.2rem; width: auto; filter: drop-shadow(0 2px 6px rgb(255 255 255 / .9)); }
+.login-brand-text { padding-left: .9rem; border-left: 1.5px solid rgb(12 80 40 / .35); }
+.login-brand-title { font-weight: 800; font-size: 1.05rem; letter-spacing: -.02em; color: #0c3d22; }
+.login-brand-sub { font-size: .8rem; color: #2f5b3f; }
+.login-motto { position: absolute; top: 1.7rem; right: clamp(1rem, 4vw, 3.5rem); font-family: "Caveat", cursive; font-size: clamp(1.35rem, 2vw, 1.85rem); line-height: 1.05; color: #0d4d2a; transform: rotate(-6deg); text-shadow: 0 1px 10px rgb(255 255 255 / .7); }
+.login-motto::after { content: ""; display: block; width: 70%; height: 3px; margin: .35rem 0 0 auto; border-radius: 999px; background: #1f8445; transform: rotate(-2deg); }
+.login-hindi { position: absolute; z-index: 1; right: clamp(1rem, 4vw, 3.5rem); bottom: 1.6rem; font-family: "Kalam", cursive; font-size: clamp(1.1rem, 1.7vw, 1.55rem); line-height: 1.25; text-align: right; color: #f3ffe9; transform: rotate(-4deg); }
+.login-footer { position: absolute; z-index: 1; bottom: 1.1rem; left: clamp(1rem, 3vw, 2.6rem); font-size: .75rem; color: #e6f6df; }
+.login-side { position: absolute; top: 50%; left: clamp(1rem, 4vw, 4rem); width: min(27rem, 30vw); transform: translateY(-58%); }
+.login-side h2 { font-size: clamp(1.7rem, 2.6vw, 2.45rem); font-weight: 800; line-height: 1.12; letter-spacing: -.035em; color: #fff; text-shadow: 0 2px 12px rgb(0 0 0 / .65), 0 1px 3px rgb(0 0 0 / .5); }
+.login-side h2 span { display: block; color: #c9f59f; }
+.login-side p { margin-top: .9rem; font-size: clamp(.88rem, 1.05vw, 1rem); line-height: 1.55; color: #f4f7f2; font-weight: 500; text-shadow: 0 1px 8px rgb(0 0 0 / .75); }
+.login-values { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; margin-top: 1.5rem; }
+.login-value { display: flex; flex-direction: column; align-items: center; gap: .45rem; text-align: center; font-size: .74rem; font-weight: 700; line-height: 1.2; color: #fff; text-shadow: 0 1px 6px rgb(0 0 0 / .8); }
+.login-value i { display: inline-flex; height: 3rem; width: 3rem; align-items: center; justify-content: center; border-radius: 999px; background: radial-gradient(circle at 35% 30%, #d8f5c4, #a9df8d); color: #156b34; box-shadow: 0 8px 18px -10px rgb(20 90 40 / .6); }
+.login-value i svg { height: 1.45rem; width: 1.45rem; }
+.login-card { position: relative; width: min(100%, 25rem); padding: 1.8rem 1.8rem 1.4rem; border-radius: 1.4rem; overflow: hidden;
+  background: rgb(255 255 255 / .9); border: 1px solid rgb(255 255 255 / .95); box-shadow: 0 30px 70px -28px rgb(10 50 25 / .55); backdrop-filter: blur(16px) saturate(1.3); }
+.login-card::after { content: ""; position: absolute; left: -2rem; bottom: -2.6rem; width: 9rem; height: 4.5rem; border-radius: 50%; background: linear-gradient(90deg, #b8e39a, #e6f6d6); transform: rotate(8deg); z-index: -1; }
+.login-card-head { display: flex; align-items: center; gap: .9rem; }
+.login-card-logo { display: inline-flex; height: 3rem; width: 3rem; flex-shrink: 0; align-items: center; justify-content: center; }
+.login-card h1 { font-size: 2.6rem; line-height: 1; font-weight: 800; letter-spacing: .06em;
+  background: linear-gradient(135deg, #1f8445, #0f4f27); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.login-ess-full { margin-top: .35rem; font-size: .95rem; font-weight: 600; letter-spacing: .02em; color: #475569; }
+.login-ess-full b { font-weight: 800; color: #1f8445; }
+.login-card .lbl { color: #1a7a3c; }
+.login-card .inp { padding-top: .72rem; padding-bottom: .72rem; border-radius: .8rem; background: #f6fbf6; border-color: rgb(120 180 140 / .55); }
+.login-card .inp:focus { background: #fff; border-color: #1f8445; box-shadow: 0 0 0 4px rgb(31 132 69 / .15); }
+.login-card .check { accent-color: #1f8445; }
+.login-btn { width: 100%; min-height: 3rem; border-radius: .8rem; font-size: 1rem;
+  background-image: linear-gradient(90deg, #136b35, #1f8a43 55%, #3fae4f) !important; box-shadow: 0 16px 30px -14px rgb(19 107 53 / .85) !important; }
+.login-btn:hover { filter: brightness(1.05); }
+.login-help { margin-top: 1.1rem; display: flex; align-items: center; justify-content: center; gap: .35rem; font-size: .78rem; color: #50645a; }
+.login-help b { color: #1a7a3c; }
+.login-leaf-deco { position: absolute; right: .4rem; bottom: .2rem; width: 3.2rem; opacity: .95; }
+.login-features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; width: min(100%, 42rem); margin-top: 1.6rem; position: relative; z-index: 1; }
+.login-feature { display: flex; align-items: center; gap: .6rem; padding: .7rem .75rem; border-radius: .95rem; background: rgb(255 255 255 / .9); box-shadow: 0 12px 26px -16px rgb(10 50 25 / .5); }
+.login-feature .dot { display: inline-flex; height: 2.3rem; width: 2.3rem; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 999px; color: #fff; }
+.login-feature .dot svg { height: 1.1rem; width: 1.1rem; }
+.login-feature b { display: block; font-size: .85rem; color: #0f2a1b; }
+.login-feature small { display: block; font-size: .68rem; line-height: 1.2; color: #557060; }
+.login-feature .go { margin-left: auto; color: #6b8576; }
+@media (width < 75rem) { .login-side { display: none; } }
+@media (width < 44rem) {
+  .login-scene { padding: 6.2rem .9rem 8rem; }
+  .login-motto, .login-brand-text { display: none; }
+  .login-features { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; width: min(100%, 25rem); margin-top: 1rem; }
+  .login-feature { flex-direction: column; gap: .35rem; padding: .6rem .4rem; text-align: center; }
+  .login-feature small, .login-feature .go { display: none; }
+  .login-card { padding: 1.4rem 1.2rem 1.2rem; }
+  .login-hindi { font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) { .fade-up { animation: none; } }
+
+/* ---- bank details cards ---- */
+@layer components {
+  .bank-card-top { @apply relative overflow-hidden px-5 pt-4 pb-4 text-white; background: linear-gradient(135deg, var(--color-brand-600), var(--color-brand-900)); }
+  .bank-card-top::after { content: ""; position: absolute; right: -2.5rem; top: -2.5rem; width: 9rem; height: 9rem; border-radius: 9999px; background: rgb(255 255 255 / .09); }
+  .bank-card.is-off .bank-card-top { background: linear-gradient(135deg, #94a3b8, #475569); }
+  .bank-card.is-off { opacity: .8; }
+}
+
+/* ---- date + time picker (DA / Lodging) ---- */
+.dt-input { cursor: pointer; background-image: none; }
+.flatpickr-calendar.hasTime .dt-time-label { border-top: 1px solid #e2e8f0; padding: .45rem .75rem .1rem; font-size: 12px; font-weight: 700; color: #14532d; text-align: left; }
+.flatpickr-calendar.hasTime .dt-time-label span { display: block; font-size: 10.5px; font-weight: 500; color: #64748b; }
+.flatpickr-calendar.hasTime .flatpickr-time { border-top: 0 !important; height: 44px; max-height: 44px; margin: .2rem .5rem .35rem; border-radius: .6rem; background: #f0fdf4; }
+.flatpickr-calendar.hasTime .flatpickr-time input, .flatpickr-calendar.hasTime .flatpickr-am-pm { font-size: 16px; font-weight: 700; color: #14532d; }
+.flatpickr-calendar.hasTime .flatpickr-am-pm { background: #dcfce7; border-radius: .45rem; }
+.flatpickr-calendar .dt-done { display: block; width: calc(100% - 1rem); margin: 0 .5rem .5rem; border-radius: .6rem; background: var(--color-brand-600); padding: .4rem; font-size: 13px; font-weight: 700; color: #fff; }
+.flatpickr-calendar .dt-done:hover { background: var(--color-brand-700); }
+.claim-lines .dt-input, .tbl-entry .dt-input { padding-left: .35rem !important; padding-right: .25rem !important; font-size: 12px; }
+
+/* phones: long button labels ("Send to L1 – <name>", "Forward to …") wrap instead of spilling out */
+@media (width < 48rem) {
+  .btn, .btn-primary, .btn-success, .btn-warning, .btn-light, .btn-soft, .btn-soft-danger, .btn-danger, .btn-ghost {
+    white-space: normal; text-align: center; line-height: 1.2; min-width: 0; }
+  .glass-bar .btn, .glass-bar .btn-primary, .glass-bar .btn-success, .glass-bar .btn-warning, .glass-bar .btn-light { justify-content: center; }
+  .page-heading > div:last-child { width: 100%; }
+}

@@ -1,0 +1,74 @@
+<% content_for :title, "Login" %>
+<% photo = %w[login-watershed.jpg login-rural-farmer.jpg login-scene.svg].find { |f| Rails.application.assets.load_path.find(f) } %>
+<div class="login-scene">
+  <div class="login-photo" style="background-image: url('<%= image_path(photo) %>')" aria-hidden="true"></div>
+
+  <header class="login-brand">
+    <%= image_tag "papl_logo_full.png", alt: "Ploughman Agro – Sustainable by Design" %>
+    <div class="login-brand-text leading-tight">
+      <div class="login-brand-title">Ploughman Agro Private Limited</div>
+    </div>
+  </header>
+
+  <p class="login-motto" aria-hidden="true">Empowering People<br>Building Better Tomorrows 🌿</p>
+
+  <section class="login-side" aria-label="About PAPL">
+    <h2>Together for a <span>Stronger Rural India</span></h2>
+    <p>PAPL works for sustainable agriculture, empowering farmers and creating better livelihoods.</p>
+    <div class="login-values">
+      <% [[:sun, "Better Livelihoods"], [:users, "Stronger Communities"], [:sparkles, "Sustainable Growth"], [:check_badge, "Inclusive Development"]].each do |ic, label| %>
+        <div class="login-value"><i><%= icon(ic) %></i><%= label %></div>
+      <% end %>
+    </div>
+  </section>
+
+  <main class="login-card fade-up" aria-label="Login">
+    <div class="login-card-head">
+      <span class="login-card-logo" aria-hidden="true">
+        <svg viewBox="0 0 48 48" class="h-11 w-11"><path d="M24 44c0-12 0-20-2-28" stroke="#1f8445" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M22 18C14 18 8 12 8 4c8 0 14 6 14 14Z" fill="#3fae4f"/><path d="M24 26c8 0 15-6 15-14-8 0-15 6-15 14Z" fill="#1f8445"/><path d="M23 34c-7 0-13-5-13-12 7 0 13 5 13 12Z" fill="#7cc35a"/><circle cx="31" cy="7" r="2.4" fill="#f5b92c"/></svg>
+      </span>
+      <div>
+        <h1 aria-label="ESS – Employee Self Service">ESS</h1>
+        <p class="login-ess-full"><b>E</b>mployee <b>S</b>elf <b>S</b>ervice</p>
+      </div>
+    </div>
+
+    <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "mt-6 space-y-4" }, data: { turbo: false }) do |f| %>
+      <div>
+        <%= f.label :emp_code, "Employee Code", class: "lbl" %>
+        <div class="relative">
+          <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-emerald-700/70"><%= icon(:user, "h-5 w-5") %></span>
+          <%= f.text_field :emp_code, autofocus: true, autocomplete: "username", placeholder: "e.g. 1025", class: "inp pl-10" %>
+        </div>
+      </div>
+      <div data-controller="reveal">
+        <%= f.label :password, class: "lbl" %>
+        <div class="relative">
+          <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-emerald-700/70"><%= icon(:lock, "h-5 w-5") %></span>
+          <%= f.password_field :password, autocomplete: "current-password", placeholder: "••••••••", class: "inp pl-10 pr-10", data: { reveal_target: "input" } %>
+          <button type="button" class="absolute inset-y-0 right-2 flex items-center px-1 text-slate-400 hover:text-emerald-700" data-action="reveal#toggle" title="Show / hide password"><%= icon(:eye, "h-5 w-5") %></button>
+        </div>
+      </div>
+      <label class="flex items-center gap-2 text-sm text-slate-600"><%= f.check_box :remember_me, class: "check" %> Remember me</label>
+      <%= f.button class: "btn-primary login-btn" do %>Login <%= icon(:arrow_right) %><% end %>
+    <% end %>
+
+    <svg class="login-leaf-deco" viewBox="0 0 64 64" aria-hidden="true"><path d="M60 6C30 6 10 22 8 56c22-2 52-14 52-50Z" fill="#2e9a49"/><path d="M12 54C26 38 40 24 58 8" stroke="#e8f8d8" stroke-width="2" fill="none"/></svg>
+  </main>
+
+  <div class="login-features fade-up" aria-hidden="true">
+    <% [[:pin, "Tour Plan", "Plan, track & get approvals", "#16a34a"], [:receipt, "Claims", "TA/DA & local mileage", "#2563eb"], [:check_badge, "Approvals", "Every step, time-stamped", "#7c3aed"]].each do |ic, title, sub, color| %>
+      <div class="login-feature"><span class="dot" style="background: <%= color %>"><%= icon(ic) %></span><span><b><%= title %></b><small><%= sub %></small></span><span class="go"><%= icon(:arrow_right, "h-4 w-4") %></span></div>
+    <% end %>
+  </div>
+
+  <div class="login-wave" aria-hidden="true">
+    <svg viewBox="0 0 1440 150" preserveAspectRatio="none">
+      <path d="M0 70 C 280 20 520 30 760 70 S 1200 110 1440 40 L1440 150 L0 150Z" fill="#8cc63f" opacity=".9"/>
+      <path d="M0 92 C 300 45 560 60 800 92 S 1220 125 1440 66 L1440 150 L0 150Z" fill="#1f7a3a"/>
+      <path d="M0 108 C 320 70 580 84 820 110 S 1240 140 1440 92 L1440 150 L0 150Z" fill="#0f4f27"/>
+    </svg>
+  </div>
+  <div class="login-footer">© <%= Date.current.year %> Ploughman Agro Pvt. Ltd.</div>
+  <p class="login-hindi" aria-hidden="true">किसान की प्रगति<br>देश की समृद्धि</p>
+</div>

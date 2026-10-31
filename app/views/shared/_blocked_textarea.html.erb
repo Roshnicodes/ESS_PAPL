@@ -1,0 +1,5 @@
+<%# locals: (f:, attr:, record:, rows: 3, placeholder: nil) %>
+<div data-controller="blocked-words" data-blocked-words-list-value="<%= BlockedWords.list.to_json %>">
+  <%= f.text_area attr, rows: rows, class: "inp", placeholder: placeholder, data: { blocked_words_target: "input", action: "input->blocked-words#check" } %>
+  <p data-blocked-words-target="warning" class="<%= 'hidden' unless record.blocked_words_removed? %> mt-1.5 flex items-center gap-1.5 text-xs font-semibold text-rose-600">❗ A prohibited word has been found and removed.</p>
+</div>

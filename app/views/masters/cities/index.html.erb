@@ -1,0 +1,50 @@
+<% content_for :title, "City & DA Rate" %>
+<%= page_header("City & DA Rate", "Only these cities show in the claim form (D. Daily Allowance; C. Lodging city list). DA = days × city DA rate × applicable %; lodging rate is entered by the employee.", icon_name: :building) do %>
+  <%= print_button %>
+  <%= render "shared/activity_button", id: "city-history", title: "City master history", sections: [["Changes", @logs.reverse]] %>
+  <%= link_to export_masters_cities_path, class: "btn-light", data: { turbo: false } do %><%= icon(:receipt) %> Download Excel<% end %>
+  <%= link_to new_masters_city_path, class: "btn-primary" do %><%= icon(:plus) %> Add City<% end %>
+<% end %>
+
+<%= form_with url: import_masters_cities_path, multipart: true, class: "card mb-5 flex flex-wrap items-end gap-3 p-4 fade-up", data: { turbo: false } do %>
+  <div class="min-w-0 flex-1">
+    <label class="lbl" for="city_file">Upload City &amp; DA Rate Excel</label>
+    <%= file_field_tag :file, id: "city_file", accept: ".xlsx,.csv", required: true, class: "inp file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-1.5 file:font-semibold file:text-brand-700" %>
+    <p class="mt-1 text-xs text-slate-500">Columns: <b>City</b>, State, <b>DA Rate</b>, Active (Yes/No). Existing cities are updated, new ones added; a blank cell keeps the current value. Tip: Download Excel, change rates, upload back.</p>
+  </div>
+  <%= button_tag class: "btn-primary", data: { turbo_confirm: "Upload and update city rates?" } do %><%= icon(:send) %> Upload<% end %>
+<% end %>
+
+<div class="card overflow-hidden fade-up">
+  <%= form_with url: masters_cities_path, method: :get, class: "flex flex-wrap items-center gap-2 border-b border-white/70 px-4 py-3" do %>
+    <div class="relative w-full sm:w-72">
+      <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400"><%= icon(:search, "h-4 w-4") %></span>
+      <%= search_field_tag :q, params[:q], placeholder: "Search city, state or rate…", class: "inp pl-9" %>
+    </div>
+    <% [["", "All (#{@counts[:all]})"], ["active", "Enabled (#{@counts[:active]})"], ["inactive", "Disabled (#{@counts[:all] - @counts[:active]})"]].each do |val, label| %>
+      <%= link_to label, masters_cities_path(q: params[:q], status: val.presence), class: ["btn-xs", (params[:status].to_s == val ? "btn-primary" : "btn-light")] %>
+    <% end %>
+    <%= button_tag class: "btn-light btn-xs ml-auto" do %><%= icon(:filter) %> Search<% end %>
+  <% end %>
+  <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">
+    <thead><tr><th>City</th><th>State</th><th class="md:text-right">DA Rate / day</th><th>Enable / Disable</th><th class="no-print"></th></tr></thead>
+    <tbody>
+      <% @cities.each do |c| %>
+        <tr class="<%= 'opacity-55' unless c.active? %>">
+          <td data-label="City" class="font-semibold"><%= c.name %></td>
+          <td data-label="State" class="text-slate-600"><%= c.state.presence || "—" %></td>
+          <td data-label="DA Rate" class="font-semibold md:text-right"><%= inr(c.da_rate) %></td>
+          <td data-label="Status">
+            <%= button_to toggle_masters_city_path(c), method: :patch, class: "group inline-flex items-center gap-2", form_class: "inline", title: c.active? ? "Disable" : "Enable" do %>
+              <span class="relative inline-flex h-6 w-11 items-center rounded-full transition <%= c.active? ? 'bg-emerald-500' : 'bg-slate-300' %>"><span class="absolute h-5 w-5 rounded-full bg-white shadow transition <%= c.active? ? 'left-[22px]' : 'left-0.5' %>"></span></span>
+              <span class="text-xs font-semibold <%= c.active? ? 'text-emerald-700' : 'text-slate-500' %>"><%= c.active? ? "Enabled" : "Disabled" %></span>
+            <% end %>
+          </td>
+          <td class="md:text-right no-print"><%= link_to edit_masters_city_path(c), class: "btn-light btn-xs" do %><%= icon(:pencil) %> Edit<% end %></td>
+        </tr>
+      <% end %>
+      <%= empty_row(6, "No city found") if @cities.empty? %>
+    </tbody>
+  </table></div>
+  <% if @cities.total_pages > 1 %><div class="border-t border-white/70 px-4 py-3"><%= paginate @cities %></div><% end %>
+</div>

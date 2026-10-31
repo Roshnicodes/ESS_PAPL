@@ -1,0 +1,11 @@
+<div class="pointer-events-none fixed inset-x-0 top-3 z-[60] flex flex-col items-center gap-2 px-3 sm:top-5">
+  <% { notice: ["border-emerald-200 text-emerald-800", "text-emerald-500", :check_circle], alert: ["border-rose-200 text-rose-800", "text-rose-500", :warning] }.each do |key, (css, icss, ic)| %>
+    <% if flash[key].present? %>
+      <div data-controller="toast" class="toast pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-xl border bg-white/95 px-4 py-3 text-sm shadow-xl backdrop-blur <%= css %>">
+        <%= icon(ic, "h-5 w-5 shrink-0 #{icss}") %>
+        <div class="flex-1 font-medium"><%= flash[key] %></div>
+        <button type="button" data-action="toast#close" class="text-slate-400 hover:text-slate-600" aria-label="Close"><%= icon(:x, "h-4 w-4") %></button>
+      </div>
+    <% end %>
+  <% end %>
+</div>

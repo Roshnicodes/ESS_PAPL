@@ -1,0 +1,100 @@
+<% local = @claim.type_local? %>
+<% content_for :title, local ? "Local Mileage Claim Form" : "Tour Claim Form" %>
+<% u = @tour.user %>
+<%= page_header(local ? "Local Mileage Claim Form" : "Tour Claim (TA/DA) Form", @tour.duration_label, icon_name: :receipt) do %>
+  <% if @tour.persisted? %>
+    <%= history_link(@tour) %>
+  <% else %>
+    <%= link_to tours_path(type: "local"), class: "btn-light btn-icon", title: "Local Mileage History", aria: { label: "Local Mileage History" } do %><%= icon(:clock) %><% end %>
+  <% end %>
+<% end %>
+<%= error_box(@claim) %>
+<% if @claim.returned? %>
+  <div class="mb-5 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900 backdrop-blur fade-up"><%= icon(:warning, "h-5 w-5 shrink-0 text-amber-500") %>
+    <div>Returned by <b><%= @claim.returned_by %></b> on <%= dt(@claim.returned_at) %><div class="mt-1 italic">“<%= @claim.return_remark %>”</div><div class="mt-1 text-xs">Correct the claim and send again.</div></div></div>
+<% end %>
+
+<%= form_with model: @claim, url: (@form_url || tour_claim_path(@tour)), method: (@claim.persisted? && !@form_url ? :patch : :post), class: "space-y-5",
+      data: { controller: "claim-calc", action: "input->claim-calc#recalc change->claim-calc#recalc nested-rows:changed->claim-calc#recalc" } do |f| %>
+
+  <%# Project and budget coding are entered in the PD Finance approval screen only. %>
+  <div class="card overflow-hidden fade-up">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:user) %></span>Visit Details</span></div>
+    <div class="card-body grid gap-x-6 gap-y-4 md:grid-cols-[auto_1fr] md:items-center">
+      <% [["Name", "#{u.name}#{" (#{u.level})" if u.level}"],
+          ["Duration", local ? @tour.claim_month.strftime("%b-%Y") : @tour.duration_label],
+          ["Team / Location", u.location || "—"]].each do |label, value| %>
+        <span class="lbl md:mb-0"><%= label %></span><span class="text-sm font-semibold text-slate-800"><%= value %></span>
+      <% end %>
+    </div>
+  </div>
+
+  <%= render "tour_claims/bank_field", f: f, user: @claim.user %>
+
+  <% ded = ["Deduction Amt.", "Deduction Remark", "Total Amt."] %>
+  <% unless local %>
+    <%= render "tour_claims/section", f: f, assoc: :claim_city_travels, key: "city", icon_name: :route, tone: "brand",
+          title: "A. Travel (City to City)",
+          heads: ["Date", "Departure City", "Arrived City", "Mode of Travel", "Bill/ Ticket No.", "Remark", "Amt."] + ded %>
+  <% end %>
+  <%= render "tour_claims/section", f: f, assoc: :claim_local_travels, key: "local", icon_name: :truck, tone: "leaf",
+        title: (local ? nil : "B. Local Travel"),
+        heads: ["Date", "Place From", "Place To", "Mode of Travel", "Met. Reading from", "Met. Reading to", "KM", "Purpose/Bill or Ticket Ref", "₹/km", "Amount"] + ded %>
+  <% unless local %>
+    <%= render "tour_claims/section", f: f, assoc: :claim_lodgings, key: "lodging", icon_name: :bed, tone: "violet",
+          title: "C. Lodging Expenses (Stay Expenses)",
+          hint: "Pick From and To with date and time – No of Days fills itself (24 h = 1 day; remaining up to 6 h = ¼, 6 h to under 10 h = ½, 10 h or more = 1 day)",
+          heads: ["Date", "Place", "From (Date & Time)", "To (Date & Time)", "No of Days (auto)", "Lodging Rate", "Remark", "Amount (Rs.)"] + ded %>
+    <%= render "tour_claims/section", f: f, assoc: :claim_daily_allowances, key: "da", icon_name: :sun, tone: "amber",
+          title: "D. Daily Allowance (DA)",
+          hint: "Pick From and To with date and time – No of Days fills itself (24 h = 1 day; remaining up to 6 h = ¼, 6 h to under 10 h = ½, 10 h or more = 1 day)",
+          heads: ["Departure City", "From (Date & Time)", "Arrival City", "To (Date & Time)", "No of Days (auto)", "DA Rate", "Applicable Rate", "Amount (Rs.)"] + ded %>
+    <%= render "tour_claims/section", f: f, assoc: :claim_incidentals, key: "inc", icon_name: :shopping, tone: "sky",
+          title: "E. Incidental Expenses (Misc/Meeting/Others)",
+          heads: ["Date", "Particular", "Bill No", "Amount (Rs.)"] + ded %>
+
+    <div class="grid gap-5 lg:grid-cols-2">
+      <div class="card">
+        <div class="card-head"><span class="card-title"><span class="icon-chip bg-slate-100 text-slate-600"><%= icon(:pencil) %></span>General Description</span></div>
+        <div class="card-body"><%= render "shared/blocked_textarea", f: f, attr: :general_description, record: @claim %></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title"><span class="icon-chip bg-emerald-50 text-emerald-600"><%= icon(:rupee) %></span>Summary</span></div>
+        <div class="card-body space-y-3 text-sm">
+          <div class="flex items-center justify-between"><span class="text-slate-500">Grand total</span><span class="text-lg font-bold" data-claim-calc-target="grand"><%= inr(@claim.grand_total) %></span></div>
+          <div class="flex items-center justify-between gap-4"><%= f.label :advance_amount, "Less Advance Taken", class: "text-slate-500" %><%= f.number_field :advance_amount, step: "0.01", min: 0, value: (@claim.advance_amount.to_d.zero? ? nil : @claim.advance_amount), placeholder: "0.00", class: "inp w-40 text-right", data: { claim_calc_target: "advance" } %></div>
+          <div class="flex items-center justify-between border-t border-dashed border-slate-300/70 pt-3"><span class="font-semibold">Balance Receivable / Payable</span><span class="text-2xl font-extrabold text-brand-700" data-claim-calc-target="balance"><%= inr(@claim.balance_amount) %></span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-controller="nested-rows">
+      <div class="card-head"><span class="card-title"><span class="icon-chip bg-slate-100 text-slate-600"><%= icon(:clipboard) %></span>Brief detail of travel</span>
+        <button type="button" class="btn-soft btn-xs" data-action="nested-rows#add"><%= icon(:plus) %> Add</button></div>
+      <div class="claim-lines-wrap"><table class="tbl tbl-edit tbl-stack claim-lines">
+        <thead><tr><th>Date</th><th>Place Visited</th><th>Tour Visit Created Date</th><th>Tasks Accomplished <span class="text-rose-500">*</span></th><th>Action Points from the Visit <span class="text-rose-500">*</span></th><th>Time frame <span class="text-rose-500">*</span></th><th>Remark <span class="text-rose-500">*</span></th><th></th></tr></thead>
+        <tbody data-nested-rows-target="container">
+          <%= f.fields_for :claim_visit_reports do |rf| %><%= render "tour_claims/report_fields", f: rf %><% end %>
+        </tbody>
+      </table>
+      <template data-nested-rows-target="template"><%= f.fields_for :claim_visit_reports, ClaimVisitReport.new, child_index: "NEW_RECORD" do |rf| %><%= render "tour_claims/report_fields", f: rf %><% end %></template>
+      </div>
+    </div>
+  <% end %>
+
+  <%# Footer: Local = Balance (= B sub total) + Save + helmet + Send, exactly like live ESS %>
+  <div class="glass-bar sticky bottom-3 z-20 rounded-2xl p-3 sm:p-4" data-controller="helmet">
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+      <label data-helmet-target="box" class="flex items-start gap-2 text-sm font-medium text-slate-700 lg:max-w-md"><%= f.check_box :helmet_declaration, class: "check mt-0.5", data: { helmet_target: "check", action: "helmet#toggle" } %> I hereby declare that I wear a helmet while riding my two-wheeler.</label>
+      <div class="flex flex-wrap items-center gap-4 lg:ml-auto">
+        <div class="leading-tight"><div class="text-[11px] font-semibold uppercase text-slate-500">Balance Receivable / Payable</div><div class="text-xl font-extrabold text-brand-700" data-claim-calc-target="balance"><%= inr(@claim.balance_amount) %></div></div>
+        <div class="ml-auto grid w-full grid-cols-[auto_minmax(0,1fr)] gap-2 sm:flex sm:w-auto sm:flex-wrap">
+          <%= button_tag name: "commit_action", value: "save", class: "btn-warning" do %><%= icon(:check) %> Save<% end %>
+          <%= button_tag name: "commit_action", value: "submit", class: "btn-success min-w-0 whitespace-normal text-center leading-tight", data: { helmet_target: "send", turbo_confirm: "Send claim? You cannot edit after sending unless it is returned." } do %>
+            <%= icon(:send) %> Send to L1 – <%= u.reporting_manager&.name || "not set" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

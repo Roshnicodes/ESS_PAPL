@@ -1,0 +1,35 @@
+<% name = @type == "local" ? "Local Mileage Claim" : "TA/DA Claim" %>
+<% content_for :title, "#{name} #{@scope == 'approved' ? 'Approved' : 'Recommendation'}" %>
+<%= page_header("#{name} List", @scope == "approved" ? "Claims approved by PD Finance" : "Claims waiting for your action", icon_name: :clipboard) do %>
+  <%= print_button %>
+  <%= link_to approvals_claims_path(type: @type, scope: @scope, format: :xlsx), class: "btn-light", data: { turbo: false } do %><%= icon(:receipt) %> Download Excel<% end %>
+<% end %>
+<div class="mb-4 flex flex-wrap gap-2">
+  <% [["TA/DA", "tour"], ["Local Mileage", "local"]].each do |label, type| %>
+    <%= link_to label, approvals_claims_path(type: type, scope: @scope), class: (@type == type ? "btn-primary btn-xs" : "btn-light btn-xs") %>
+  <% end %>
+  <span class="mx-1 w-px bg-slate-300"></span>
+  <%= link_to approvals_claims_path(type: @type), class: (@scope == "pending" ? "btn-soft btn-xs" : "btn-ghost btn-xs") do %><%= icon(:inbox) %> Pending with me<% end %>
+  <%= link_to approvals_claims_path(type: @type, scope: "approved"), class: (@scope == "approved" ? "btn-soft btn-xs" : "btn-ghost btn-xs") do %><%= icon(:check_circle) %> Approved<% end %>
+</div>
+<div class="card overflow-hidden fade-up">
+  <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">
+    <thead><tr><th>Tour Created By</th><th>Tour Duration</th><th>Receiving Date</th><th>Comment</th><th class="text-right">Amount</th><th>TA/DA Status</th><th class="text-right no-print">Action</th></tr></thead>
+    <tbody>
+    <% @claims.each do |c| %>
+      <tr>
+        <td data-label="Employee"><div class="flex items-center gap-2.5"><%= avatar(c.user, size: "h-8 w-8 text-xs") %><div class="leading-tight"><b><%= c.user.name %></b><div class="muted"><%= c.user.location %></div></div></div></td>
+        <td data-label="Duration"><div><span class="font-medium"><%= c.tour.duration_label %></span><div class="muted"><%= tour_type_label(c.tour) %></div></div></td>
+        <td data-label="Receiving Date" class="text-xs text-slate-600"><%= dt(c.submitted_at) %></td>
+        <td data-label="Comment" class="max-w-56 text-xs text-slate-600"><%= c.general_description.presence || "—" %></td>
+        <td data-label="Amount" class="font-semibold md:text-right"><%= inr(c.grand_total) %></td>
+        <td data-label="Status"><div><%= status_badge(c.status) %><div class="muted mt-1"><%= c.stage_label %></div></div></td>
+        <td data-label="Action" class="no-print"><div class="flex flex-wrap justify-end gap-1.5"><%= history_link(c.tour, css: "btn-light btn-xs") %>
+          <%= link_to approvals_claim_path(c), class: (@scope == "approved" ? "btn-light btn-xs" : "btn-primary btn-xs") do %><%= icon(@scope == "approved" ? :eye : :clipboard) %> <%= @scope == "approved" ? "View" : "Review" %><% end %></div></td>
+      </tr>
+    <% end %>
+    <%= empty_row(7, @scope == "approved" ? "No approved claims" : "Nothing pending with you") if @claims.empty? %>
+    </tbody>
+  </table></div>
+  <% if @claims.total_pages > 1 %><div class="border-t border-white/70 px-4 py-3"><%= paginate @claims %></div><% end %>
+</div>
