@@ -34,7 +34,12 @@
 
   <div class="nav-head">IT Tools</div>
   <% [["guest_house", "Guest House", :building], ["help_desk", "Help Desk", :info], ["training", "Training", :sparkles], ["old_ess", "Old ESS", :home]].each do |key, label, ic| %>
-    <%= link_to it_tool_path(key), class: "nav-link", target: "_blank", rel: "noopener", title: "Opens #{label} – no separate login needed" do %><%= icon(ic) %><span class="truncate"><%= label %></span><%= icon(:arrow_right, "ml-auto h-3.5 w-3.5 -rotate-45 opacity-50") %><% end %>
+    <% if ExternalAppLink.configured?(key) %>
+      <%= link_to it_tool_path(key), class: "nav-link", target: "_blank", rel: "noopener", title: "Opens #{label} – no separate login needed" do %><%= icon(ic) %><span class="truncate"><%= label %></span><%= icon(:arrow_right, "ml-auto h-3.5 w-3.5 -rotate-45 opacity-50") %><% end %>
+    <% else %>
+      <%# link not set up yet (Masters → IT Tools Settings) – shown, but opens nothing %>
+      <span class="nav-link cursor-not-allowed opacity-50" aria-disabled="true" title="<%= label %> link is not set up yet"><%= icon(ic) %><span class="truncate"><%= label %></span><span class="ml-auto rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-500">Soon</span></span>
+    <% end %>
   <% end %>
 
   <div class="nav-head">Settings</div>

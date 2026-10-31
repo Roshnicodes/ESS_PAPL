@@ -8,7 +8,7 @@ class AppSetting < ApplicationRecord
 
   def self.get(key)
     env = ENV[key].presence and return env
-    row = Rails.cache.fetch("app_setting/#{key}", expires_in: 1.minute) { find_by(key: key)&.value }
+    row = cached_value(key)
     return nil if row.blank?
     key.in?(SECRET_KEYS) ? encryptor.decrypt_and_verify(row) : row
   rescue ActiveSupport::MessageEncryptor::InvalidMessage
@@ -20,11 +20,24 @@ class AppSetting < ApplicationRecord
     rec.value = value.blank? ? nil : (key.in?(SECRET_KEYS) ? encryptor.encrypt_and_sign(value.to_s.strip) : value.to_s.strip)
     rec.updated_by = by
     rec.save!
-    Rails.cache.delete("app_setting/#{key}")
+    begin
+      Rails.cache.delete("app_setting/#{key}")
+    rescue ActiveRecord::ActiveRecordError
+      nil
+    end
     rec
   end
 
   def self.present?(key) = get(key).present?
+
+  # cache database down / missing – read the table directly instead of failing the page
+  def self.cached_value(key)
+    Rails.cache.fetch("app_setting/#{key}", expires_in: 1.minute) { find_by(key: key)&.value }
+  rescue ActiveRecord::ActiveRecordError => e
+    raise if e.is_a?(ActiveRecord::RecordInvalid)
+    Rails.logger.error("AppSetting cache unavailable: #{e.class} #{e.message}")
+    find_by(key: key)&.value
+  end
 
   def self.encryptor
     key = Rails.application.key_generator.generate_key("ess app settings", ActiveSupport::MessageEncryptor.key_len)

@@ -21,9 +21,11 @@ module BlockedWords
   def blocked_words_removed? = @blocked_words_removed.present?
 
   def self.list
-    Rails.cache.fetch("blocked_words/#{Project.maximum(:updated_at).to_i}", expires_in: 10.minutes) do
-      (Project.active.pluck(:name) + EXTRA).uniq.sort_by { -_1.length }
-    end
+    load = proc { (Project.active.pluck(:name) + EXTRA).uniq.sort_by { -_1.length } }
+    Rails.cache.fetch("blocked_words/#{Project.maximum(:updated_at).to_i}", expires_in: 10.minutes, &load)
+  rescue ActiveRecord::ActiveRecordError => e   # cache database down / missing – work without the cache
+    Rails.logger.error("BlockedWords cache unavailable: #{e.class} #{e.message}")
+    load.call
   end
 
   def self.regex

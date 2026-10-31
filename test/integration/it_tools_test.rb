@@ -9,10 +9,20 @@ class ItToolsTest < ActionDispatch::IntegrationTest
   teardown { @keys.each { |k| ENV[k] = @env[k] } }
 
   test "menu shows the IT Tools for every employee" do
+    ENV["KRA_SSO_SECRET"] = "kra-secret"
     sign_in @emp
     get authenticated_root_path
     %w[guest_house help_desk training old_ess].each { |t| assert_match it_tool_path(t), response.body }
     assert_no_match "GeoHub", response.body
+  end
+
+  test "tools without a link are shown but open nothing" do
+    ENV["KRA_SSO_SECRET"] = nil
+    sign_in @emp
+    get authenticated_root_path
+    %w[guest_house help_desk training].each { |t| assert_no_match it_tool_path(t), response.body }
+    assert_match it_tool_path("old_ess"), response.body
+    assert_match "link is not set up yet", response.body
   end
 
   test "not connected yet → friendly message, no redirect away" do
