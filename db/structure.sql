@@ -1037,7 +1037,7 @@ CREATE TABLE public.tour_claims (
     bank_account_id bigint,
     extra_approver_id bigint,
     CONSTRAINT chk_claims_advance_positive CHECK ((advance_amount >= (0)::numeric)),
-    CONSTRAINT chk_claims_finance_coding_on_approval CHECK ((((status)::text <> 'approved'::text) OR ((project_id IS NOT NULL) AND (budget_line_item_id IS NOT NULL) AND (budget_line_item_code_id IS NOT NULL) AND (approved_at IS NOT NULL)))),
+    CONSTRAINT chk_claims_approved_at_on_approval CHECK ((((status)::text <> 'approved'::text) OR (approved_at IS NOT NULL))),
     CONSTRAINT chk_claims_l1 CHECK ((((status)::text <> 'l1_approved'::text) OR ((l1_approved_at IS NOT NULL) AND (l2_approver_id IS NOT NULL)))),
     CONSTRAINT chk_claims_reject_remark CHECK ((((status)::text <> 'rejected'::text) OR (length(btrim(COALESCE(reject_remark, ''::text))) > 0))),
     CONSTRAINT chk_claims_return_remark CHECK ((((status)::text <> 'returned'::text) OR ((returned_at IS NOT NULL) AND (length(btrim(COALESCE(return_remark, ''::text))) > 0)))),
@@ -3266,6 +3266,7 @@ ALTER TABLE ONLY public.projects
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261102100001'),
 ('20261030160001'),
 ('20261030120001'),
 ('20261030110001'),

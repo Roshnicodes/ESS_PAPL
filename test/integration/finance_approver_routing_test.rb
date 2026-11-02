@@ -24,9 +24,7 @@ class FinanceApproverRoutingTest < ActionDispatch::IntegrationTest
     sign_in @fin
     get approvals_claims_path
     assert_match approvals_claim_path(@claim), response.body
-    coding = finance_mapping
-    patch approve_approvals_claim_path(@claim), params: { remark: "ok", project_id: coding.project_id,
-      budget_line_item_id: coding.budget_line_item_id, budget_line_item_code_id: coding.budget_line_item_code_id }
+    patch approve_approvals_claim_path(@claim), params: { remark: "ok" }
     assert @claim.reload.approved?
     get approvals_claims_path(scope: "approved")
     assert_match approvals_claim_path(@claim), response.body

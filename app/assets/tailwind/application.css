@@ -232,7 +232,26 @@
   .no-print, .tbl .no-print, .tbl-stack .no-print, .tbl-review .no-print { display: none !important; }
   .seal-foot { margin: 0 0 -14px; padding-right: .5rem; }
   .print-only { display: block !important; }
+
+  /* nothing may run off the paper at 100 % scale: wide tables shrink to the page and cells wrap
+     (screen-only scroll boxes / clipping would otherwise cut the right-hand columns) */
+  .app-main, .app-main * { max-width: 100% !important; }
+  .overflow-hidden, .overflow-x-auto, .overflow-auto, .overflow-x-scroll { overflow: visible !important; }
+  table { width: 100% !important; max-width: 100% !important; }
+  th, td { min-width: 0 !important; white-space: normal !important; word-break: normal; }
+  th { overflow-wrap: anywhere; }             /* long headings may split; amounts / dates in cells stay whole */
+  td { overflow-wrap: break-word; }
+  td[data-label="Date"], td[data-label="Amount"], td[data-label="Total"] { white-space: nowrap !important; }
+  .tbl-review th, .tbl-review td, .tbl-stack th, .tbl-stack td { padding: 3px 4px !important; font-size: 9.5px !important; }
+  .tbl-review th, .tbl-stack th { font-size: 8.5px !important; letter-spacing: 0 !important; }
+  th[class*="w-"], td[class*="w-"] { width: auto !important; }
+  td input, td select, td textarea, td .ts-wrapper, td .inp { width: 100% !important; min-width: 0 !important; padding-left: 2px !important; padding-right: 2px !important; }
+  .truncate { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; }
 }
+
+/* Sub total line under each claim section (screen and paper) */
+.claim-subtotal { display: flex; justify-content: flex-end; align-items: baseline; gap: .25rem; padding: .6rem 1.25rem; font-size: .875rem; color: var(--color-slate-500); border-top: 1px solid rgb(218 232 225 / .88); background: rgb(255 255 255 / .35); }
+@media print { .claim-subtotal { padding: 4px 6px; font-size: 10.5px; border-top: 0; } }
 .print-only { display: none; }
 
 /* ---------- claim rows: all fields visible, wrap instead of scrolling ---------- */

@@ -13,7 +13,6 @@
       Helmet declaration: <%= claim.helmet_declaration? ? "Yes" : "No" %>
     </span>
   <% end %>
-  <% if current_user.finance? && claim.project %><span><span class="text-xs font-semibold uppercase text-slate-400">Project</span> <%= claim.project %> · <%= claim.budget_line_item %> · <%= claim.budget_line_item_code %></span><% end %>
   <span class="ml-auto"><%= status_badge(claim.status) %></span>
 </div>
 
@@ -37,7 +36,7 @@
   <% lines = claim.public_send(assoc) %>
   <% next if lines.empty? %>
   <div class="card mb-4 overflow-hidden" data-review-section>
-    <div class="card-head"><span class="card-title text-sm"><%= title %></span><span class="text-sm text-slate-500">Sub total <b class="ml-1 text-slate-900" data-review-sub><%= inr(claim.public_send(TourClaim::SECTIONS[assoc])) %></b></span></div>
+    <div class="card-head"><span class="card-title text-sm"><%= title %></span></div>
     <%# one line per expense: fixed table fits the width (text wraps inside cells) – no sideways scroll %>
     <table class="tbl tbl-review xl:table-fixed">
       <thead><tr><% heads.each do |h| %><th><%= h %></th><% end %>
@@ -65,6 +64,7 @@
         <% end %>
       </tbody>
     </table>
+    <div class="claim-subtotal">Sub total <b class="ml-1 text-slate-900" data-review-sub><%= inr(claim.public_send(TourClaim::SECTIONS[assoc])) %></b></div>
   </div>
 <% end %>
 

@@ -21,23 +21,6 @@
   <% end %>
 </ol></div>
 
-<%# Project / BLI / Code – PD Finance step only. Options are tied to the
-    uploaded mapping, so a project cannot be approved with another project's BLI. %>
-<% finance_fields = capture do %>
-  <% if step == :finance %>
-    <% mappings = ProjectBudgetLineItem.active.includes(:project, :budget_line_item, :budget_line_item_code).map { |m| { project_id: m.project_id, line_item_id: m.budget_line_item_id, line_item_name: m.budget_line_item.name, code_id: m.budget_line_item_code_id, code_name: m.budget_line_item_code.name } } %>
-    <% project_ids = mappings.pluck(:project_id).uniq %>
-    <div class="grid gap-3 sm:grid-cols-3" data-controller="finance-coding" data-finance-coding-mappings-value="<%= json_escape(mappings.to_json) %>">
-      <div><%= label_tag :project_id, "Project", class: "lbl" %>
-        <%= select_tag :project_id, options_for_select(Project.active.where(id: project_ids).ordered.pluck(:name, :id), params[:project_id] || @claim.project_id), include_blank: "Select project", required: true, class: "inp", data: { finance_coding_target: "project", action: "change->finance-coding#projectChanged" } %></div>
-      <div><%= label_tag :budget_line_item_id, "Budget Line Item (BLI)", class: "lbl" %>
-        <%= select_tag :budget_line_item_id, options_for_select([], params[:budget_line_item_id] || @claim.budget_line_item_id), required: true, class: "inp", data: { finance_coding_target: "lineItem", selected: (params[:budget_line_item_id] || @claim.budget_line_item_id), action: "change->finance-coding#lineItemChanged" } %></div>
-      <div><%= label_tag :budget_line_item_code_id, "BLI Code", class: "lbl" %>
-        <%= select_tag :budget_line_item_code_id, options_for_select([], params[:budget_line_item_code_id] || @claim.budget_line_item_code_id), required: true, class: "inp", data: { finance_coding_target: "code", selected: (params[:budget_line_item_code_id] || @claim.budget_line_item_code_id) } %></div>
-    </div>
-    <% if mappings.empty? %><p class="sm:col-span-3 text-xs text-amber-700">No BLI mapping is uploaded yet. Ask the administrator to upload the BLI list from Masters.</p><% end %>
-  <% end %>
-<% end %>
 <% approve_label = step == :finance ? "Approve" : "Forward to #{@claim.next_reviewer_label}" %>
 <% if @claim.extra_reason && step.in?(%i[l1 l2 extra]) %>
   <div class="card mb-4 flex flex-wrap items-center gap-2 border-l-4 border-l-indigo-400 px-4 py-2.5 text-sm text-indigo-900 fade-up">
@@ -90,7 +73,6 @@
         <span class="text-sm font-semibold text-slate-700"><%= { l1: "L1 – review & forward", l2: "L2 – review & forward", extra: "#{@claim.extra_label} – review & forward", finance: "Finance – final approval" }[step] %></span>
         <span class="text-sm text-slate-500">Claim total <b class="ml-1 text-lg text-slate-900" data-review-header-total><%= inr(@claim.grand_total) %></b></span>
       </div>
-      <%= finance_fields %>
       <div class="grid gap-3 2xl:grid-cols-[1fr_auto] 2xl:items-end">
         <div><label class="lbl" for="remark_c<%= @claim.id %>">Remark <span class="text-rose-500">*</span></label>
           <%= text_area_tag :remark, params[:remark], id: "remark_c#{@claim.id}", rows: 2, required: true, class: "inp", placeholder: "Remark – required for Approve / Forward, Return and Reject" %></div>

@@ -8,10 +8,7 @@
       <span class="card-title"><span class="icon-chip <%= tones[tone].split(" ").first(2).join(" ") %>"><%= icon(icon_name) %></span>
         <span class="leading-tight"><%= title %><% if hint %><span class="block text-xs font-normal text-slate-500"><%= hint %></span><% end %></span></span>
     <% else %><span></span><% end %>
-    <div class="flex items-center gap-3">
-      <span class="text-sm text-slate-500">Sub total <b class="ml-1 text-slate-900" data-subtotal><%= inr(f.object.public_send(TourClaim::SECTIONS[assoc])) %></b></span>
-      <button type="button" class="btn-soft btn-xs print:hidden" data-action="nested-rows#add"><%= icon(:plus) %> Add row</button>
-    </div>
+    <button type="button" class="btn-soft btn-xs print:hidden" data-action="nested-rows#add"><%= icon(:plus) %> Add row</button>
   </div>
   <%# same table as live ESS: one line per entry on wide screens; each line becomes a card on phones / small screens %>
   <table class="tbl tbl-review tbl-entry xl:table-fixed">
@@ -23,4 +20,6 @@
   <template data-nested-rows-target="template">
     <%= f.fields_for assoc, f.object.public_send(assoc).klass.new, child_index: "NEW_RECORD" do |lf| %><%= render "tour_claims/lines/#{key}", f: lf %><% end %>
   </template>
+  <%# Sub total sits under the lines (same on every claim screen and on print) %>
+  <div class="claim-subtotal">Sub total <b class="ml-1 text-slate-900" data-subtotal><%= inr(f.object.public_send(TourClaim::SECTIONS[assoc])) %></b></div>
 </div>

@@ -68,7 +68,6 @@ class TourClaim < ApplicationRecord
   validate  :reports_have_tasks, if: :submitting?
   validate  :bank_account_is_own, if: :bank_account_id_changed?
   validate  :lines_inside_tour_dates
-  validate  :finance_coding_present, if: -> { approved? }
 
   strip_blocked_words_from :general_description
   before_validation :inherit_from_tour, on: :create
@@ -294,25 +293,10 @@ class TourClaim < ApplicationRecord
     self.finance_approver = user.finance_approver || finance_approver
   end
 
-  # PD Finance must use an approved Project → BLI → Code mapping uploaded by
-  # the administrator. This prevents codes from one project being booked to
-  # another project.
-  def approve!(by:, project_id:, budget_line_item_id:, budget_line_item_code_id:, remark: nil)
+  # PD Finance approves with a remark only (PAPL: no Project / BLI / BLI Code at approval).
+  def approve!(by:, remark: nil)
     transition!(by: by, action: :claim_approved, remark: remark) do
       ensure_reviewer!(by, "finance_pending")
-      coding = ProjectBudgetLineItem.active.find_by(
-        project_id: project_id,
-        budget_line_item_id: budget_line_item_id,
-        budget_line_item_code_id: budget_line_item_code_id
-      )
-      unless coding
-        errors.add(:base, "Select a valid Project, BLI and BLI Code combination from the uploaded list.")
-        raise ActiveRecord::RecordInvalid, self
-      end
-
-      self.project               = coding.project
-      self.budget_line_item      = coding.budget_line_item
-      self.budget_line_item_code = coding.budget_line_item_code
       self.finance_remark = remark.presence
       self.approved_at = Time.current
       self.approved_by = by
@@ -430,11 +414,5 @@ class TourClaim < ApplicationRecord
   def bank_account_is_own
     return if bank_account_id.nil?
     errors.add(:bank_account, "is not valid") unless BankAccount.usable.exists?(id: bank_account_id, user_id: user_id)
-  end
-
-  def finance_coding_present
-    errors.add(:project, "is required for approval") if project.nil?
-    errors.add(:budget_line_item, "is required for approval") if budget_line_item.nil?
-    errors.add(:budget_line_item_code, "is required for approval") if budget_line_item_code.nil?
   end
 end

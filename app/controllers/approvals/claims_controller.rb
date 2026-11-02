@@ -17,12 +17,12 @@ class Approvals::ClaimsController < ApplicationController
     respond_to do |format|
       format.html { @claims = @claims.page(params[:page]).per(25) }
       format.xlsx do
-        send_data ClaimExport.new(@claims.includes(:budget_line_item, :budget_line_item_code, :l1_approved_by, :l2_approved_by, :bank_account), viewer: current_user).to_xlsx,
+        send_data ClaimExport.new(@claims.includes(:l1_approved_by, :l2_approved_by, :bank_account), viewer: current_user).to_xlsx,
                   filename: "#{@type == 'local' ? 'local_mileage' : 'tada'}_claims_#{@scope}_#{Date.current}.xlsx",
                   type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       end
       format.csv do
-        send_data ClaimExport.new(@claims.includes(:budget_line_item, :budget_line_item_code, :l1_approved_by, :l2_approved_by, :bank_account), viewer: current_user).to_csv,
+        send_data ClaimExport.new(@claims.includes(:l1_approved_by, :l2_approved_by, :bank_account), viewer: current_user).to_csv,
                   filename: "#{@type == 'local' ? 'local_mileage' : 'tada'}_claims_#{@scope}_#{Date.current}.csv", type: "text/csv"
       end
     end
@@ -61,9 +61,7 @@ class Approvals::ClaimsController < ApplicationController
   def approve
     authorize! :review, @claim
     remark = remark!
-    TourClaim.transaction { save_deductions!; @claim.approve!(by: current_user, remark: remark,
-      project_id: params[:project_id], budget_line_item_id: params[:budget_line_item_id],
-      budget_line_item_code_id: params[:budget_line_item_code_id]) }
+    TourClaim.transaction { save_deductions!; @claim.approve!(by: current_user, remark: remark) }
     redirect_to approvals_claims_path(type: @claim.claim_type), notice: "Claim approved."
   rescue ActiveRecord::RecordInvalid
     render_review_again

@@ -72,9 +72,7 @@ class TourWorkflowTest < ActiveSupport::TestCase
     c.forward!(by: @l1)
     assert c.finance_pending?
     assert_includes TourClaim.in_queue_of(user("FIN001")), c
-    coding = finance_mapping
-    c.approve!(by: user("FIN001"), project_id: coding.project_id, budget_line_item_id: coding.budget_line_item_id,
-               budget_line_item_code_id: coding.budget_line_item_code_id)
+    c.approve!(by: user("FIN001"))
     assert c.approved?
   end
 

@@ -6,7 +6,7 @@ require "caxlsx"
 class ClaimExport
   HEADERS = [ "Claim Type", "Emp Code", "Employee", "Location", "Tour Duration", "Status", "Receiving Date",
               "A. Travel", "B. Local", "C. Lodging", "D. DA", "E. Incidental", "Grand Total", "Advance", "Balance",
-              "Project", "Budget Line Item", "Budget Line Item Code", "L1 Approved By", "L1 Approved At",
+              "L1 Approved By", "L1 Approved At",
               "L2 Approved By", "L2 Approved At", "Approved By", "Approved At" ].freeze
 
   BANK_HEADERS = [ "Bank", "Account Holder", "Account No.", "IFSC" ].freeze
@@ -48,7 +48,6 @@ class ClaimExport
     [ claim.type_local? ? "Local Mileage" : "TA/DA", claim.user.emp_code, claim.user.name, claim.user.location&.name, claim.tour.duration_label, claim.status,
       claim.submitted_at&.strftime("%d/%m/%Y %H:%M"), claim.city_travel_total, claim.local_travel_total, claim.lodging_total,
       claim.da_total, claim.incidental_total, claim.grand_total, claim.advance_amount, claim.balance_amount,
-      claim.project&.name, claim.budget_line_item&.name, claim.budget_line_item_code&.name,
       claim.l1_approved_by&.name, claim.l1_approved_at&.strftime("%d/%m/%Y %H:%M"), claim.l2_approved_by&.name,
       claim.l2_approved_at&.strftime("%d/%m/%Y %H:%M"), claim.approved_by&.name, claim.approved_at&.strftime("%d/%m/%Y %H:%M") ] + bank_cells(claim)
   end

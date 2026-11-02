@@ -98,19 +98,14 @@ class TourFlowTest < ActionDispatch::IntegrationTest
     sign_out @hr
 
     sign_in @fin
-    coding = finance_mapping(project_name: "LEAP", line_item_name: "Travel", code_name: "TR-01")
     get approvals_claim_path(claim); assert_response :success
-    %w[project_id budget_line_item_id budget_line_item_code_id].each do |field|
-      assert_match "name=\"#{field}\"", response.body
+    %w[project_id budget_line_item_id budget_line_item_code_id].each do |field|   # PAPL: Finance approves without Project / BLI
+      assert_no_match "name=\"#{field}\"", response.body
     end
-    patch approve_approvals_claim_path(claim), params: { remark: "Approved", project_id: coding.project_id,
-                                                         budget_line_item_id: coding.budget_line_item_id, budget_line_item_code_id: coding.budget_line_item_code_id }
+    patch approve_approvals_claim_path(claim), params: { remark: "Approved" }
     claim.reload
     assert claim.approved?
-    assert_equal "LEAP", claim.project.name
-    patch approve_approvals_claim_path(claim), params: { remark: "again", project_id: coding.project_id,
-                                                         budget_line_item_id: coding.budget_line_item_id, budget_line_item_code_id: coding.budget_line_item_code_id }  # second time is not allowed
-    assert_equal 1, Project.where("lower(name) = 'leap'").count
+    patch approve_approvals_claim_path(claim), params: { remark: "again" }  # second time is not allowed
     assert_equal %w[claim_created claim_submitted deduction_updated claim_l1_approved claim_l2_approved claim_approved], claim.activity_logs.pluck(:action)
     assert claim.activity_logs.all? { |l| l.created_at.present? }
     get approvals_claims_path(scope: "approved", format: :xlsx)

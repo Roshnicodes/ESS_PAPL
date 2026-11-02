@@ -52,9 +52,7 @@ class NotificationFlowTest < ActiveSupport::TestCase
     refute_includes titles(other_fin), "Claim for final approval"
     refute c.current_reviewer?(other_fin)
     refute_includes TourClaim.in_queue_of(other_fin), c
-    coding = finance_mapping(code_name: "T1")
-    c.approve!(by: @fin, remark: "done", project_id: coding.project_id, budget_line_item_id: coding.budget_line_item_id,
-               budget_line_item_code_id: coding.budget_line_item_code_id)
+    c.approve!(by: @fin, remark: "done")
     assert_includes titles(@emp), "Your claim is approved"
     assert_includes titles(@l1), "Claim approved by PD Finance"
   end

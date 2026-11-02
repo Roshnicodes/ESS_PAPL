@@ -55,6 +55,5 @@
     <%= link.("Employee List", masters_users_path, :users) if can?(:create, User) %>
     <%= link.("All Tours", masters_all_tours_path, :map) if current_user.admin? %>
     <%= link.("IT Tools Settings", masters_it_tool_settings_path, :cog) if current_user.admin? %>
-    <%= link.("Project BLI Upload", masters_finance_codes_path, :clipboard) if current_user.admin? %>
   <% end %>
 </nav>

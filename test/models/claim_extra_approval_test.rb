@@ -107,9 +107,7 @@ class LocalMileageExtraApprovalTest < ActiveSupport::TestCase
     c.forward!(by: coo, remark: "ok")
     c.forward!(by: dir, remark: "ok")
     assert c.reload.finance_pending?
-    coding = finance_mapping
-    c.approve!(by: user("FIN001"), remark: "ok", project_id: coding.project_id,
-               budget_line_item_id: coding.budget_line_item_id, budget_line_item_code_id: coding.budget_line_item_code_id)
+    c.approve!(by: user("FIN001"), remark: "ok")
     assert c.approved?
     assert_equal 1, adm.notifications.where(kind: "claim_info").count
   end
