@@ -45,6 +45,7 @@ class Tour < ApplicationRecord
   validates :submitted_at, presence: true, unless: -> { draft? || cancelled? }
   validates :general_description, length: { maximum: 2000 }
   validate  :date_order
+  validate  :within_plan_window, if: -> { type_tour? && (new_record? || will_save_change_to_from_date? || will_save_change_to_to_date?) }
   validate  :visits_inside_range
   validate  :tour_needs_visits, if: -> { type_tour? && !draft? }
   validate  :no_overlap, if: -> { type_tour? && status.in?(LIVE) }
@@ -388,6 +389,17 @@ class Tour < ApplicationRecord
     self.id ||= self.class.connection.select_value("SELECT nextval('tours_id_seq')")
     prefix = type_local? ? "LM" : "TR"
     self.reference_no = format("%s-%d-%06d", prefix, from_date.year, id)
+  end
+
+  # A tour can be planned for any past month, but only up to the end of next month
+  # (October → till 30-Nov, November → till 31-Dec).
+  def self.latest_plan_date(today = Date.current) = today.next_month.end_of_month
+
+  def within_plan_window
+    last = self.class.latest_plan_date
+    if (from_date && from_date > last) || (to_date && to_date > last)
+      errors.add(:base, "Tour can be planned only till #{last.strftime('%d/%m/%Y')} (current and next month)")
+    end
   end
 
   def date_order

@@ -88,8 +88,14 @@ class TourClaim < ApplicationRecord
     queues = queues.or(where(status: "finance_pending", finance_approver_id: u.id))
     queues = queues.or(where(status: "extra_pending", extra_approver_id: u.id))
     queues = queues.or(where(status: "finance_query", id: ClaimQuery.open.where(asked_to_id: u.id).select(:tour_claim_id)))
-    u.finance? ? queues.or(where(status: "finance_pending", finance_approver_id: nil)) : queues
+    finance_pool?(u) ? queues.or(where(status: "finance_pending", finance_approver_id: nil)) : queues
   }
+
+  # Claims without a named Finance person go to PD Finance (same people who get the notification).
+  # Admin sees them as "pending" only if there is no active PD Finance user at all, so nothing gets stuck.
+  def self.finance_pool?(u)
+    u.pd_finance? || (u.admin? && !User.active.where(role: "pd_finance").exists?)
+  end
 
   attr_accessor :submitting
 
@@ -135,7 +141,7 @@ class TourClaim < ApplicationRecord
     (submitted? && l1_approver_id == u.id) ||
       (l1_approved? && l2_approver_id == u.id) ||
       (extra_pending? && extra_approver_id == u.id) ||
-      (finance_pending? && (finance_approver_id ? finance_approver_id == u.id : u.finance?))
+      (finance_pending? && (finance_approver_id ? finance_approver_id == u.id : self.class.finance_pool?(u)))
   end
 
   # :l1, :l2 or :finance – which step the current reviewer is doing (:reply = answering Finance's question)

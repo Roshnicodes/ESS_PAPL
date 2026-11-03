@@ -43,9 +43,34 @@
   </div>
 
   <div class="space-y-5">
-    <div class="card card-body flex items-center gap-4">
-      <span class="icon-chip h-12 w-12 bg-amber-50 text-amber-600"><%= icon(:building, "h-6 w-6") %></span>
-      <div><div class="text-2xl font-bold"><%= @on_tour_count %></div><div class="muted">Colleagues on tour today</div></div>
+    <div data-controller="dialog">
+      <button type="button" class="card card-body flex w-full items-center gap-4 text-left transition hover:ring-2 hover:ring-brand-200" data-action="dialog#open" data-dialog-id-param="on-tour-today">
+        <span class="icon-chip h-12 w-12 bg-amber-50 text-amber-600"><%= icon(:building, "h-6 w-6") %></span>
+        <div class="flex-1"><div class="text-2xl font-bold"><%= @on_tour_count %></div><div class="muted">Colleagues on tour today</div></div>
+        <%= icon(:arrow_right, "h-4 w-4 text-slate-400") %>
+      </button>
+      <dialog id="on-tour-today" data-action="click->dialog#backdrop"
+              class="m-auto w-[min(40rem,calc(100vw-1.5rem))] rounded-2xl border border-white/70 bg-white/95 p-0 shadow-2xl backdrop:bg-slate-900/40">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-3">
+          <div class="font-semibold text-slate-900">On tour today · <%= d(Date.current) %> <span class="muted font-normal">(<%= @on_tour_count %>)</span></div>
+          <button type="button" class="btn-ghost btn-xs" data-action="dialog#close" aria-label="Close"><%= icon(:x_circle, "h-5 w-5") %></button>
+        </div>
+        <div class="max-h-[70vh] divide-y divide-slate-100 overflow-y-auto">
+          <% @on_tour_today.each do |t| %>
+            <% today_places = t.tour_visits.select { |v| v.visit_date == Date.current }.map(&:place).compact_blank.uniq %>
+            <div class="flex items-start gap-3 px-5 py-3">
+              <%= avatar(t.user, size: "h-9 w-9 text-xs") %>
+              <div class="min-w-0 flex-1 text-sm leading-tight">
+                <b class="text-slate-900"><%= t.user.name %></b>
+                <div class="muted"><%= [t.user.designation, t.user.emp_code, t.user.location].compact_blank.join(" · ") %></div>
+                <div class="mt-1 text-xs text-slate-600"><%= icon(:calendar, "mr-1 inline h-3.5 w-3.5 text-slate-400") %><%= t.duration_label %>
+                  <% if today_places.any? %> · <%= icon(:pin, "mr-0.5 inline h-3.5 w-3.5 text-slate-400") %><%= today_places.join(", ") %><% end %></div>
+              </div>
+            </div>
+          <% end %>
+          <% if @on_tour_today.empty? %><div class="px-5 py-8 text-center text-sm text-slate-500">No one is on tour today.</div><% end %>
+        </div>
+      </dialog>
     </div>
   </div>
 </div>

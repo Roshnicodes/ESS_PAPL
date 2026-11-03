@@ -9,3 +9,4 @@ pin "flatpickr" # @4.6.13
 pin "datepicker"
 pin "tom-select" # @2.6.2 – self-contained UMD build, sets window.TomSelect
 pin "searchselect"
+pin "formcheck"

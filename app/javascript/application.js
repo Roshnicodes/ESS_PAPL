@@ -3,6 +3,7 @@ import "@hotwired/turbo-rails"
 import "controllers"
 import "datepicker"
 import "searchselect"
+import "formcheck"
 
 // Header dropdowns (profile, bell): close on outside click / Esc
 document.addEventListener("click", (e) => {

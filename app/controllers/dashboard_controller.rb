@@ -6,7 +6,8 @@ class DashboardController < ApplicationController
     @pending_tour_approvals = Tour.pending_for(current_user).count
     @pending_claims = TourClaim.in_queue_of(current_user).count
     today = Date.current
-    @on_tour_count = Tour.on_tour_between(today, today).count
+    @on_tour_today = Tour.on_tour_between(today, today).includes(:tour_visits, user: :location).order(:from_date).to_a
+    @on_tour_count = @on_tour_today.size
     @claim_ready = tours.approved.where.missing(:tour_claim).select(&:claimable?).first(4)
   end
 end

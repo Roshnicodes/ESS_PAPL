@@ -19,7 +19,7 @@
       <tr>
         <td data-label="Type" class="whitespace-nowrap font-semibold text-brand-700"><%= tour_type_label(t) %></td>
         <td data-label="Employee" class="whitespace-nowrap"><b><%= t.user.name %></b> <span class="muted">(<%= t.user.emp_code %>)</span></td>
-        <td data-label="Duration" class="whitespace-nowrap"><%= t.duration_label %></td>
+        <td data-label="Duration" class="md:whitespace-nowrap"><%= t.duration_label %></td>
         <td data-label="Status"><%= tour_status_badge(t) %></td>
         <td data-label="Claim"><%= t.tour_claim ? status_badge(t.tour_claim.status) : tag.span("—", class: "text-slate-300") %></td>
         <td data-label="Created" class="whitespace-nowrap muted"><%= dt(t.created_at) %></td>

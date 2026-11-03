@@ -1,6 +1,6 @@
 <% name = @type == "local" ? "Local Mileage Claim" : "TA/DA Claim" %>
 <% content_for :title, "#{name} #{@scope == 'approved' ? 'Approved' : 'Recommendation'}" %>
-<%= page_header("#{name} List", @scope == "approved" ? "Claims approved by PD Finance" : "Claims waiting for your action", icon_name: :clipboard) do %>
+<%= page_header("#{name} List", @scope == "approved" ? (current_user.finance? || current_user.hr? ? "Claims approved by PD Finance" : "Claims you approved – with their current stage") : "Claims waiting for your action", icon_name: :clipboard) do %>
   <%= print_button %>
   <%= link_to approvals_claims_path(type: @type, scope: @scope, format: :xlsx), class: "btn-light", data: { turbo: false } do %><%= icon(:receipt) %> Download Excel<% end %>
 <% end %>

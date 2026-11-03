@@ -9,8 +9,18 @@ class Approvals::ClaimsController < ApplicationController
     base = TourClaim.where(claim_type: @type).includes(:user, :tour, :approved_by, :project)
     @claims =
       if @scope == "approved"
-        (current_user.finance? || current_user.hr? ? base : base.where(user: current_user).or(base.where(l1_approver: current_user)).or(base.where(l2_approver: current_user)).or(base.where(finance_approver: current_user)).or(base.where(id: ClaimApprovalStep.where(approver_id: current_user.id).select(:tour_claim_id))))
-          .approved.order(approved_at: :desc)
+        if current_user.finance? || current_user.hr?
+          base.approved.order(approved_at: :desc)
+        else
+          mine = base.where(user: current_user).or(base.where(l1_approver: current_user)).or(base.where(l2_approver: current_user)).or(base.where(finance_approver: current_user)).or(base.where(id: ClaimApprovalStep.where(approver_id: current_user.id).select(:tour_claim_id)))
+          # history of the reviewer: also claims they already approved as L1 / L2 / extra approver and that are still
+          # on their way (status column shows the real stage; "Approved" only after the final approval)
+          acted = base.where(l1_approved_by: current_user).or(base.where(l2_approved_by: current_user))
+                      .or(base.where(id: ClaimApprovalStep.where(acted_by_id: current_user.id).select(:tour_claim_id)))
+                      .where.not(status: %w[draft cancelled])
+          base.where(id: mine.approved.select(:id)).or(base.where(id: acted.select(:id)))
+              .order(Arel.sql("COALESCE(tour_claims.approved_at, tour_claims.updated_at) DESC"))
+        end
       else
         base.in_queue_of(current_user).order(:submitted_at)
       end

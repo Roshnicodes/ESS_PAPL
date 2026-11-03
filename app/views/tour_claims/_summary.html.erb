@@ -38,7 +38,7 @@
   <div class="card mb-4 overflow-hidden" data-review-section>
     <div class="card-head"><span class="card-title text-sm"><%= title %></span></div>
     <%# one line per expense: fixed table fits the width (text wraps inside cells) – no sideways scroll %>
-    <table class="tbl tbl-review xl:table-fixed">
+    <table class="tbl tbl-review 2xl:table-fixed">
       <thead><tr><% heads.each do |h| %><th><%= h %></th><% end %>
         <th class="w-24 text-right">Amount</th><th class="w-28">Deduction</th><th class="w-40">Deduction Remark</th><th class="w-28 text-right">Total</th></tr></thead>
       <tbody>

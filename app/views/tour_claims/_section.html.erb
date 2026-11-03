@@ -11,7 +11,7 @@
     <button type="button" class="btn-soft btn-xs print:hidden" data-action="nested-rows#add"><%= icon(:plus) %> Add row</button>
   </div>
   <%# same table as live ESS: one line per entry on wide screens; each line becomes a card on phones / small screens %>
-  <table class="tbl tbl-review tbl-entry xl:table-fixed">
+  <table class="tbl tbl-review tbl-entry 2xl:table-fixed">
     <thead><tr><% heads.each do |h| %><th><%= h %></th><% end %><th class="w-16"></th></tr></thead>
     <tbody data-nested-rows-target="container">
       <%= f.fields_for assoc do |lf| %><%= render "tour_claims/lines/#{key}", f: lf %><% end %>

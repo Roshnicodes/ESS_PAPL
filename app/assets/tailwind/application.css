@@ -63,7 +63,7 @@
 
   /* ---------- forms ---------- */
   .lbl { @apply block text-[11px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5; }
-  .inp { @apply w-full min-w-0 rounded-lg border border-slate-300/70 bg-white/75 backdrop-blur px-3 py-2 text-sm text-slate-800 shadow-xs placeholder:text-slate-400 transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 outline-none read-only:bg-slate-100/60 read-only:text-slate-600 disabled:bg-slate-100 disabled:text-slate-500; }
+  .inp { @apply w-full min-w-0 rounded-lg border border-slate-300/70 bg-white/90 px-3 py-2 text-sm text-slate-800 shadow-xs placeholder:text-slate-400 transition focus:border-brand-500 focus:ring-4 focus:ring-brand-100 outline-none read-only:bg-slate-100/60 read-only:text-slate-600 disabled:bg-slate-100 disabled:text-slate-500; }
   .inp-static { @apply rounded-lg bg-white/50 border border-white/80 px-3 py-2 text-sm font-medium text-slate-700; }
   .check { @apply h-4 w-4 rounded accent-brand-600; }
   .inp.field-error, .field-error { @apply border-rose-400 bg-rose-50/70 ring-4 ring-rose-100; }
@@ -73,7 +73,7 @@
   .btn-success { @apply btn border-transparent text-white bg-gradient-to-b from-emerald-500 to-emerald-600 shadow-sm hover:from-emerald-600 hover:to-emerald-700 focus-visible:ring-emerald-200; }
   .btn-warning { @apply btn border-transparent text-white bg-gradient-to-b from-amber-500 to-orange-500 shadow-sm hover:from-amber-600 hover:to-orange-600 focus-visible:ring-amber-200; }
   .btn-danger  { @apply btn border-transparent text-white bg-gradient-to-b from-rose-500 to-rose-600 shadow-sm hover:from-rose-600 hover:to-rose-700 focus-visible:ring-rose-200; }
-  .btn-light   { @apply btn bg-white/70 backdrop-blur border-slate-300/70 text-slate-700 shadow-xs hover:bg-slate-50 hover:border-slate-400 focus-visible:ring-slate-200; }
+  .btn-light   { @apply btn bg-white/90 border-slate-300/70 text-slate-700 shadow-xs hover:bg-slate-50 hover:border-slate-400 focus-visible:ring-slate-200; }
   .btn-ghost   { @apply btn border-transparent text-slate-600 hover:bg-slate-100; }
   .btn-soft    { @apply btn border-transparent bg-brand-50 text-brand-700 hover:bg-brand-100; }
   .btn-icon { @apply px-2!; }
@@ -139,7 +139,10 @@
   .tbl-stack tbody td[data-label]::before { content: attr(data-label); width: 6.5rem; flex-shrink: 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--color-slate-400); padding-top: .15rem; }
   .tbl-stack tbody td.td-empty { justify-content: center; }
   .tbl-stack tbody td > * { min-width: 0; }
-  .tbl-stack tbody td { overflow-wrap: anywhere; }
+  .tbl-stack tbody td { overflow-wrap: anywhere; flex-wrap: wrap; }
+  /* inside a phone card nothing may stay on one over-long line: dates, names and button rows wrap */
+  .tbl-stack tbody td, .tbl-stack tbody td .whitespace-nowrap { white-space: normal; }
+  .tbl-stack tbody td .flex { flex-wrap: wrap; }
   /* entry tables (inputs): label on top, input full width */
   .tbl-edit tbody td { flex-direction: column; gap: .25rem; }
   .tbl-edit tbody td[data-label]::before { width: auto; padding-top: 0; }
@@ -152,10 +155,12 @@
   .claim-row-actions { justify-content: center; }
 }
 
-/* Review tables: one line per expense on wide screens (≥1280px), stacked cards below that */
+/* Claim tables (review and entry): one line per expense only from 1536px – they have up to 13 columns, and on
+   1280–1535px laptops a single line squeezed the boxes until values were cut and headings overlapped.
+   Below that every expense is a labelled card. */
 .tbl-review th, .tbl-review td { padding: .55rem .5rem; font-size: 13px; }
-.tbl-review th { white-space: normal; }
-@media (width < 80rem) {
+.tbl-review th { white-space: normal; overflow-wrap: anywhere; font-size: 11px; letter-spacing: .02em; }   /* long headings wrap inside their column */
+@media (width < 96rem) {
   .tbl-review thead { display: none; }
   .tbl-review, .tbl-review tbody, .tbl-review tr, .tbl-review td { display: block; width: 100%; }
   .tbl-review tbody tr { margin: .6rem .75rem; width: auto; border-radius: .9rem; border: 1px solid rgb(255 255 255 / .8); background: rgb(255 255 255 / .55); padding: .5rem .8rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: .25rem .75rem; }
@@ -167,8 +172,8 @@
 .tbl-entry td { vertical-align: middle; }
 .tbl-entry .inp, .tbl-entry .ts-wrapper .ts-control { padding-left: .5rem; padding-right: .5rem; font-size: 13px; min-height: 34px; }
 .tbl-entry .ts-wrapper.single .ts-control { padding-right: 1.6rem; }
-@media (width < 80rem) {
-  .tbl-entry tbody tr { position: relative; padding-top: 2.1rem; }
+@media (width < 96rem) {
+  .tbl-entry tbody tr { position: relative; padding-top: 2.1rem; grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr)); }
   .tbl-entry tbody td:last-child { position: absolute; top: .3rem; right: .4rem; width: auto; padding: 0; }
   .tbl-entry tbody td:last-child::before { display: none; }
 }
@@ -290,15 +295,14 @@ body > .ts-dropdown, .ts-wrapper .ts-dropdown { z-index: 1000 !important; min-wi
     radial-gradient(42rem 28rem at 108% 0%, rgb(31 132 69 / .13), transparent 66%),
     radial-gradient(32rem 25rem at 70% 112%, rgb(255 202 103 / .15), transparent 68%),
     linear-gradient(135deg, #f7fbf1 0%, #fdfdf8 48%, #f1f8e9 100%);
-  background-attachment: fixed;
   background-color: #f7fbf1;
 }
 .card {
   border-color: rgb(255 255 255 / .9);
   border-radius: 1.25rem;
-  background: linear-gradient(135deg, rgb(255 255 255 / .94), rgb(255 255 255 / .86));
+  background: linear-gradient(135deg, rgb(255 255 255 / .96), rgb(255 255 255 / .92));
   box-shadow: 0 2px 4px rgb(16 54 110 / .04), 0 16px 38px -24px rgb(16 54 110 / .36);
-  backdrop-filter: blur(9px) saturate(1.08);
+  backdrop-filter: none;   /* near-opaque already; a blur per card made long forms slow / patchy on weaker laptops */
 }
 .card-head { border-color: rgb(218 232 225 / .88); background: rgb(255 255 255 / .26); }
 .inp {
@@ -469,4 +473,14 @@ body.app-bg::before {
     white-space: normal; text-align: center; line-height: 1.2; min-width: 0; }
   .glass-bar .btn, .glass-bar .btn-primary, .glass-bar .btn-success, .glass-bar .btn-warning, .glass-bar .btn-light { justify-content: center; }
   .page-heading > div:last-child { width: 100%; }
+}
+
+/* ---------- rendering performance (same as ASA ESS) ----------
+   No backdrop blur on the many small surfaces of a long form – they are near-opaque already, and 100+ blur layers
+   leave parts of the page blank or as empty "ghost" boxes on modest PCs. Sidebar, header and the sticky action bar
+   keep their glass look. */
+.card, .inp, .ts-wrapper .ts-control, .btn, .btn-primary, .btn-success, .btn-warning, .btn-light, .btn-soft,
+.btn-soft-danger, .btn-danger, .btn-ghost, .tbl th, .card-head {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
