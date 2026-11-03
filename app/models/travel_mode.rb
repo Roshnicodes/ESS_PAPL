@@ -23,11 +23,14 @@ class TravelMode < ApplicationRecord
   scope :city_travel,  -> { active.where(for_city_travel: true).ordered }
   scope :local_travel, -> { active.where(for_local_travel: true).ordered }
 
-  # Rate applicable on a given date (latest effective_from <= date).
+  # Rate for a travel date: the latest rate set on or before that day. A rate holds until it is changed, so a
+  # trip from before the very first rate was entered uses that first rate (PAPL: the date of entry does not matter).
   def rate_on(date = Date.current)
     return nil unless km_based?
-    return mileage_rates.find { |r| r.effective_from <= date }&.rate_per_km if mileage_rates.loaded?   # ordered desc
-    mileage_rates.where(effective_from: ..date).first&.rate_per_km
+    if mileage_rates.loaded?   # ordered desc
+      return (mileage_rates.find { |r| r.effective_from <= date } || mileage_rates.last)&.rate_per_km
+    end
+    (mileage_rates.where(effective_from: ..date).first || mileage_rates.reorder(:effective_from).first)&.rate_per_km
   end
 
   def current_rate = rate_on(Date.current)

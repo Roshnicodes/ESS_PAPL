@@ -1,4 +1,5 @@
-# PD Finance: per km rate. Every change is a new dated row (history kept).
+# PD Finance: per km rate. Only the rate is entered – it applies from today until it is changed again
+# (earlier rates stay as history). A second change on the same day replaces that day's entry.
 class Masters::MileageRatesController < ApplicationController
   def index
     authorize! :read, MileageRate
@@ -7,11 +8,16 @@ class Masters::MileageRatesController < ApplicationController
   end
 
   def create
-    @rate = MileageRate.new(params.require(:mileage_rate).permit(:travel_mode_id, :rate_per_km, :effective_from, :remark))
+    @rate = MileageRate.new(params.require(:mileage_rate).permit(:travel_mode_id, :rate_per_km, :remark))
+    @rate.effective_from = Date.current
     @rate.created_by = current_user
     authorize! :create, @rate
-    if @rate.save
-      redirect_to masters_mileage_rates_path, notice: "Rate for #{@rate.travel_mode} set to ₹#{@rate.rate_per_km}/km from #{@rate.effective_from.strftime('%d/%m/%Y')}."
+    saved = MileageRate.transaction do
+      MileageRate.where(travel_mode_id: @rate.travel_mode_id, effective_from: Date.current).delete_all
+      @rate.save or raise ActiveRecord::Rollback   # invalid input: today's earlier entry stays as it was
+    end
+    if saved
+      redirect_to masters_mileage_rates_path, notice: "Rate for #{@rate.travel_mode} set to ₹#{@rate.rate_per_km}/km. It applies until it is changed again."
     else
       @modes = TravelMode.where(km_based: true).ordered.includes(mileage_rates: :created_by)
       render :index, status: :unprocessable_entity
