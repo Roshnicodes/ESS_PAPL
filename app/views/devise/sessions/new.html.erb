@@ -49,7 +49,10 @@
           <button type="button" class="absolute inset-y-0 right-2 flex items-center px-1 text-slate-400 hover:text-emerald-700" data-action="reveal#toggle" title="Show / hide password"><%= icon(:eye, "h-5 w-5") %></button>
         </div>
       </div>
-      <label class="flex items-center gap-2 text-sm text-slate-600"><%= f.check_box :remember_me, class: "check" %> Remember me</label>
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <label class="flex items-center gap-2 text-sm text-slate-600"><%= f.check_box :remember_me, class: "check" %> Remember me</label>
+        <%= link_to "Forgot password?", new_password_reset_path, class: "link text-sm" %>
+      </div>
       <%= f.button class: "btn-primary login-btn" do %>Login <%= icon(:arrow_right) %><% end %>
     <% end %>
 

@@ -1,9 +1,13 @@
 Rails.application.routes.draw do
   devise_for :users, skip: %i[registrations passwords]
+  # "Forgot password?" on the login page (link mailed through krai)
+  resource :password_reset, only: %i[new create edit update], path: "forgot-password"
 
   authenticated :user do
     root "dashboard#index", as: :authenticated_root
   end
+  # Colleagues on tour on a day (dashboard card) – approved and still-pending plans
+  get "on-tour", to: "dashboard#on_tour", as: :on_tour
   devise_scope :user do
     root "devise/sessions#new"
   end

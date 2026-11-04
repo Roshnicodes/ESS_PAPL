@@ -124,7 +124,7 @@ module ApplicationHelper
   # Rubber stamp put on a printed tour / claim: the word, who stamped it, when.
   SEALS = {
     "approved" => [ "Approved", "seal-ok" ],
-    "draft" => [ "Pending", "seal-wait" ],
+    "draft" => [ "Not sent", "seal-wait" ],
     "submitted" => [ "Pending", "seal-wait" ],
     "l1_approved" => [ "Pending", "seal-wait" ],
     "l2_approved" => [ "Pending", "seal-wait" ],
@@ -140,6 +140,12 @@ module ApplicationHelper
   # so that is what the stamp on a local mileage page has to follow.
   def tour_seal_record(tour) = tour.type_local? ? tour.tour_claim : tour
 
+  # What a stamp is about – printed on its rim, so a "Tour Plan · Approved" stamp is never read as an approved claim.
+  def seal_subject(record)
+    return "Tour Plan" if record.is_a?(Tour)
+    record.try(:type_local?) ? "Local Mileage" : "TA/DA Claim"
+  end
+
   # Shown on screen and on the printed copy, at the foot of the document.
   def approval_seal(record, css: nil)
     return "".html_safe if record.nil?
@@ -149,7 +155,7 @@ module ApplicationHelper
     tag.div(class: [ "seal", tone, css ]) do
       tag.div(class: "seal-ring") do
         tag.div(class: "seal-core") do
-          tag.div("PAPL · ESS", class: "seal-top") +
+          tag.div(seal_subject(record), class: "seal-top") +
             tag.div(word, class: "seal-word") +
             (who.present? ? tag.div(who, class: "seal-line") : "".html_safe) +
             (at ? tag.div(d(at), class: "seal-line") : "".html_safe)
@@ -179,7 +185,7 @@ module ApplicationHelper
   # Short line for a stamp that is still travelling – the circle has no room
   # for a whole stage_label.
   def seal_waiting_with(record)
-    return "Not sent yet" if record.draft?
+    return "Saved only" if record.draft?
     if record.respond_to?(:current_approver)   # tour: L1 → L2 → extra approvers
       name = record.l2_approved? ? record.l3_label : record.current_approver&.name
     else                                       # claim: L1 → L2 → PD Finance

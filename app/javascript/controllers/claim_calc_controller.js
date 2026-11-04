@@ -36,6 +36,22 @@ export default class extends Controller {
     const amountEl = q("amount")
     const deduction = this.num(q("deduction")?.dataset.value)
 
+    // "NA" = no journey on this line: places, ticket, meters, km and amount are cleared and locked, total ₹0
+    const na = row.querySelector("[data-na-mode]")?.selectedOptions[0]?.dataset.none === "true"
+    row.querySelectorAll("[data-na-off]").forEach((el) => {
+      if (na) {
+        el.value = ""; el.readOnly = true; el.required = false; el.classList.add("na-off")
+        el.setCustomValidity?.(""); el.classList.remove("field-error")
+      } else if (el.classList.contains("na-off")) {
+        el.readOnly = false; el.classList.remove("na-off")
+      }
+    })
+    if (na) {
+      if (q("rate")) q("rate").value = "0.00"
+      const t = q("total"); if (t) t.textContent = this.money(0)
+      return 0
+    }
+
     if (kind === "local") {
       const opt = q("mode")?.selectedOptions[0]
       const manual = opt?.dataset.manual === "true"

@@ -1,0 +1,78 @@
+<% content_for :title, "On Tour" %>
+<% waiting = @tours.count { |t| !t.approved? } %>
+<%= page_header("On tour · #{d(@date)}", "#{@tours.size} colleague#{'s' unless @tours.size == 1} on tour – #{@tours.size - waiting} approved, #{waiting} waiting for approval. Click a name for the whole plan.", icon_name: :building) do %>
+  <%= form_with url: on_tour_path, method: :get, class: "flex flex-wrap items-center gap-2 print:hidden", data: { turbo: false } do %>
+    <%= date_field_tag :date, @date, class: "inp w-40", onchange: "this.form.submit()", "aria-label": "Day" %>
+    <%= link_to "Today", on_tour_path, class: "btn-light" unless @date == Date.current %>
+  <% end %>
+  <%= print_button %>
+<% end %>
+
+<% status_label = ->(t) { { "submitted" => "Pending L1", "l1_approved" => "Forwarded to L2", "l2_approved" => "Forwarded to #{t.l3_label}" }[t.status] } %>
+<div class="card overflow-hidden fade-up" data-controller="dialog">
+  <table class="tbl tbl-stack">
+    <thead><tr><th>Employee</th><th>Tour</th><th>Place on <%= d(@date) %></th><th>Status</th><th class="no-print"></th></tr></thead>
+    <tbody>
+      <% @tours.each do |t| %>
+        <% u = t.user; day_places = t.tour_visits.select { |v| v.visit_date == @date }.map(&:place).compact_blank.uniq %>
+        <tr class="cursor-pointer transition hover:bg-brand-50/50" data-action="click->dialog#open" data-dialog-id-param="on-tour-<%= t.id %>">
+          <td data-label="Employee"><div class="flex items-center gap-3"><%= avatar(u, size: "h-9 w-9 text-xs") %><div class="min-w-0 leading-tight"><b class="text-slate-900"><%= u.name %></b><div class="muted"><%= [ u.emp_code, u.designation, u.location ].compact_blank.join(" · ") %></div></div></div></td>
+          <td data-label="Tour"><%= t.duration_label %> <span class="muted">(<%= t.days %> day<%= "s" unless t.days == 1 %>)</span></td>
+          <td data-label="Place"><%= day_places.join(", ").presence || "—" %></td>
+          <td data-label="Status"><%= tour_status_badge(t, label: status_label.(t)) %></td>
+          <td class="no-print text-right"><button type="button" class="btn-light btn-xs" data-action="dialog#open:stop" data-dialog-id-param="on-tour-<%= t.id %>"><%= icon(:eye) %> Details</button></td>
+        </tr>
+      <% end %>
+      <%= empty_row(5, "No one is on tour on #{d(@date)}.") if @tours.empty? %>
+    </tbody>
+  </table>
+
+  <%# one detail window per person – the whole plan, read only %>
+  <% @tours.each do |t| %>
+    <% u = t.user %>
+    <dialog id="on-tour-<%= t.id %>" data-action="click->dialog#backdrop"
+            class="m-auto w-[min(46rem,calc(100vw-1.5rem))] rounded-2xl border border-white/70 bg-white p-0 shadow-2xl backdrop:bg-slate-900/40">
+      <div class="flex items-start justify-between gap-3 border-b border-slate-100 px-5 py-3">
+        <div class="flex items-center gap-3">
+          <%= avatar(u, size: "h-10 w-10 text-sm") %>
+          <div class="leading-tight"><div class="font-semibold text-slate-900"><%= u.name %> <span class="muted font-normal">(<%= u.emp_code %>)</span></div>
+            <div class="muted"><%= [ u.designation, u.department, u.location ].compact_blank.join(" · ") %></div></div>
+        </div>
+        <button type="button" class="btn-ghost btn-xs" data-action="dialog#close" aria-label="Close"><%= icon(:x_circle, "h-5 w-5") %></button>
+      </div>
+      <div class="max-h-[70vh] space-y-4 overflow-y-auto px-5 py-4 text-sm">
+        <div class="flex flex-wrap items-center gap-2">
+          <%= tour_status_badge(t, label: status_label.(t)) %>
+          <% unless t.approved? %><span class="text-slate-600"><%= t.stage_label %></span><% end %>
+        </div>
+        <dl class="grid gap-x-6 gap-y-2 sm:grid-cols-2">
+          <div><dt class="lbl">Tour dates</dt><dd class="font-medium text-slate-900"><%= t.duration_label %> · <%= t.days %> day<%= "s" unless t.days == 1 %></dd></div>
+          <div><dt class="lbl">Reference</dt><dd><%= t.reference_no.presence || "—" %></dd></div>
+          <div><dt class="lbl">Sent for approval</dt><dd><%= dt(t.submitted_at) || "—" %></dd></div>
+          <div><dt class="lbl"><%= t.approved? ? "Approved" : "Approval" %></dt>
+            <dd><%= t.approved? ? "#{dt(t.approved_at)} – #{t.decided_by&.name}" : "Waiting – #{t.stage_label}" %></dd></div>
+          <div class="sm:col-span-2"><dt class="lbl">Approvers</dt><dd class="flex flex-wrap items-center gap-1"><%= approver_chain(t.approver, t.l2_approver, t.approval_steps) %></dd></div>
+          <% if t.general_description.present? %><div class="sm:col-span-2"><dt class="lbl">Purpose</dt><dd class="text-slate-700"><%= t.general_description %></dd></div><% end %>
+        </dl>
+        <div>
+          <div class="lbl">Day by day</div>
+          <table class="tbl tbl-stack rounded-xl ring-1 ring-slate-200/70">
+            <thead><tr><th>Date</th><th>Place</th><th>Mode of travel</th><th>Planned activity</th></tr></thead>
+            <tbody>
+              <% t.tour_visits.sort_by { [ _1.visit_date || Date.new(0), _1.id ] }.each do |v| %>
+                <tr class="<%= 'bg-amber-50/70 font-medium' if v.visit_date == @date %>">
+                  <td data-label="Date" class="md:whitespace-nowrap"><%= d(v.visit_date) %><%= tag.span(" today", class: "text-[11px] font-semibold text-amber-700") if v.visit_date == Date.current %></td>
+                  <td data-label="Place"><%= v.place.presence || "—" %></td>
+                  <td data-label="Mode"><%= v.travel_mode || "—" %></td>
+                  <td data-label="Activity"><%= v.planned_activity.presence || "—" %></td>
+                </tr>
+              <% end %>
+              <%= empty_row(4, "No visits entered") if t.tour_visits.empty? %>
+            </tbody>
+          </table>
+        </div>
+        <% if can?(:read, t) %><div class="text-right"><%= link_to "Open full tour plan →", t, class: "link" %></div><% end %>
+      </div>
+    </dialog>
+  <% end %>
+</div>

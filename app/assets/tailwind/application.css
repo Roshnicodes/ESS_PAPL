@@ -484,3 +484,6 @@ body.app-bg::before {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
+
+/* claim line with mode "NA": the fields that do not apply are shown locked and empty */
+.inp.na-off { background: rgb(241 245 249) !important; color: transparent; opacity: .55; pointer-events: none; }

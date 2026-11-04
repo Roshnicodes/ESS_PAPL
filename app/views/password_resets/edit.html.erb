@@ -1,0 +1,23 @@
+<% content_for :title, "Set new password" %>
+<div class="flex min-h-screen items-center justify-center px-4 py-10">
+  <div class="w-full max-w-md">
+  <%= image_tag "papl_logo_full.png", alt: "Ploughman Agro", class: "mx-auto mb-5 h-16 w-auto" %>
+  <div class="card fade-up">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:lock) %></span>Set new password</span></div>
+    <%= form_with url: password_reset_path, method: :patch, class: "card-body space-y-4", data: { turbo: false } do %>
+      <%= hidden_field_tag :token, params[:token] %>
+      <p class="text-sm text-slate-600"><b><%= @user.name %></b> (<%= @user.emp_code %>) – choose a new password.</p>
+      <%= error_box(@user) %>
+      <div>
+        <%= label_tag :password, "New password", class: "lbl" %>
+        <%= password_field_tag :password, nil, required: true, minlength: User::PASSWORD_MINIMUM_LENGTH, autocomplete: "new-password", class: "inp" %>
+      </div>
+      <div>
+        <%= label_tag :password_confirmation, "Type it again", class: "lbl" %>
+        <%= password_field_tag :password_confirmation, nil, required: true, autocomplete: "new-password", class: "inp" %>
+      </div>
+      <%= button_tag class: "btn-primary w-full" do %><%= icon(:check) %> Save new password<% end %>
+    <% end %>
+  </div>
+  </div>
+</div>

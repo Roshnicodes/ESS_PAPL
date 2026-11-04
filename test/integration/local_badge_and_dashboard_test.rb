@@ -31,13 +31,30 @@ class LocalBadgeAndDashboardTest < ActionDispatch::IntegrationTest
     assert_not_equal "Approved", badge
   end
 
-  test "dashboard lists the colleagues on tour today" do
+  test "dashboard card opens the on-tour page: approved and waiting plans, each with its details" do
     t = @emp.tours.create!(from_date: Date.current, to_date: Date.current + 1, send_now: true,
       tour_visits_attributes: [ { visit_date: Date.current, place: "Jhabua", planned_activity: "Visit" } ])
     t.update_columns(status: "approved", approved_at: Time.current, decided_by_id: @l1.id)
+    waiting = @l1.tours.create!(from_date: Date.current - 1, to_date: Date.current, send_now: true,
+      tour_visits_attributes: [ { visit_date: Date.current, place: "Dhar", planned_activity: "SHG meeting" } ])
     sign_in @l1
     get authenticated_root_path
-    assert_match 'id="on-tour-today"', response.body
+    assert_match on_tour_path, response.body
+    assert_no_match 'id="on-tour-today"', response.body                 # no popup on the dashboard any more
+
+    get on_tour_path
+    assert_response :success
+    body = response.body
+    assert_match "Jhabua", body
+    assert_match "Dhar", body
+    assert_match "id=\"on-tour-#{t.id}\"", body                         # detail window per person
+    assert_match "SHG meeting", body
+    assert_operator body.index("on-tour-#{waiting.id}"), :<, body.index("on-tour-#{t.id}")   # waiting first
+    assert_match ">Approved<", body
+    assert_match ">Pending L1<", body
+
+    get on_tour_path(date: (Date.current + 1).to_s)                       # another day
     assert_match "Jhabua", response.body
+    assert_no_match "Dhar", response.body
   end
 end

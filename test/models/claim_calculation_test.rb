@@ -10,6 +10,18 @@ class ClaimCalculationTest < ActiveSupport::TestCase
     @claim = with_tasks(TourClaim.build_for(@tour))
   end
 
+  test "NA mode: no places, ticket, km or amount needed – the line counts ₹0" do
+    na = mode("NA")
+    @claim.claim_city_travels.build(travel_date: @tour.from_date, travel_mode: na, amount: 300, bill_ticket_no: "X1")
+    @claim.claim_local_travels.build(travel_date: @tour.from_date, travel_mode: na, meter_from: 10, meter_to: 50, amount: 99)
+    @claim.save!
+    city = @claim.claim_city_travels.last
+    local = @claim.claim_local_travels.last
+    assert_equal [ 0, 0 ], [ city.amount.to_i, city.total_amount.to_i ]
+    assert_equal [ 0, 0, nil ], [ local.amount.to_i, local.kilometers.to_i, local.rate_per_km ]
+    assert_equal 0, @claim.reload.grand_total.to_i
+  end
+
   test "two wheeler: km from meters x 4.25, public transport: typed km and total" do
     @claim.claim_local_travels.build(travel_date: @tour.from_date, place_from: "HO", place_to: "Bank", travel_mode: mode("Two Wheeler"), meter_from: 1200, meter_to: 1265)
     @claim.claim_local_travels.build(travel_date: @tour.from_date, place_from: "HO", place_to: "PAPL", travel_mode: mode("Public Transport"), meter_from: 5, meter_to: 9, kilometers: 12.16, amount: 192.66, purpose: "Bus ticket 4471")

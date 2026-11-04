@@ -3,7 +3,7 @@ module ClaimsHelper
   def claim_cities      = @claim_cities ||= City.active.ordered.to_a
   # A. Travel: every active mode from the master used for tours / city travel (anything HR adds shows up)
   def city_travel_modes
-    @city_travel_modes ||= TravelMode.active.where("for_city_travel OR for_tour_plan").where.not(name: "NA").ordered
+    @city_travel_modes ||= TravelMode.city_travel
                                      .includes(mode_approvers: :user).to_a
   end
   def local_travel_modes = @local_travel_modes ||= TravelMode.local_travel.includes(:mileage_rates).to_a

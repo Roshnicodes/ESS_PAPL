@@ -1,0 +1,19 @@
+<% content_for :title, "Forgot password" %>
+<div class="flex min-h-screen items-center justify-center px-4 py-10">
+  <div class="w-full max-w-md">
+  <%= image_tag "papl_logo_full.png", alt: "Ploughman Agro", class: "mx-auto mb-5 h-16 w-auto" %>
+  <div class="card fade-up">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:lock) %></span>Forgot password</span></div>
+    <%= form_with url: password_reset_path, method: :post, class: "card-body space-y-4", data: { turbo: false } do %>
+      <p class="text-sm text-slate-600">Type your Employee Code. A link to set a new password is sent to the email saved for you in the Employee List.</p>
+      <div>
+        <%= label_tag :emp_code, "Employee Code", class: "lbl" %>
+        <%= text_field_tag :emp_code, params[:emp_code], required: true, autofocus: true, autocomplete: "username", placeholder: "e.g. PAPL134", class: "inp" %>
+      </div>
+      <%= button_tag class: "btn-primary w-full" do %><%= icon(:send) %> Send link<% end %>
+      <p class="flex gap-2 rounded-lg bg-white/60 px-3 py-2 text-xs text-slate-600"><%= icon(:info, "h-4 w-4 shrink-0") %>No email in the Employee List? Ask HR / Admin to reset your password.</p>
+      <div class="text-center"><%= link_to "← Back to login", new_session_path(:user), class: "link text-sm" %></div>
+    <% end %>
+  </div>
+  </div>
+</div>

@@ -19,9 +19,10 @@ class TravelMode < ApplicationRecord
 
   scope :active,       -> { where(active: true) }
   scope :ordered,      -> { order(:position, :name) }
-  scope :tour_plan,    -> { active.where(for_tour_plan: true).ordered }
-  scope :city_travel,  -> { active.where(for_city_travel: true).ordered }
-  scope :local_travel, -> { active.where(for_local_travel: true).ordered }
+  # PAPL: every enabled mode of the master is offered everywhere (Tour Plan, A. Travel, B. Local Travel)
+  scope :tour_plan,    -> { active.ordered }
+  scope :city_travel,  -> { active.ordered }
+  scope :local_travel, -> { active.ordered }
 
   # Rate for a travel date: the latest rate set on or before that day. A rate holds until it is changed, so a
   # trip from before the very first rate was entered uses that first rate (PAPL: the date of entry does not matter).
@@ -34,6 +35,13 @@ class TravelMode < ApplicationRecord
   end
 
   def current_rate = rate_on(Date.current)
+
+  # "NA" – no journey on that line: nothing else (places, ticket, km, amount) has to be filled
+  def no_travel? = category == "none" || name.to_s.strip.casecmp?("NA")
+
+  # B. Local Travel: modes without a per-km rate (Bus, Train, Public Transport …) take KM and amount as typed,
+  # with the bill / ticket ref as proof; NA takes nothing
+  def typed_amount? = !no_travel? && (manual_total? || !km_based?)
 
   # extra approvers in order (after L1 → L2) and notify-only people
   def approver_chain = mode_approvers.select { |a| a.kind == "approve" }.sort_by(&:position)

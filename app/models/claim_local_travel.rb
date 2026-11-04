@@ -6,17 +6,27 @@ class ClaimLocalTravel < ApplicationRecord
   include ClaimLine
   belongs_to :travel_mode
 
-  validates :travel_date, :place_from, :place_to, presence: true
+  validates :travel_date, presence: true
+  validates :place_from, :place_to, presence: true, unless: :no_travel?
   validates :kilometers, numericality: { greater_than_or_equal_to: 0, less_than: 10_000 }
   validate  :meter_order
   validate  :manual_mode_needs_ticket_ref
 
   def km_based? = travel_mode&.km_based?
-  def manual?   = travel_mode&.manual_total?
+  def manual?   = !!travel_mode&.typed_amount?
+  def no_travel? = travel_mode&.no_travel?
 
   private
 
   def compute_amount
+    if no_travel?   # NA: no journey – no meters, km, rate or amount
+      self.meter_from = self.meter_to = self.rate_per_km = nil
+      self.kilometers = 0
+      self.amount = self.deduction_amount = 0
+      self.place_from = place_from.to_s
+      self.place_to = place_to.to_s
+      return
+    end
     if manual?
       self.meter_from = self.meter_to = nil
       self.rate_per_km = nil

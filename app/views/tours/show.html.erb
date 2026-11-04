@@ -45,7 +45,7 @@
        (["Description", @tour.general_description] if @tour.general_description.present?),
        (["Returned", "#{@tour.return_remark} – #{@tour.returned_by&.name}"] if @tour.returned?),
        (["Cancelled", "#{@tour.cancel_remark} (#{dt(@tour.cancelled_at)})"] if @tour.cancelled?),
-       (["Claim", "#{c.stage_label} · #{inr(c.grand_total)}"] if c),
+       (["Claim", safe_join([ status_badge(c.status), " #{c.stage_label} · #{inr(c.grand_total)}" ])] if c),
        (["Bank", c.bank_account.label] if c&.bank_account && (@tour.user_id == current_user.id || can?(:read, c.bank_account)))
      ].compact %>
   <% if notes.any? %>
@@ -72,7 +72,11 @@
   <%# history – one line per action %>
   <div class="flex flex-wrap items-center gap-4 bg-white/30 px-4 py-3 sm:px-5">
     <div class="min-w-0 flex-1 print:hidden"><%= render "shared/history_lines", logs: logs %></div>
-    <%= approval_seal(tour_seal_record(@tour), css: "ml-auto mr-6 shrink-0") %>
+    <%# tour plan and its claim each carry their own stamp, named on the rim – an approved plan is not an approved claim %>
+    <div class="ml-auto mr-6 flex shrink-0 items-center gap-6">
+      <%= approval_seal(tour_seal_record(@tour)) %>
+      <%= approval_seal(c) if c && @tour.type_tour? %>
+    </div>
   </div>
   <% if current_user.admin? %>
     <%= render "shared/delete_dialog", id: "del-tour", url: tour_path(@tour), title: "Delete this #{tour_type_label(@tour).downcase}?", note: "#{@tour.user.name} · #{@tour.duration_label}" %>
