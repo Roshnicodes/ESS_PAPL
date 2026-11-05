@@ -50,7 +50,7 @@ class LocalBadgeAndDashboardTest < ActionDispatch::IntegrationTest
     assert_match "id=\"on-tour-#{t.id}\"", body                         # detail window per person
     assert_match "SHG meeting", body
     assert_operator body.index("on-tour-#{waiting.id}"), :<, body.index("on-tour-#{t.id}")   # waiting first
-    assert_match ">Approved<", body
+    assert_match ">Plan approved<", body
     assert_match ">Pending L1<", body
 
     get on_tour_path(date: (Date.current + 1).to_s)                       # another day

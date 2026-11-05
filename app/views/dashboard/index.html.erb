@@ -24,7 +24,7 @@
         <div class="card-head"><span class="card-title"><span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:map) %></span>My latest tour</span><%= link_to "History", tours_path, class: "link text-xs" %></div>
         <div class="card-body">
           <% if @last_tour %>
-            <div class="flex items-start justify-between gap-2"><div><div class="font-semibold"><%= link_to tour_type_label(@last_tour), @last_tour, class: "link" %></div><div class="text-sm text-slate-600"><%= @last_tour.duration_label %></div></div><%= status_badge(@last_tour.status, label: @last_tour.approved? ? "Accepted" : nil) %></div>
+            <div class="flex items-start justify-between gap-2"><div><div class="font-semibold"><%= link_to tour_type_label(@last_tour), @last_tour, class: "link" %></div><div class="text-sm text-slate-600"><%= @last_tour.duration_label %></div></div><%= tour_status_badge(@last_tour) %></div>
             <div class="mt-3 flex flex-wrap gap-1.5"><% @last_tour.tour_visits.first(4).each do |v| %><span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600"><%= icon(:pin, "h-3.5 w-3.5") %><%= v.place %></span><% end %></div>
           <% else %><div class="empty-state py-6"><%= icon(:map) %>No tour yet</div><% end %>
         </div>

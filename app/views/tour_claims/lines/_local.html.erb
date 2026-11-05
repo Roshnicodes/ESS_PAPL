@@ -5,7 +5,7 @@
   <td data-label="Place From"><%= f.text_field :place_from, class: "inp", data: { na_off: true } %></td>
   <td data-label="Place To"><%= f.text_field :place_to, class: "inp", data: { na_off: true } %></td>
   <td data-label="Mode of Travel"><%= f.select :travel_mode_id,
-        modes.map { |m| [m.name, m.id, { "data-rate" => ((o.travel_mode_id == m.id && o.rate_per_km) || m.current_rate || 0), "data-km" => m.km_based?, "data-manual" => m.typed_amount?, "data-none" => m.no_travel? }] },
+        modes_with_current(modes, o.travel_mode).map { |m| [m.name, m.id, { "data-rate" => ((o.travel_mode_id == m.id && o.rate_per_km) || m.current_rate || 0), "data-km" => m.km_based?, "data-manual" => m.typed_amount?, "data-none" => m.no_travel? }] },
         { include_blank: "Select" }, required: true, class: "inp", data: { calc: "mode", na_mode: true } %></td>
   <td data-label="Met. Reading from"><%= f.number_field :meter_from, step: "0.1", min: 0, class: "inp", data: { calc: "metfrom", na_off: true } %></td>
   <td data-label="Met. Reading to"><%= f.number_field :meter_to, step: "0.1", min: 0, class: "inp", data: { calc: "metto", na_off: true } %></td>

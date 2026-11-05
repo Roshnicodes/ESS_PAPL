@@ -2,7 +2,7 @@
 <%= page_header("Tour Approval History", "Tours you have forwarded, approved, returned or rejected", icon_name: :clock) do %>
   <%= print_button %>
 <% end %>
-<% labels = { "l1_approved" => ["Forwarded", "bg-sky-50 text-sky-700 ring-sky-300/60"], "l2_approved" => ["Forwarded", "bg-sky-50 text-sky-700 ring-sky-300/60"], "extra_forwarded" => ["Forwarded", "bg-sky-50 text-sky-700 ring-sky-300/60"], "approved" => ["Approved", "bg-emerald-50 text-emerald-700 ring-emerald-300/60"],
+<% labels = { "l1_approved" => ["Forwarded", "bg-sky-50 text-sky-700 ring-sky-300/60"], "l2_approved" => ["Forwarded", "bg-sky-50 text-sky-700 ring-sky-300/60"], "extra_forwarded" => ["Forwarded", "bg-sky-50 text-sky-700 ring-sky-300/60"], "approved" => ["Plan approved", "bg-emerald-50 text-emerald-700 ring-emerald-300/60"],
               "returned" => ["Returned", "bg-orange-50 text-orange-700 ring-orange-300/60"], "rejected" => ["Rejected", "bg-rose-50 text-rose-700 ring-rose-300/60"] } %>
 <div class="card overflow-hidden fade-up">
   <div class="card-head">
@@ -22,7 +22,7 @@
         <td data-label="Tour" class="whitespace-nowrap font-semibold text-brand-700">Tour Plan</td>
         <td data-label="Duration" class="whitespace-nowrap"><%= t.duration_label %></td>
         <td data-label="My Action"><div><% if lbl %><span class="badge <%= css %>"><%= lbl %></span><% end %><div class="muted mt-0.5 whitespace-nowrap"><%= dt(log&.created_at) %></div></div></td>
-        <td data-label="Status"><div><%= status_badge(t.status) %><div class="muted mt-0.5"><%= t.stage_label %></div></div></td>
+        <td data-label="Status"><div><%= tour_status_badge(t) %><div class="muted mt-0.5"><%= t.stage_label %></div></div></td>
         <td class="md:text-right no-print"><%= link_to approvals_tour_path(t), class: "ml-auto inline-flex rounded-lg p-2 text-brand-600 hover:bg-brand-50", title: "History" do %><%= icon(:clock) %><span class="sr-only">History</span><% end %></td>
       </tr>
     <% end %>

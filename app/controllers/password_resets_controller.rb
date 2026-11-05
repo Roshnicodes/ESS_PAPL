@@ -3,6 +3,8 @@
 #   1. The employee types the Employee Code. If that employee is active and has an email in the Employee List,
 #      a one-time link is mailed through krai (EssMailRelay – the same route as every ESS notification mail).
 #      The answer on screen is the same for every code, so nobody can find out which codes exist.
+#      The mail is sent straight away (not queued) and the new token is saved only after krai confirms it,
+#      so a mail outage never invalidates a link the employee already has.
 #   2. The link (valid for VALID_FOR) opens a form for the new password. Using it once makes it invalid.
 # Employees without an email are told to ask HR / Admin, who can set a password in Masters → Employee List.
 class PasswordResetsController < ApplicationController
@@ -17,9 +19,7 @@ class PasswordResetsController < ApplicationController
   def create
     user = User.active.find_by("lower(emp_code) = ?", params[:emp_code].to_s.strip.downcase)
     if user&.email.present? && !(user.reset_password_sent_at && user.reset_password_sent_at > RESEND_AFTER.ago)
-      raw, digest = Devise.token_generator.generate(User, :reset_password_token)
-      user.update_columns(reset_password_token: digest, reset_password_sent_at: Time.current)
-      send_link(user, raw)
+      send_link(user)
     end
     redirect_to new_session_path(:user), notice: "If this Employee Code has an email in the Employee List, a link to set a new password " \
                                                  "has been sent to it (valid for 2 hours). No email? Ask HR / Admin to reset your password."
@@ -51,19 +51,26 @@ class PasswordResetsController < ApplicationController
     user if user&.reset_password_sent_at && user.reset_password_sent_at > VALID_FOR.ago
   end
 
-  def send_link(user, raw)
+  # Token pair made here (not saved yet): if krai fails, the employee's earlier link keeps working.
+  def send_link(user)
+    raw, digest = Devise.token_generator.generate(User, :reset_password_token)
+    sent_at = Time.current
     # saved paths never carry the /papl sub-path – app_url (https://hr.asaindia.org/papl) already has it
     link = "#{EssMailRelay.app_url}#{Rails.application.routes.url_helpers.edit_password_reset_path(token: raw)}"
-    return Rails.logger.warn("Password reset for #{user.emp_code}: mail relay is off, link not sent") unless EssMailRelay.enabled?
-    EssMailJob.perform_later(
+    mail = {
       "to_email" => user.email.strip, "to_name" => user.name.to_s, "subject" => "PAPL ESS: Set a new password",
       "message" => "A new password was asked for Employee Code #{user.emp_code}. Open the link within 2 hours to set it. " \
                    "If you did not ask for this, ignore this mail – your password stays the same.",
       "link" => link, "employee_name" => user.name.to_s, "employee_code" => user.emp_code.to_s,
-      "quarter" => "", "month" => "", "reviewer_role" => "", "reviewer_name" => "", "action" => "information",
-      "remarks" => "", "mail_type" => "password_reset"
-    )
+      "quarter" => "", "month" => "", "reviewer_role" => "", "reviewer_name" => "",
+      # krai accepts `pending` for a mail that needs the recipient to act; `information` is refused as an invalid action
+      "action" => "pending", "remarks" => "", "mail_type" => "password_reset"
+    }
+    EssMailRelay.deliver!(mail, relay_url: EssMailRelay.password_reset_url)
+    user.update_columns(reset_password_token: digest, reset_password_sent_at: sent_at)
+    true
   rescue StandardError => e
-    Rails.logger.error("Password reset mail not queued for #{user.emp_code}: #{e.class} #{e.message}")
+    Rails.logger.error("Password reset mail failed for #{user.emp_code}: #{e.class} #{e.message}")
+    false
   end
 end

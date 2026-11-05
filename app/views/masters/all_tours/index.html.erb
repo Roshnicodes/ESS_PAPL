@@ -13,14 +13,14 @@
     <% end %>
   </div>
   <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">
-    <thead><tr><th>Type</th><th>Employee</th><th>Duration</th><th>Status</th><th>Claim</th><th>Created</th><th class="text-right no-print">Actions</th></tr></thead>
+    <thead><tr><th>Type</th><th>Employee</th><th>Duration</th><th>Tour Plan</th><th>Claim</th><th>Created</th><th class="text-right no-print">Actions</th></tr></thead>
     <tbody>
     <% @tours.each do |t| %>
       <tr>
         <td data-label="Type" class="whitespace-nowrap font-semibold text-brand-700"><%= tour_type_label(t) %></td>
         <td data-label="Employee" class="whitespace-nowrap"><b><%= t.user.name %></b> <span class="muted">(<%= t.user.emp_code %>)</span></td>
         <td data-label="Duration" class="md:whitespace-nowrap"><%= t.duration_label %></td>
-        <td data-label="Status"><%= tour_status_badge(t) %></td>
+        <td data-label="Tour Plan"><%= tour_status_badge(t) %></td>
         <td data-label="Claim"><%= t.tour_claim ? status_badge(t.tour_claim.status) : tag.span("—", class: "text-slate-300") %></td>
         <td data-label="Created" class="whitespace-nowrap muted"><%= dt(t.created_at) %></td>
         <td class="no-print"><div class="flex justify-end gap-1">

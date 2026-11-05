@@ -20,7 +20,7 @@
   <%# one line summary %>
   <div class="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-white/70 px-4 py-3 sm:px-5">
     <span class="text-base font-bold text-slate-900">Tour Plan</span>
-    <%= status_badge(t.status, label: { "submitted" => "Pending L1", "l1_approved" => "Forwarded to L2", "l2_approved" => "Forwarded to #{t.l3_label}" }[t.status]) %>
+    <%= tour_status_badge(t, label: { "submitted" => "Pending L1", "l1_approved" => "Forwarded to L2", "l2_approved" => "Forwarded to #{t.l3_label}" }[t.status]) %>
     <span class="text-sm"><b><%= t.user.name %></b> <span class="text-slate-500">(<%= t.user.emp_code %>) · <%= t.user.designation %> · <%= t.user.branch || t.user.location %></span></span>
     <span class="text-sm text-slate-700"><%= icon(:calendar, "mr-1 inline h-4 w-4 text-slate-400") %><%= t.duration_label %> <span class="text-slate-400">(<%= t.days %>d · <%= t.tour_visits.size %> visits)</span></span>
   </div>

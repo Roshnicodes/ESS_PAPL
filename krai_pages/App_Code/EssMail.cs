@@ -54,7 +54,8 @@ public static class EssMail
         { "claim_closed",     new[] { "Claim update",                        Grey,   "Open ESS" } },
         { "claim_query",      new[] { "Finance has a question on a claim",   Orange, "Reply in ESS" } },
         { "claim_query_info", new[] { "Finance asked about your claim",      Grey,   "Open ESS" } },
-        { "claim_info",       new[] { "For your information",                Grey,   "Open ESS" } }
+        { "claim_info",       new[] { "For your information",                Grey,   "Open ESS" } },
+        { "password_reset",   new[] { "Reset your ESS password",             Blue,   "Set new password" } }
     };
 
     public static void HandleAny(Page page)

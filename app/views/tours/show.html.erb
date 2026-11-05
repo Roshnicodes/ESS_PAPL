@@ -27,12 +27,8 @@
       <% if @tour.user_id == current_user.id && @tour.editable? && @tour.type_tour? %>
         <%= button_to submit_tour_path(@tour), method: :patch, class: "btn-primary btn-xs", form_class: "inline" do %><%= icon(:send) %> Send<% end %>
       <% end %>
-      <% if @tour.user_id == current_user.id %>
-        <% if c.nil? && @tour.claimable? %><%= link_to new_tour_claim_path(@tour), class: "btn-primary btn-xs" do %><%= icon(:receipt) %> Make Claim<% end %>
-        <% elsif c&.employee_editable? %><%= link_to edit_tour_claim_path(@tour), class: "btn-primary btn-xs" do %><%= icon(:pencil) %> Edit Claim<% end %>
-        <% elsif c %><%= link_to tour_claim_path(@tour), class: "btn-light btn-xs" do %><%= icon(:eye) %> Claim<% end %><% end %>
-      <% end %>
-      <% if c&.current_reviewer?(current_user) %><%= link_to approvals_claim_path(c), class: "btn-primary btn-xs" do %><%= icon(:clipboard) %> Review Claim<% end %><% end %>
+      <%# outstation tour: the claim buttons sit on the claim's own card below %>
+      <% if @tour.type_local? %><%= render "tours/claim_buttons", tour: @tour, c: c %><% end %>
       <%= print_button("Print", css: "btn-light btn-xs") %>
       <% if current_user.admin? %>
         <%= link_to edit_tour_path(@tour), class: "btn-light btn-xs" do %><%= icon(:pencil) %> Admin Edit<% end %>
@@ -45,8 +41,8 @@
        (["Description", @tour.general_description] if @tour.general_description.present?),
        (["Returned", "#{@tour.return_remark} – #{@tour.returned_by&.name}"] if @tour.returned?),
        (["Cancelled", "#{@tour.cancel_remark} (#{dt(@tour.cancelled_at)})"] if @tour.cancelled?),
-       (["Claim", safe_join([ status_badge(c.status), " #{c.stage_label} · #{inr(c.grand_total)}" ])] if c),
-       (["Bank", c.bank_account.label] if c&.bank_account && (@tour.user_id == current_user.id || can?(:read, c.bank_account)))
+       (["Claim", safe_join([ status_badge(c.status), " #{c.stage_label} · #{inr(c.grand_total)}" ])] if c && @tour.type_local?),
+       (["Bank", c.bank_account.label] if @tour.type_local? && c&.bank_account && (@tour.user_id == current_user.id || can?(:read, c.bank_account)))
      ].compact %>
   <% if notes.any? %>
     <div class="flex flex-wrap gap-x-6 gap-y-1 border-b border-white/70 px-4 py-2 text-sm sm:px-5">
@@ -71,17 +67,17 @@
 
   <%# history – one line per action %>
   <div class="flex flex-wrap items-center gap-4 bg-white/30 px-4 py-3 sm:px-5">
-    <div class="min-w-0 flex-1 print:hidden"><%= render "shared/history_lines", logs: logs %></div>
-    <%# tour plan and its claim each carry their own stamp, named on the rim – an approved plan is not an approved claim %>
-    <div class="ml-auto mr-6 flex shrink-0 items-center gap-6">
-      <%= approval_seal(tour_seal_record(@tour)) %>
-      <%= approval_seal(c) if c && @tour.type_tour? %>
-    </div>
+    <div class="min-w-0 flex-1 print:hidden"><%= render "shared/history_lines", logs: (@tour.type_local? ? logs : @logs.to_a), title: (@tour.type_local? ? "History" : "Tour plan history") %></div>
+    <%# stamp named on the rim ("Tour Plan" / "Local Mileage") – the claim of an outstation tour has its own card and stamp below %>
+    <%= approval_seal(tour_seal_record(@tour), css: "ml-auto mr-6 shrink-0") %>
   </div>
   <% if current_user.admin? %>
     <%= render "shared/delete_dialog", id: "del-tour", url: tour_path(@tour), title: "Delete this #{tour_type_label(@tour).downcase}?", note: "#{@tour.user.name} · #{@tour.duration_label}" %>
   <% end %>
 </div>
+<% if @tour.type_tour? && (c || @tour.approved?) %>
+  <%= render "tours/claim_card", tour: @tour, c: c, claim_logs: @claim_logs.to_a %>
+<% end %>
 <% unless @tour.type_local? %>
   <%= render "shared/print_signatures", rows: [ [ "Employee", u.name, @tour.submitted_at ],
         [ "L1 · Reporting Manager", @tour.approver&.name, @tour.l1_approved_at ],

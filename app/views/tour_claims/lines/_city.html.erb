@@ -7,7 +7,7 @@
   <% routes = (@claim_mode_routes ||= modes.to_h { |m| [ m.id, { approvers: m.approver_chain.map { |a| a.user.designation.presence || a.user.name }.uniq, tatkal_approvers: m.tatkal_chain.map { |a| a.user.designation.presence || a.user.name }.uniq } ] }) %>
   <td data-label="Mode of Travel">
     <div data-controller="train-quota" data-train-quota-trains-value="<%= trains.to_json %>" data-train-quota-approvals-value="<%= json_escape(routes.to_json) %>">
-      <%= f.select :travel_mode_id, modes.map { |m| [ m.name, m.id, { "data-none" => m.no_travel? } ] }, {}, class: "inp", data: { train_quota_target: "mode", na_mode: true, action: "change->train-quota#toggle" } %>
+      <%= f.select :travel_mode_id, modes_with_current(modes, f.object.travel_mode).map { |m| [ m.name, m.id, { "data-none" => m.no_travel? } ] }, {}, class: "inp", data: { train_quota_target: "mode", na_mode: true, action: "change->train-quota#toggle" } %>
       <div class="mt-1" data-train-quota-target="quota" <%= "hidden" unless f.object.travel_mode&.is_train? %>>
         <%= f.select :ticket_quota, TourVisit::QUOTAS, {}, class: "inp py-1 text-xs", title: "Ticket", data: { no_search: true, train_quota_target: "ticket", action: "change->train-quota#toggle" } %>
       </div>

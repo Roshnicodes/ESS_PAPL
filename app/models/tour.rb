@@ -161,7 +161,7 @@ class Tour < ApplicationRecord
       if type_local?
         tour_claim.nil? || tour_claim.draft? ? "Prepared (claim not sent)" : "Self-sanctioned"
       else
-        "Approved"
+        "Tour plan approved"
       end
     when "returned"    then "Returned by #{returned_by} – correct & send again"
     when "rejected"    then "Rejected by #{decided_by} (final)"

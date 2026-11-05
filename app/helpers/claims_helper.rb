@@ -8,6 +8,10 @@ module ClaimsHelper
   end
   def local_travel_modes = @local_travel_modes ||= TravelMode.local_travel.includes(:mileage_rates).to_a
 
+  # Dropdown list from the master + the mode an older saved row already has (if the master no longer offers it),
+  # so opening an old tour / claim never silently changes its mode.
+  def modes_with_current(modes, current) = current && !modes.include?(current) ? modes + [ current ] : modes
+
   def nd(date)  = tag.span(d(date), class: "whitespace-nowrap")
   def ndt(time) = tag.span(dt(time), class: "whitespace-nowrap")
 

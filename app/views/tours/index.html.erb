@@ -17,7 +17,7 @@
         <td data-label="Sanction">
           <div class="text-sm">
           <% if t.approved? && t.type_local? %><span class="font-semibold text-brand-700">Self-sanctioned</span><div class="muted"><%= dt(t.approved_at) %></div>
-          <% elsif t.approved? %><% if t.decided_by_id == t.user_id %><span class="font-semibold text-brand-700">Approved</span><% else %>Approved by <b><%= t.approval_steps.find { |st| st.approver_id == t.decided_by_id }&.label || t.decided_by %></b><% end %><div class="muted"><%= dt(t.approved_at) %></div>
+          <% elsif t.approved? %><% if t.decided_by_id == t.user_id %><span class="font-semibold text-brand-700">Plan approved</span><% else %>Plan approved by <b><%= t.approval_steps.find { |st| st.approver_id == t.decided_by_id }&.label || t.decided_by %></b><% end %><div class="muted"><%= dt(t.approved_at) %></div>
           <% elsif t.returned? %>Returned by <b><%= t.returned_by %></b><div class="muted"><%= dt(t.returned_at) %></div><div class="text-xs text-amber-700">“<%= t.return_remark %>”</div>
           <% elsif t.rejected? %>Rejected by <b><%= t.decided_by %></b><div class="text-xs text-rose-600">“<%= t.decision_remark %>”</div>
           <% elsif t.cancelled? %><span class="font-semibold text-rose-700">Cancelled</span> <span class="muted"><%= dt(t.cancelled_at) %></span><div class="text-xs italic text-slate-600">“<%= t.cancel_remark %>”</div>

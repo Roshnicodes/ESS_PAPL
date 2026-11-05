@@ -39,6 +39,11 @@ class EssMailRelay
 
   def self.url = (ENV["ESS_MAIL_RELAY_URL"].presence || (Rails.env.production? ? DEFAULT_RELAY_URL : "")).to_s.strip
   def self.enabled? = url.present?
+  # Forgot-password mail must work even where ordinary notification mail is off (no ESS_MAIL_RELAY_URL outside
+  # production); ESS_PASSWORD_RESET_MAIL_RELAY_URL overrides. Ordinary notifications stay as they are.
+  def self.password_reset_url
+    ENV["ESS_PASSWORD_RESET_MAIL_RELAY_URL"].presence || url.presence || DEFAULT_RELAY_URL
+  end
   def self.app_url = (ENV["ESS_MAIL_APP_URL"].presence || DEFAULT_APP_URL).chomp("/")
 
   # Queues the mail for one notification; never raises.
@@ -89,14 +94,16 @@ class EssMailRelay
     m ? [ m[1], m[2] ] : [ text, nil ]
   end
 
-  def self.request_uri(params)
-    uri = URI.parse(url)
+  def self.request_uri(params, relay_url: url)
+    uri = URI.parse(relay_url)
     uri.query = URI.encode_www_form(params.slice(*FIELDS))
     uri
   end
 
-  def self.deliver!(params)
-    response, final_uri = fetch(request_uri(params))
+  def self.deliver!(params, relay_url: url)
+    raise DeliveryError, "Mail relay URL is not configured" if relay_url.blank?
+
+    response, final_uri = fetch(request_uri(params, relay_url: relay_url))
     where = "[#{final_uri.scheme}://#{final_uri.host}#{final_uri.path}]"
     raise DeliveryError, "Mail service asked for a login #{where}" if final_uri.path.to_s.downcase.match?(/login|signin/)
     raise DeliveryError, "#{failure_message(response)} #{where}" unless success?(response)

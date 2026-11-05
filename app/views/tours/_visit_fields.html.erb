@@ -6,7 +6,7 @@
   <% approval_routes = (@tour_mode_approval_routes ||= modes.to_h { |mode| [ mode.id, { approvers: mode.approver_chain.map { |approver| approver.user.designation.presence || approver.user.name }.uniq, tatkal_approvers: mode.tatkal_chain.map { |approver| approver.user.designation.presence || approver.user.name }.uniq } ] }) %>
   <div data-controller="train-quota" data-train-quota-trains-value="<%= train_ids.to_json %>" data-train-quota-approvals-value="<%= json_escape(approval_routes.to_json) %>">
     <%= f.label :travel_mode_id, "Mode of Travel", class: "lbl lg:sr-only" %>
-    <%= f.collection_select :travel_mode_id, modes, :id, :name, { include_blank: "Mode of travel" }, class: "inp", data: { train_quota_target: "mode", action: "change->train-quota#toggle" } %>
+    <%= f.collection_select :travel_mode_id, modes_with_current(modes, f.object.travel_mode), :id, :name, { include_blank: "Mode of travel" }, class: "inp", data: { train_quota_target: "mode", action: "change->train-quota#toggle" } %>
     <div class="mt-1.5" data-train-quota-target="quota" <%= "hidden" unless f.object.travel_mode&.is_train? %>>
       <div class="flex items-center gap-2">
         <label class="text-[11px] font-semibold uppercase tracking-wide text-slate-500" for="<%= f.field_id(:ticket_quota) %>">Ticket</label>

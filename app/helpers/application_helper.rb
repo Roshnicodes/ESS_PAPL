@@ -24,6 +24,7 @@ module ApplicationHelper
       return status_badge("draft", label: "Prepared") if claim.nil? || claim.draft?
       return status_badge(claim.status) unless claim.approved?
     end
+    label ||= "Plan approved" if tour.type_tour? && tour.approved?   # the plan, not its claim
     status_badge(tour.status, label: label)
   end
 
