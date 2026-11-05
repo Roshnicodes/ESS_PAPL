@@ -1,0 +1,28 @@
+<% content_for :title, "IOM / Circular" %>
+<%= page_header("IOM / Circular", "Office memos and circulars shared with you.", icon_name: :megaphone) do %>
+  <%= print_button %>
+  <%= link_to masters_circulars_path, class: "btn-light" do %><%= icon(:cog) %> Manage<% end if current_user.admin? %>
+<% end %>
+
+<div class="card overflow-hidden fade-up">
+  <ul class="divide-y divide-white/70">
+    <% @circulars.each do |c| %>
+      <li>
+        <%= link_to circular_path(c), class: "flex flex-wrap items-start gap-3 px-4 py-3.5 hover:bg-white/50 sm:px-5" do %>
+          <span class="rounded-full px-2 py-0.5 text-xs font-bold <%= c.type_iom? ? 'bg-violet-50 text-violet-700' : 'bg-sky-50 text-sky-700' %>"><%= c.type_label %></span>
+          <span class="min-w-0 flex-1">
+            <span class="block font-semibold text-slate-900"><%= c.topic %></span>
+            <% if c.description.present? %><span class="muted line-clamp-2 block"><%= c.description.truncate(180) %></span><% end %>
+            <% if c.attachments.attached? %>
+              <span class="mt-1 inline-flex items-center gap-1 text-xs text-slate-500"><%= icon(:paperclip, "h-3.5 w-3.5") %><%= c.attachments.size %> attachment<%= "s" unless c.attachments.size == 1 %></span>
+            <% end %>
+            <% unless c.active? %><span class="ml-2 text-xs font-semibold text-rose-600">Inactive (visible to admin only)</span><% end %>
+          </span>
+          <span class="shrink-0 whitespace-nowrap text-xs text-slate-400"><%= dt(c.created_at) %></span>
+        <% end %>
+      </li>
+    <% end %>
+    <% if @circulars.empty? %><li class="empty-state"><%= icon(:megaphone) %>No IOM or Circular for you yet</li><% end %>
+  </ul>
+  <% if @circulars.total_pages > 1 %><div class="border-t border-white/70 px-4 py-3"><%= paginate @circulars %></div><% end %>
+</div>

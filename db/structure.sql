@@ -347,6 +347,79 @@ ALTER SEQUENCE public.budget_line_items_id_seq OWNED BY public.budget_line_items
 
 
 --
+-- Name: circular_recipients; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.circular_recipients (
+    id bigint NOT NULL,
+    circular_id bigint NOT NULL,
+    user_id bigint NOT NULL,
+    notified_at timestamp(6) without time zone,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL
+);
+
+
+--
+-- Name: circular_recipients_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.circular_recipients_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: circular_recipients_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.circular_recipients_id_seq OWNED BY public.circular_recipients.id;
+
+
+--
+-- Name: circulars; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.circulars (
+    id bigint NOT NULL,
+    topic_type character varying(20) DEFAULT 'circular'::character varying NOT NULL,
+    topic character varying(200) NOT NULL,
+    description text,
+    audience character varying(10) DEFAULT 'all'::character varying NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    created_by_id bigint NOT NULL,
+    notified_at timestamp(6) without time zone,
+    notified_count integer DEFAULT 0 NOT NULL,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT chk_circulars_audience CHECK (((audience)::text = ANY ((ARRAY['all'::character varying, 'selected'::character varying])::text[]))),
+    CONSTRAINT chk_circulars_topic_type CHECK (((topic_type)::text = ANY ((ARRAY['iom'::character varying, 'circular'::character varying])::text[])))
+);
+
+
+--
+-- Name: circulars_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.circulars_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: circulars_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.circulars_id_seq OWNED BY public.circulars.id;
+
+
+--
 -- Name: cities; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1036,6 +1109,11 @@ CREATE TABLE public.tour_claims (
     finance_approver_id bigint,
     bank_account_id bigint,
     extra_approver_id bigint,
+    utr_no character varying(60),
+    paid_on date,
+    payment_remark character varying(255),
+    utr_updated_at timestamp(6) without time zone,
+    utr_updated_by_id bigint,
     CONSTRAINT chk_claims_advance_positive CHECK ((advance_amount >= (0)::numeric)),
     CONSTRAINT chk_claims_approved_at_on_approval CHECK ((((status)::text <> 'approved'::text) OR (approved_at IS NOT NULL))),
     CONSTRAINT chk_claims_l1 CHECK ((((status)::text <> 'l1_approved'::text) OR ((l1_approved_at IS NOT NULL) AND (l2_approver_id IS NOT NULL)))),
@@ -1043,6 +1121,7 @@ CREATE TABLE public.tour_claims (
     CONSTRAINT chk_claims_return_remark CHECK ((((status)::text <> 'returned'::text) OR ((returned_at IS NOT NULL) AND (length(btrim(COALESCE(return_remark, ''::text))) > 0)))),
     CONSTRAINT chk_claims_submitted_l1 CHECK ((((status)::text <> 'submitted'::text) OR (l1_approver_id IS NOT NULL))),
     CONSTRAINT chk_claims_type CHECK (((claim_type)::text = ANY (ARRAY[('tour'::character varying)::text, ('local'::character varying)::text]))),
+    CONSTRAINT chk_claims_utr_only_approved CHECK (((utr_no IS NULL) OR ((status)::text = 'approved'::text))),
     CONSTRAINT chk_tour_claims_delete_remark CHECK (((deleted_at IS NULL) OR (length(btrim(COALESCE(delete_remark, ''::text))) > 0))),
     CONSTRAINT chk_tour_claims_extra_pointer CHECK ((((status)::text <> 'extra_pending'::text) OR (extra_approver_id IS NOT NULL))),
     CONSTRAINT chk_tour_claims_status CHECK (((status)::text = ANY (ARRAY[('draft'::character varying)::text, ('submitted'::character varying)::text, ('l1_approved'::character varying)::text, ('extra_pending'::character varying)::text, ('finance_pending'::character varying)::text, ('finance_query'::character varying)::text, ('approved'::character varying)::text, ('returned'::character varying)::text, ('rejected'::character varying)::text, ('cancelled'::character varying)::text])))
@@ -1380,6 +1459,20 @@ ALTER TABLE ONLY public.budget_line_items ALTER COLUMN id SET DEFAULT nextval('p
 
 
 --
+-- Name: circular_recipients id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circular_recipients ALTER COLUMN id SET DEFAULT nextval('public.circular_recipients_id_seq'::regclass);
+
+
+--
+-- Name: circulars id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circulars ALTER COLUMN id SET DEFAULT nextval('public.circulars_id_seq'::regclass);
+
+
+--
 -- Name: cities id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1603,6 +1696,22 @@ ALTER TABLE ONLY public.budget_line_item_codes
 
 ALTER TABLE ONLY public.budget_line_items
     ADD CONSTRAINT budget_line_items_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: circular_recipients circular_recipients_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circular_recipients
+    ADD CONSTRAINT circular_recipients_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: circulars circulars_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circulars
+    ADD CONSTRAINT circulars_pkey PRIMARY KEY (id);
 
 
 --
@@ -1847,6 +1956,13 @@ CREATE INDEX idx_budget_line_items_name_trgm ON public.budget_line_items USING g
 
 
 --
+-- Name: idx_circulars_live; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_circulars_live ON public.circulars USING btree (active, created_at DESC);
+
+
+--
 -- Name: idx_cities_lower_name; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1872,6 +1988,27 @@ CREATE INDEX idx_claim_queries_claim ON public.claim_queries USING btree (tour_c
 --
 
 CREATE INDEX idx_claim_queries_open_to ON public.claim_queries USING btree (asked_to_id) WHERE (answered_at IS NULL);
+
+
+--
+-- Name: idx_claims_awaiting_payment; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_claims_awaiting_payment ON public.tour_claims USING btree (claim_type, approved_at) WHERE (((status)::text = 'approved'::text) AND (utr_no IS NULL) AND (deleted_at IS NULL));
+
+
+--
+-- Name: idx_claims_utr; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_claims_utr ON public.tour_claims USING btree (utr_no) WHERE (utr_no IS NOT NULL);
+
+
+--
+-- Name: idx_claims_utr_by; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_claims_utr_by ON public.tour_claims USING btree (utr_updated_by_id) WHERE (utr_updated_by_id IS NOT NULL);
 
 
 --
@@ -2033,6 +2170,20 @@ CREATE INDEX index_budget_line_item_codes_on_created_by_id ON public.budget_line
 --
 
 CREATE INDEX index_budget_line_items_on_created_by_id ON public.budget_line_items USING btree (created_by_id);
+
+
+--
+-- Name: index_circular_recipients_on_user_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_circular_recipients_on_user_id ON public.circular_recipients USING btree (user_id);
+
+
+--
+-- Name: index_circulars_on_created_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_circulars_on_created_by_id ON public.circulars USING btree (created_by_id);
 
 
 --
@@ -2617,6 +2768,13 @@ CREATE UNIQUE INDEX uniq_bank_accounts_user_number ON public.bank_accounts USING
 
 
 --
+-- Name: uniq_circular_recipient; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX uniq_circular_recipient ON public.circular_recipients USING btree (circular_id, user_id);
+
+
+--
 -- Name: uniq_claim_approval_steps; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -2705,6 +2863,14 @@ ALTER TABLE ONLY public.users
 
 ALTER TABLE ONLY public.claim_lodgings
     ADD CONSTRAINT fk_rails_0d081f0637 FOREIGN KEY (tour_claim_id) REFERENCES public.tour_claims(id) ON DELETE CASCADE;
+
+
+--
+-- Name: tour_claims fk_rails_0dc06ec947; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tour_claims
+    ADD CONSTRAINT fk_rails_0dc06ec947 FOREIGN KEY (utr_updated_by_id) REFERENCES public.users(id);
 
 
 --
@@ -2924,6 +3090,14 @@ ALTER TABLE ONLY public.tours
 
 
 --
+-- Name: circular_recipients fk_rails_743ae04f47; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circular_recipients
+    ADD CONSTRAINT fk_rails_743ae04f47 FOREIGN KEY (circular_id) REFERENCES public.circulars(id);
+
+
+--
 -- Name: claim_queries fk_rails_7696706ba5; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3001,6 +3175,14 @@ ALTER TABLE ONLY public.claim_daily_allowances
 
 ALTER TABLE ONLY public.claim_visit_reports
     ADD CONSTRAINT fk_rails_970d219e9e FOREIGN KEY (tour_claim_id) REFERENCES public.tour_claims(id) ON DELETE CASCADE;
+
+
+--
+-- Name: circular_recipients fk_rails_9723112c7a; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circular_recipients
+    ADD CONSTRAINT fk_rails_9723112c7a FOREIGN KEY (user_id) REFERENCES public.users(id);
 
 
 --
@@ -3148,6 +3330,14 @@ ALTER TABLE ONLY public.claim_city_travels
 
 
 --
+-- Name: circulars fk_rails_d2bd878166; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.circulars
+    ADD CONSTRAINT fk_rails_d2bd878166 FOREIGN KEY (created_by_id) REFERENCES public.users(id);
+
+
+--
 -- Name: claim_queries fk_rails_d4de47f9f8; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3266,6 +3456,8 @@ ALTER TABLE ONLY public.projects
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261105120001'),
+('20261105100001'),
 ('20261102100001'),
 ('20261030160001'),
 ('20261030120001'),

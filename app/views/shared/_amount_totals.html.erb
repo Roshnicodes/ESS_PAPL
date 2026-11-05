@@ -1,0 +1,23 @@
+<%# locals: (totals:, label: nil, note: nil) %>
+<%# Total of the whole filtered list, not only the rows on this page. %>
+<div class="card mb-4 fade-up">
+  <div class="card-body grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div>
+      <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Claims<%= " · #{label}" if label %></div>
+      <div class="text-2xl font-extrabold text-slate-900"><%= totals[:count] %></div>
+      <% if note %><div class="muted"><%= note %></div><% end %>
+    </div>
+    <div>
+      <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Grand total</div>
+      <div class="text-2xl font-extrabold text-brand-700"><%= inr(totals[:grand]) %></div>
+    </div>
+    <div>
+      <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Less advance</div>
+      <div class="text-xl font-bold text-slate-700"><%= inr(totals[:advance]) %></div>
+    </div>
+    <div>
+      <div class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Payable / receivable</div>
+      <div class="text-2xl font-extrabold text-emerald-700"><%= inr(totals[:balance]) %></div>
+    </div>
+  </div>
+</div>

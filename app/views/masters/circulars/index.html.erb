@@ -1,0 +1,51 @@
+<% content_for :title, "IOM / Circular" %>
+<%= page_header("IOM / Circular", "Publish an Inter Office Memo or a Circular with attachments and notify employees by email.", icon_name: :megaphone) do %>
+  <%= print_button %>
+  <%= link_to new_masters_circular_path, class: "btn-primary" do %><%= icon(:plus) %> New IOM / Circular<% end %>
+<% end %>
+
+<div class="card overflow-hidden fade-up">
+  <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">
+    <thead><tr><th>Type</th><th>Topic</th><th>Attachments</th><th>Notified</th><th>Published</th><th>Active / Inactive</th><th class="no-print"></th></tr></thead>
+    <tbody>
+      <% @circulars.each do |c| %>
+        <tr class="<%= 'opacity-55' unless c.active? %>">
+          <td data-label="Type"><span class="rounded-full px-2 py-0.5 text-xs font-bold <%= c.type_iom? ? 'bg-violet-50 text-violet-700' : 'bg-sky-50 text-sky-700' %>"><%= c.type_label %></span></td>
+          <td data-label="Topic" class="max-w-80">
+            <div class="leading-tight"><%= link_to c.topic, circular_path(c), class: "font-semibold text-slate-900 hover:text-brand-700" %>
+              <% if c.description.present? %><div class="muted line-clamp-2"><%= c.description.truncate(140) %></div><% end %></div>
+          </td>
+          <td data-label="Attachments">
+            <% if c.attachments.attached? %>
+              <span class="inline-flex items-center gap-1 text-sm text-slate-700"><%= icon(:paperclip, "h-4 w-4 text-slate-400") %><%= c.attachments.size %> file<%= "s" unless c.attachments.size == 1 %></span>
+            <% else %><span class="text-slate-300">—</span><% end %>
+          </td>
+          <td data-label="Notified">
+            <div class="leading-tight text-sm"><%= c.audience_label %>
+              <% if c.notified? %><div class="muted">Sent to <%= c.notified_count %> on <%= dt(c.notified_at) %></div>
+              <% else %><div class="text-xs font-semibold text-amber-700">Not sent yet</div><% end %></div>
+          </td>
+          <td data-label="Published" class="whitespace-nowrap text-xs text-slate-500"><%= dt(c.created_at) %><div class="muted">by <%= c.created_by.name %></div></td>
+          <td data-label="Status">
+            <%= button_to toggle_masters_circular_path(c), method: :patch, class: "group inline-flex items-center gap-2", form_class: "inline", title: c.active? ? "Deactivate" : "Activate" do %>
+              <span class="relative inline-flex h-6 w-11 items-center rounded-full transition <%= c.active? ? 'bg-emerald-500' : 'bg-slate-300' %>"><span class="absolute h-5 w-5 rounded-full bg-white shadow transition <%= c.active? ? 'left-[22px]' : 'left-0.5' %>"></span></span>
+              <span class="text-xs font-semibold <%= c.active? ? 'text-emerald-700' : 'text-slate-500' %>"><%= c.active? ? "Active" : "Inactive" %></span>
+            <% end %>
+          </td>
+          <td class="no-print">
+            <div class="flex flex-wrap justify-end gap-1.5">
+              <%= link_to circular_path(c), class: "btn-light btn-xs btn-icon", title: "Preview", aria: { label: "Preview" } do %><%= icon(:eye) %><% end %>
+              <%= link_to edit_masters_circular_path(c), class: "btn-light btn-xs" do %><%= icon(:pencil) %> Edit<% end %>
+              <% if c.active? %>
+                <%= button_to notify_masters_circular_path(c), method: :post, class: "btn-soft btn-xs", form_class: "inline",
+                      data: { turbo_confirm: "Send the email notification to #{c.audience_label.downcase}#{" again" if c.notified?}?" } do %><%= icon(:send) %> <%= c.notified? ? "Send again" : "Send" %><% end %>
+              <% end %>
+            </div>
+          </td>
+        </tr>
+      <% end %>
+      <%= empty_row(7, "No IOM or Circular published yet", icon_name: :megaphone) if @circulars.empty? %>
+    </tbody>
+  </table></div>
+  <% if @circulars.total_pages > 1 %><div class="border-t border-white/70 px-4 py-3"><%= paginate @circulars %></div><% end %>
+</div>

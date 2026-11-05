@@ -16,11 +16,26 @@
   <div><%= f.label :sub_branch, class: "lbl" %><%= f.text_field :sub_branch, class: "inp" %></div>
   <div><%= f.label :date_of_joining, class: "lbl" %><%= f.date_field :date_of_joining, class: "inp" %></div>
   <div><%= f.label :reporting_manager_id, "L-1 · Reporting manager (tour + claim L1)", class: "lbl" %><%= f.collection_select :reporting_manager_id, people, :id, ->(p) { "#{p.name} (#{p.emp_code})" }, { include_blank: "None" }, class: "inp" %></div>
-  <div><%= f.label :finance_approver_id, "Finance · PD Finance for this employee's claims", class: "lbl" %><%= f.collection_select :finance_approver_id, people, :id, ->(p) { "#{p.name} (#{p.emp_code})" }, { include_blank: "Any PD Finance" }, class: "inp" %></div>
   <div><%= f.label :l2_manager_id, "L-2 · Functional manager (tour + claim L2)", class: "lbl" %><%= f.collection_select :l2_manager_id, people, :id, ->(p) { "#{p.name} (#{p.emp_code})" }, { include_blank: "None" }, class: "inp" %></div>
+  <div><%= f.label :finance_approver_id, "Finance · PD Finance for this employee's claims", class: "lbl" %><%= f.collection_select :finance_approver_id, people, :id, ->(p) { "#{p.name} (#{p.emp_code})" }, { include_blank: "Any PD Finance" }, class: "inp" %></div>
   <label class="flex items-center gap-2 self-end rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium"><%= f.check_box :active, class: "check" %> Active (can log in)</label>
-  <div><%= f.label :password, (@user.new_record? ? "Password" : "New password (leave blank to keep)"), class: "lbl" %><%= f.password_field :password, class: "inp", autocomplete: "new-password" %></div>
-  <div><%= f.label :password_confirmation, class: "lbl" %><%= f.password_field :password_confirmation, class: "inp", autocomplete: "new-password" %></div>
+  <%# Show / hide so HR can read back the password being set. Saved passwords are one-way
+      encrypted and can never be read again – set a new one here if it is forgotten. %>
+  <div data-controller="reveal">
+    <%= f.label :password, (@user.new_record? ? "Password" : "New password (leave blank to keep)"), class: "lbl" %>
+    <div class="relative">
+      <%= f.password_field :password, class: "inp pr-10", autocomplete: "new-password", data: { reveal_target: "input" } %>
+      <button type="button" class="absolute inset-y-0 right-2 flex items-center px-1 text-slate-400 hover:text-brand-700" data-action="reveal#toggle" title="Show / hide password" aria-label="Show / hide password"><%= icon(:eye, "h-5 w-5") %></button>
+    </div>
+    <p class="mt-1 text-[11px] text-slate-500">Tap the eye to check what you typed. The old password cannot be shown – type a new one to change it.</p>
+  </div>
+  <div data-controller="reveal">
+    <%= f.label :password_confirmation, class: "lbl" %>
+    <div class="relative">
+      <%= f.password_field :password_confirmation, class: "inp pr-10", autocomplete: "new-password", data: { reveal_target: "input" } %>
+      <button type="button" class="absolute inset-y-0 right-2 flex items-center px-1 text-slate-400 hover:text-brand-700" data-action="reveal#toggle" title="Show / hide password" aria-label="Show / hide password"><%= icon(:eye, "h-5 w-5") %></button>
+    </div>
+  </div>
   </div>
   <div class="flex justify-end gap-2 border-t border-white/70 px-5 py-3"><%= link_to "Back", masters_users_path, class: "btn-ghost" %><%= f.button class: "btn-primary" do %><%= icon(:check) %> Save<% end %></div>
 <% end %>

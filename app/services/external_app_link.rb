@@ -12,6 +12,10 @@ require "cgi"
 class ExternalAppLink
   VALID_FOR = 2.minutes
 
+  # Leave is applied for in HROne – a plain link, no single sign-on.
+  # Admin can point it somewhere else from Masters → IT Tools Settings (key LEAVE_URL).
+  LEAVE_URL = "https://app.hrone.cloud/app/request/initiate-leave".freeze
+
   TOOLS = {
     "guest_house" => { label: "Guest House", app: :kra },
     "help_desk"   => { label: "Help Desk",   app: :kra },

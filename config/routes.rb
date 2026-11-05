@@ -44,6 +44,19 @@ Rails.application.routes.draw do
     end
   end
 
+  # IOM / Circular – employees read the ones addressed to them (admin writes them under masters)
+  resources :circulars, only: %i[index show] do
+    get "attachments/:attachment_id", action: :attachment, on: :member, as: :attachment
+  end
+
+  # Payment Advice – PD Finance records the bank UTR on approved claims (single / bulk / Excel)
+  resources :payment_advices, only: :index, path: "payment-advice" do
+    collection do
+      patch :record
+      post  :import
+    end
+  end
+
   resources :notifications, only: %i[index show] do
     patch :mark_all_read, on: :collection
     patch "read_for_tour/:tour_id", on: :collection, action: :read_for_tour, as: :read_for_tour
@@ -84,6 +97,13 @@ Rails.application.routes.draw do
       end
     end
     resources :claim_cutoff_rules, only: %i[index new create edit update destroy]
+    # No destroy: an IOM / Circular is deactivated, never deleted (its audit trail is append-only)
+    resources :circulars, only: %i[index new create edit update] do
+      member do
+        patch :toggle
+        post  :notify
+      end
+    end
     resources :users, only: %i[index new create edit update] do
       collection do
         get  :export

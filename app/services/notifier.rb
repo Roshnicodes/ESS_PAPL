@@ -9,6 +9,7 @@ class Notifier
 
   def self.tour(tour, event, actor:, remark: nil) = new.tour(tour, event, actor, remark)
   def self.claim(claim, event, actor:, remark: nil) = new.claim(claim, event, actor, remark)
+  def self.payment(claim, actor:) = new.payment(claim, actor)
 
   def tour(t, event, actor, remark)
     ref = "#{t.type_local? ? 'Local mileage' : 'Tour plan'} (#{t.duration_label})"
@@ -106,6 +107,14 @@ class Notifier
       earlier = [ c.l1_approver, (c.l2_approver if c.l2_approved_at || c.finance_pending? || actor&.finance?) ].compact.uniq - [ actor ]
       earlier.each { |u| push u, c, actor, :claim_closed, "Claim #{returned ? 'returned' : 'rejected'}", "#{emp.name} · #{ref} by #{by}", approvals_claim_path(c), remark }
     end
+  end
+
+  # Payment Advice: the employee is told the money is out, with the bank reference.
+  def payment(c, actor)
+    t = c.tour
+    push c.user, c, actor, :claim_paid, "Payment made for your claim",
+         "#{t.duration_label} · #{inr(c.balance_amount)} paid – UTR #{c.utr_no}#{" on #{c.paid_on.strftime('%d/%m/%Y')}" if c.paid_on}",
+         tour_claim_path(t), c.payment_remark
   end
 
   private

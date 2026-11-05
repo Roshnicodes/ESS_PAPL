@@ -1,6 +1,9 @@
 # Claim approval: L1 -> L2 (if set) -> PD Finance.
 class Approvals::ClaimsController < ApplicationController
+  include ClaimPeriodFilter
+
   before_action :set_claim, except: :index
+  before_action :set_claim_period, only: :index
   before_action -> { redirect_to authenticated_root_path, alert: "Approvals are only for approvers." unless current_user.claim_approver? }, only: :index
 
   def index
@@ -24,16 +27,18 @@ class Approvals::ClaimsController < ApplicationController
       else
         base.in_queue_of(current_user).order(:submitted_at)
       end
+    @claims = filter_by_period(@claims)   # no FY / month picked -> unchanged
+    @totals = claim_totals(@claims)
     respond_to do |format|
       format.html { @claims = @claims.page(params[:page]).per(25) }
       format.xlsx do
-        send_data ClaimExport.new(@claims.includes(:l1_approved_by, :l2_approved_by, :bank_account), viewer: current_user).to_xlsx,
-                  filename: "#{@type == 'local' ? 'local_mileage' : 'tada'}_claims_#{@scope}_#{Date.current}.xlsx",
+        send_data ClaimExport.new(@claims.includes(:l1_approved_by, :l2_approved_by, :bank_account), viewer: current_user, period: period_label).to_xlsx,
+                  filename: "#{@type == 'local' ? 'local_mileage' : 'tada'}_claims_#{@scope}_#{period_slug}_#{Date.current}.xlsx",
                   type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
       end
       format.csv do
-        send_data ClaimExport.new(@claims.includes(:l1_approved_by, :l2_approved_by, :bank_account), viewer: current_user).to_csv,
-                  filename: "#{@type == 'local' ? 'local_mileage' : 'tada'}_claims_#{@scope}_#{Date.current}.csv", type: "text/csv"
+        send_data ClaimExport.new(@claims.includes(:l1_approved_by, :l2_approved_by, :bank_account), viewer: current_user, period: period_label).to_csv,
+                  filename: "#{@type == 'local' ? 'local_mileage' : 'tada'}_claims_#{@scope}_#{period_slug}_#{Date.current}.csv", type: "text/csv"
       end
     end
   end
@@ -110,6 +115,15 @@ class Approvals::ClaimsController < ApplicationController
   end
 
   private
+
+  # One query for the whole filtered list (not just the page on screen).
+  def claim_totals(scope)
+    row = scope.except(:includes, :preload, :eager_load, :order, :limit, :offset)
+               .pluck(Arel.sql("COUNT(*)"), Arel.sql("COALESCE(SUM(grand_total), 0)"),
+                      Arel.sql("COALESCE(SUM(advance_amount), 0)"), Arel.sql("COALESCE(SUM(balance_amount), 0)")).first
+    count, grand, advance, balance = row
+    { count: count.to_i, grand: grand.to_d, advance: advance.to_d, balance: balance.to_d }
+  end
 
   # Deductions typed on the review page are saved first (and logged), then the action runs.
   def save_deductions!

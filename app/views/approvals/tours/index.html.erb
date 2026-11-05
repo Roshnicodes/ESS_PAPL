@@ -3,6 +3,14 @@
   <%= print_button %>
 <% end %>
 
+<%# The floating toast disappears after a few seconds; the approver also needs to see,
+    on the page itself, exactly which tour they just acted on. %>
+<% if flash[:notice].present? %>
+  <div class="mb-5 flex gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/80 px-4 py-3 text-sm font-medium text-emerald-900 backdrop-blur fade-up print:hidden">
+    <%= icon(:check_circle, "h-5 w-5 shrink-0 text-emerald-500") %><div><%= flash[:notice] %></div>
+  </div>
+<% end %>
+
 <div class="card mb-6 overflow-hidden fade-up">
   <% if @tours.empty? %>
     <div class="empty-state"><%= icon(:check_circle) %><span class="font-medium text-slate-500">All caught up!</span><span class="text-sm">No tour is waiting for your approval.</span></div>

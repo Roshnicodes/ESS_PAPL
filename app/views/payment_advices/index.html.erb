@@ -1,0 +1,107 @@
+<% content_for :title, "Payment Advice" %>
+<%= page_header("Payment Advice", "Approved claims waiting for the bank UTR – record it one by one, in bulk, or by uploading the sheet.", icon_name: :banknotes) do %>
+  <%= print_button %>
+  <%= link_to payment_advices_path(request.query_parameters.merge(format: "xlsx")), class: "btn-light", data: { turbo: false } do %><%= icon(:download) %> Download Excel<% end %>
+<% end %>
+
+<% if flash[:import_errors].present? %>
+  <div class="mb-5 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 text-sm text-amber-900 backdrop-blur print:hidden">
+    <div class="mb-1 flex items-center gap-2 font-semibold"><%= icon(:warning, "h-5 w-5 text-amber-500") %>Some rows could not be updated</div>
+    <ul class="list-disc space-y-0.5 pl-6 text-xs"><% flash[:import_errors].each do |e| %><li><%= e %></li><% end %></ul>
+  </div>
+<% end %>
+
+<div class="mb-4 flex flex-wrap gap-2 print:hidden">
+  <% [["All claims", "all"], ["TA/DA", "tour"], ["Local Mileage", "local"]].each do |label, value| %>
+    <%= link_to label, payment_advices_path(request.query_parameters.merge(type: value, page: nil)),
+          class: (@type == value ? "btn-primary btn-xs" : "btn-light btn-xs") %>
+  <% end %>
+  <span class="mx-1 w-px bg-slate-300"></span>
+  <%= link_to payment_advices_path(request.query_parameters.merge(scope: nil, page: nil)), class: (@scope == "pending" ? "btn-soft btn-xs" : "btn-ghost btn-xs") do %><%= icon(:inbox) %> UTR pending<% end %>
+  <%= link_to payment_advices_path(request.query_parameters.merge(scope: "paid", page: nil)), class: (@scope == "paid" ? "btn-soft btn-xs" : "btn-ghost btn-xs") do %><%= icon(:check_circle) %> Paid (UTR recorded)<% end %>
+</div>
+
+<%= render "shared/period_filter", url: payment_advices_path, fy: @fy, month: @month, fy_options: @fy_options,
+      hidden: { type: @type, scope: @scope }, label: period_label %>
+<%= render "shared/amount_totals", totals: @totals, label: period_label,
+      note: (@scope == "paid" ? "UTR already recorded" : "Approved, UTR not yet recorded") %>
+
+<%= render "upload_form" %>
+
+<%= form_with url: record_payment_advices_path, method: :patch, data: { controller: "bulk-select", action: "change->bulk-select#refresh" } do %>
+  <div class="card overflow-hidden fade-up">
+    <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">
+      <thead><tr>
+        <th class="w-10 no-print"><input type="checkbox" class="check" data-bulk-select-target="all" data-action="bulk-select#toggleAll" aria-label="Select all on this page"></th>
+        <th>Employee</th><th>Claim</th><th>Period</th><th>Approved On</th><th class="text-right">Net Payable</th>
+        <th>Bank account</th><th><%= @scope == "paid" ? "UTR / Paid on" : "UTR No." %></th>
+      </tr></thead>
+      <tbody>
+        <% @claims.each do |c| %>
+          <tr>
+            <td class="no-print"><%= check_box_tag "claim_ids[]", c.id, false, class: "check", id: "claim_#{c.id}",
+                  data: { bulk_select_target: "row", amount: c.balance_amount.to_d } %></td>
+            <td data-label="Employee"><div class="flex items-center gap-2.5"><%= avatar(c.user, size: "h-8 w-8 text-xs") %><div class="leading-tight"><b><%= c.user.name %></b><div class="muted"><%= c.user.emp_code %><%= " · #{c.user.location}" if c.user.location %></div></div></div></td>
+            <td data-label="Claim"><div class="leading-tight"><span class="font-semibold text-brand-700"><%= tour_type_label(c.tour) %></span><div class="muted">#<%= c.id %> · <%= c.tour.reference_no %></div></div></td>
+            <td data-label="Period" class="whitespace-nowrap"><%= c.tour.duration_label %></td>
+            <td data-label="Approved On" class="whitespace-nowrap text-xs text-slate-600"><%= d(c.approved_at) %><div class="muted"><%= c.project&.name %></div></td>
+            <td data-label="Net Payable" class="font-semibold md:text-right"><%= inr(c.balance_amount) %><% if c.advance_amount.to_d.positive? %><div class="muted">of <%= inr(c.grand_total) %></div><% end %></td>
+            <td data-label="Bank">
+              <% if (b = c.bank_account) %>
+                <div class="leading-tight text-xs"><b><%= b.bank_name %></b><div class="muted"><%= b.account_number %> · <%= b.ifsc_code %></div></div>
+              <% else %><span class="text-xs font-semibold text-rose-600">No account chosen</span><% end %>
+            </td>
+            <td data-label="UTR">
+              <%# single row: its own UTR box and Save – independent of the bulk bar %>
+              <%# the box and its Save belong to this row's own form (HTML form= attribute),
+                  so typing here never disturbs the ticked rows above %>
+              <div class="flex items-center gap-1.5">
+                <%= text_field_tag :utr_no, c.utr_no, id: "utr_#{c.id}", form: "utr_form_#{c.id}", maxlength: 60,
+                      class: "inp w-40 text-sm", placeholder: "UTR / transaction no.", aria: { label: "UTR for #{c.user.name}" } %>
+                <button type="submit" class="btn-success btn-xs btn-icon" form="utr_form_<%= c.id %>" title="Save this UTR" aria-label="Save UTR for <%= c.user.name %>"><%= icon(:check) %></button>
+              </div>
+              <% if c.paid? %>
+                <div class="muted mt-1"><%= d(c.paid_on) %> · by <%= c.utr_updated_by&.name %></div>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+        <%= empty_row(8, @scope == "paid" ? "No claim paid in this period" : "No approved claim is waiting for a UTR", icon_name: :banknotes) if @claims.empty? %>
+      </tbody>
+      <% if @totals[:count].positive? %>
+        <tfoot><tr class="border-t-2 border-slate-300 bg-white/60 font-bold">
+          <td colspan="5" class="text-right">Total · <%= period_label %> (<%= @totals[:count] %> claim<%= "s" unless @totals[:count] == 1 %>)</td>
+          <td class="md:text-right"><%= inr(@totals[:balance]) %></td><td colspan="2"></td>
+        </tr></tfoot>
+      <% end %>
+    </table></div>
+    <% if @claims.total_pages > 1 %><div class="border-t border-white/70 px-4 py-3"><%= paginate @claims %></div><% end %>
+  </div>
+
+  <%# Bulk bar – appears only when rows are ticked %>
+  <div hidden data-bulk-select-target="bar" class="glass-bar sticky bottom-3 z-20 mt-4 rounded-2xl p-3 sm:p-4 print:hidden">
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-end">
+      <div class="leading-tight">
+        <div class="text-[11px] font-semibold uppercase text-slate-500">Selected</div>
+        <div class="text-lg font-extrabold text-slate-900"><span data-bulk-select-target="count">0 claims</span> · <span class="text-brand-700" data-bulk-select-target="amount">₹0.00</span></div>
+      </div>
+      <div class="grid flex-1 gap-2 sm:grid-cols-3">
+        <div><label class="lbl" for="utr_no">UTR No. <span class="text-rose-500">*</span></label>
+          <%= text_field_tag :utr_no, nil, class: "inp", maxlength: 60, placeholder: "One UTR for all ticked claims",
+                data: { bulk_select_target: "utr", action: "input->bulk-select#validate" } %></div>
+        <div><label class="lbl" for="paid_on">Paid on</label><%= date_field_tag :paid_on, Date.current, class: "inp" %></div>
+        <div><label class="lbl" for="payment_remark">Remark</label><%= text_field_tag :payment_remark, nil, class: "inp", maxlength: 255, placeholder: "Optional" %></div>
+      </div>
+      <%= button_tag class: "btn-success", data: { bulk_select_target: "submit" } do %><%= icon(:banknotes) %> Record UTR<% end %>
+    </div>
+  </div>
+<% end %>
+
+<%# One tiny form per row so a single Save never touches the ticked rows.
+    They sit outside the bulk form – forms cannot be nested – and each row's UTR box
+    points at its own form through the HTML form= attribute. %>
+<% @claims.each do |c| %>
+  <%= form_with url: record_payment_advices_path, method: :patch, id: "utr_form_#{c.id}", class: "hidden" do %>
+    <%= hidden_field_tag "claim_ids[]", c.id, id: nil %>
+  <% end %>
+<% end %>

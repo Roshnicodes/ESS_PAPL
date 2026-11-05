@@ -106,7 +106,11 @@ module ApplicationHelper
     "city_added" => "City added", "city_updated" => "City updated", "city_enabled" => "City enabled", "city_disabled" => "City disabled", "saved_draft" => "Tour saved (draft)", "claim_approved" => "Claim approved (PD Finance)",
     "claim_rejected" => "Claim rejected (final)", "claim_returned" => "Claim returned to employee", "returned" => "Tour returned to employee", "rejected" => "Tour rejected (final)", "claim_cancelled" => "Claim cancelled", "deduction_updated" => "Deductions updated", "admin_edited" => "Edited by admin", "deleted" => "Deleted by admin",
     "bank_added" => "Bank account added", "bank_updated" => "Bank account updated", "bank_activated" => "Bank account activated",
-    "bank_deactivated" => "Bank account deactivated", "bank_primary" => "Primary bank account changed"
+    "bank_deactivated" => "Bank account deactivated", "bank_primary" => "Primary bank account changed",
+    "circular_created" => "IOM / Circular published", "circular_updated" => "IOM / Circular edited",
+    "circular_notified" => "IOM / Circular notification sent", "circular_activated" => "IOM / Circular activated",
+    "circular_deactivated" => "IOM / Circular deactivated",
+    "payment_recorded" => "Payment UTR recorded", "payment_utr_corrected" => "Payment UTR corrected"
   }.freeze
 
   # Older local-mileage records used an "approved" activity with this remark.  It

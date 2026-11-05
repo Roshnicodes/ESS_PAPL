@@ -47,8 +47,13 @@
               <%= link_to new_tour_claim_path(t), class: "btn-primary btn-xs relative", title: "Tour approved – make the claim now" do %><%= icon(:receipt) %> Make Claim Form<span class="claim-due-dot"></span><% end %>
             <% elsif c.nil? && t.approved? %>
               <span class="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs text-slate-500"><%= icon(:lock, "h-3.5 w-3.5") %>Claim opens <%= d(t.claim_open_on) %></span>
+            <% elsif c&.employee_editable? && c.local_month_closed? %>
+              <%# cutoff day of the next month has passed – this month can no longer be filled or sent %>
+              <span class="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-1 text-xs font-medium text-rose-700" title="<%= c.local_month_closed_message %>"><%= icon(:lock, "h-3.5 w-3.5") %>Month closed <%= d(c.local_send_by) %></span>
+              <%= link_to tour_claim_path(t), class: "btn-light btn-xs" do %><%= icon(:eye) %> Claim Form<% end %>
             <% elsif c&.employee_editable? %>
               <%= link_to edit_tour_claim_path(t), class: "btn-primary btn-xs" do %><%= icon(:pencil) %> Edit Claim<% end %>
+              <% if (send_by = c.local_send_by) %><span class="text-[11px] text-slate-500" title="Local mileage cutoff set by PD HR">Send by <%= d(send_by) %></span><% end %>
             <% elsif c %>
               <%= link_to tour_claim_path(t), class: "btn-light btn-xs" do %><%= icon(:eye) %> Claim Form<% end %>
             <% end %>

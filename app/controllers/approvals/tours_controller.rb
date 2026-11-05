@@ -39,17 +39,17 @@ class Approvals::ToursController < ApplicationController
   def approve
     @tour.approve!(by: current_user, remark: remark!)
     nxt = { "l1_approved" => @tour.l2_approver&.name, "l2_approved" => @tour.l3_label }[@tour.status]   # extra steps by designation
-    redirect_to next_or_list, notice: nxt ? "Tour plan forwarded to #{nxt}." : "Tour plan approved."
+    back_to_list(nxt ? "forwarded to #{nxt}" : "approved")
   end
 
   def send_back
     @tour.return!(by: current_user, remark: remark!)
-    redirect_to next_or_list, notice: "Tour plan returned to #{@tour.user.name} for correction."
+    back_to_list("returned to #{@tour.user.name} for correction")
   end
 
   def reject
     @tour.reject!(by: current_user, remark: remark!)
-    redirect_to next_or_list, notice: "Tour plan rejected."
+    back_to_list("rejected")
   end
 
   private
@@ -59,10 +59,15 @@ class Approvals::ToursController < ApplicationController
     raise CanCan::AccessDenied, "This tour is not pending with you" unless @tour.approvable_by?(current_user)
   end
 
-  # after acting, open the next pending tour (if any) – saves going back to the list
-  def next_or_list
-    nxt = Tour.pending_for(current_user).order(:submitted_at).first
-    nxt ? approvals_tour_path(nxt) : approvals_tours_path
+  # Always come back to the pending list, never straight into the next tour: an approver
+  # who lands on somebody else's tour cannot tell whose plan the message belonged to, and
+  # a second Approve click would act on a tour they have not read.
+  # The list carries the confirmation and they pick the next one themselves.
+  def back_to_list(what)
+    whose = "#{@tour.user.name} (#{@tour.user.emp_code})"
+    left  = Tour.pending_for(current_user).count
+    tail  = left.zero? ? "No tour is left for your approval." : "#{left} tour#{"s" unless left == 1} still pending with you."
+    redirect_to approvals_tours_path, notice: "Tour plan of #{whose} for #{@tour.duration_label} #{what}. #{tail}"
   end
 
   def remark!

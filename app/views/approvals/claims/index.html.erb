@@ -2,7 +2,7 @@
 <% content_for :title, "#{name} #{@scope == 'approved' ? 'Approved' : 'Recommendation'}" %>
 <%= page_header("#{name} List", @scope == "approved" ? (current_user.finance? || current_user.hr? ? "Claims approved by PD Finance" : "Claims you approved – with their current stage") : "Claims waiting for your action", icon_name: :clipboard) do %>
   <%= print_button %>
-  <%= link_to approvals_claims_path(type: @type, scope: @scope, format: :xlsx), class: "btn-light", data: { turbo: false } do %><%= icon(:receipt) %> Download Excel<% end %>
+  <%= link_to approvals_claims_path(type: @type, scope: @scope, fy: params[:fy], month: params[:month], format: :xlsx), class: "btn-light", data: { turbo: false } do %><%= icon(:receipt) %> Download Excel<% end %>
 <% end %>
 <div class="mb-4 flex flex-wrap gap-2">
   <% [["TA/DA", "tour"], ["Local Mileage", "local"]].each do |label, type| %>
@@ -12,6 +12,10 @@
   <%= link_to approvals_claims_path(type: @type), class: (@scope == "pending" ? "btn-soft btn-xs" : "btn-ghost btn-xs") do %><%= icon(:inbox) %> Pending with me<% end %>
   <%= link_to approvals_claims_path(type: @type, scope: "approved"), class: (@scope == "approved" ? "btn-soft btn-xs" : "btn-ghost btn-xs") do %><%= icon(:check_circle) %> Approved<% end %>
 </div>
+
+<%= render "shared/period_filter", url: approvals_claims_path, fy: @fy, month: @month, fy_options: @fy_options,
+      hidden: { type: @type, scope: @scope }, label: period_label %>
+<%= render "shared/amount_totals", totals: @totals, label: period_label %>
 <div class="card overflow-hidden fade-up">
   <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">
     <thead><tr><th>Tour Created By</th><th>Tour Duration</th><th>Receiving Date</th><th>Comment</th><th class="text-right">Amount</th><th>TA/DA Status</th><th class="text-right no-print">Action</th></tr></thead>
@@ -30,6 +34,12 @@
     <% end %>
     <%= empty_row(7, @scope == "approved" ? "No approved claims" : "Nothing pending with you") if @claims.empty? %>
     </tbody>
+    <% if @totals[:count].positive? %>
+      <tfoot><tr class="border-t-2 border-slate-300 bg-white/60 font-bold">
+        <td colspan="4" class="text-right">Total · <%= period_label %> (<%= @totals[:count] %> claim<%= "s" unless @totals[:count] == 1 %>)</td>
+        <td class="md:text-right"><%= inr(@totals[:grand]) %></td><td colspan="2"></td>
+      </tr></tfoot>
+    <% end %>
   </table></div>
   <% if @claims.total_pages > 1 %><div class="border-t border-white/70 px-4 py-3"><%= paginate @claims %></div><% end %>
 </div>

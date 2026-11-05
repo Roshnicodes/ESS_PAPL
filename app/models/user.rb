@@ -78,6 +78,14 @@ class User < ApplicationRecord
   def hr?      = pd_hr? || admin?
   def finance? = pd_finance? || admin?
 
+  # Anyone who actually settles claims: the PD Finance role / admin, plus a person HR has
+  # named as the Finance approver on at least one employee – their role is often plain
+  # "employee", but every claim of those employees ends with them.
+  def finance_person?
+    return @finance_person if defined?(@finance_person)
+    @finance_person = finance? || User.where(finance_approver_id: id).exists?
+  end
+
   private
 
   def password_required?

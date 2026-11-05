@@ -37,6 +37,7 @@ class Ability
     can :review, TourClaim do |c| c.current_reviewer?(user) end
 
     can :read, [ TravelMode, City, Project, BudgetLineItem, BudgetLineItemCode ]
+    can :read, Circular, active: true   # the controller also limits it to the ones addressed to them
 
     # --- bank details: own accounts; the claim's Finance person sees the account chosen on it
     can [ :read, :create, :update, :toggle, :make_primary ], BankAccount, user_id: user.id

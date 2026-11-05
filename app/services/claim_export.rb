@@ -12,9 +12,11 @@ class ClaimExport
   BANK_HEADERS = [ "Bank", "Account Holder", "Account No.", "IFSC" ].freeze
 
   # viewer: bank columns are added for Finance; each row is filled only if the viewer may see that claim's account
-  def initialize(claims, viewer: nil)
+  # period: optional label ("Oct-2026", "FY 2026-27") printed on the totals row
+  def initialize(claims, viewer: nil, period: nil)
     @claims = claims
     @viewer = viewer
+    @period = period
     @include_bank = viewer.present? && (viewer.finance? || User.exists?(finance_approver_id: viewer.id))
   end
 
@@ -26,9 +28,10 @@ class ClaimExport
       header = sheet.styles.add_style(b: true, bg_color: "1F8445", fg_color: "FFFFFF", alignment: { wrap_text: true })
       money = sheet.styles.add_style(format_code: "#,##0.00")
       sheet.add_row headers, style: header
-      @claims.each do |claim|
+      rows.each do |claim|
         sheet.add_row row_for(claim), style: Array.new(7) + Array.new(8, money) + Array.new(headers.size - 15)
       end
+      add_total_row(sheet, money)
       sheet.sheet_view.pane { |pane| pane.top_left_cell = "A2"; pane.state = :frozen; pane.y_split = 1 }
       sheet.column_widths 16, 14, 24, 18, 22, 18, 20, *Array.new(8, 14), 24, 36, 16, 22, 16, 22, 20, 22, *(@include_bank ? [ 24, 24, 20, 14 ] : [])
     end
@@ -38,11 +41,33 @@ class ClaimExport
   def to_csv
     "﻿" + CSV.generate do |csv|
       csv << headers
-      @claims.each { |claim| csv << row_for(claim) }
+      rows.each { |claim| csv << row_for(claim) }
+      csv << total_row if rows.any?
     end
   end
 
   private
+
+  def rows = @rows ||= @claims.to_a
+
+  # Last line of the sheet: what the list on screen adds up to.
+  def total_row
+    line = Array.new(headers.size)
+    line[0] = "TOTAL#{" (#{@period})" if @period}"
+    line[1] = "#{rows.size} claim#{"s" unless rows.size == 1}"
+    { 7 => :city_travel_total, 8 => :local_travel_total, 9 => :lodging_total, 10 => :da_total,
+      11 => :incidental_total, 12 => :grand_total, 13 => :advance_amount, 14 => :balance_amount }.each do |i, attr|
+      line[i] = rows.sum { |c| c.public_send(attr).to_d }
+    end
+    line
+  end
+
+  def add_total_row(sheet, money)
+    return if rows.empty?
+    bold = sheet.styles.add_style(b: true, bg_color: "E8F2EC")
+    bold_money = sheet.styles.add_style(b: true, bg_color: "E8F2EC", format_code: "#,##0.00")
+    sheet.add_row total_row, style: Array.new(7, bold) + Array.new(8, bold_money) + Array.new(headers.size - 15, bold)
+  end
 
   def row_for(claim)
     [ claim.type_local? ? "Local Mileage" : "TA/DA", claim.user.emp_code, claim.user.name, claim.user.location&.name, claim.tour.duration_label, claim.status,

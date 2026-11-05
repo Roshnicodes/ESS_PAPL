@@ -1,0 +1,106 @@
+<%= error_box(@circular) %>
+<% people = User.active.ordered %>
+<% chosen = @circular.circular_recipients.reject(&:marked_for_destruction?).map(&:user_id) %>
+<%= form_with model: [:masters, @circular], multipart: true, class: "space-y-5 fade-up",
+      data: { controller: "circular-form upload", action: "submit->upload#start" } do |f| %>
+
+  <div class="card">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:megaphone) %></span>What are you publishing?</span></div>
+    <div class="card-body space-y-4">
+      <div>
+        <span class="lbl">Topic type</span>
+        <div class="flex flex-wrap gap-2">
+          <% Circular::TYPES.each do |key, value| %>
+            <label class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white/70 px-4 py-2.5 text-sm font-semibold has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 has-[:checked]:text-brand-800">
+              <%= f.radio_button :topic_type, value, class: "check", checked: (@circular.topic_type || "circular") == value %>
+              <%= key == :iom ? "IOM (Inter Office Memo)" : "Circular" %>
+            </label>
+          <% end %>
+        </div>
+      </div>
+      <div>
+        <%= f.label :topic, "Topic", class: "lbl" %>
+        <%= f.text_field :topic, class: "inp", required: true, maxlength: 200, placeholder: "e.g. Revised travel reimbursement rates w.e.f. 01-Dec-2026" %>
+      </div>
+      <div>
+        <%= f.label :description, "Details (optional)", class: "lbl" %>
+        <%= f.text_area :description, rows: 4, maxlength: 5000, class: "inp", placeholder: "Short note shown in the email and on the circular page" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-leaf-50 text-leaf-600"><%= icon(:paperclip) %></span>Attachments</span></div>
+    <div class="card-body space-y-3">
+      <% if @circular.attachments.attached? %>
+        <ul class="space-y-1.5">
+          <% @circular.attachments.each do |a| %>
+            <li class="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white/60 px-3 py-2 text-sm">
+              <%= icon(:document, "h-4 w-4 text-slate-400") %>
+              <%= link_to a.filename.to_s, attachment_circular_path(@circular, attachment_id: a.id), target: "_blank", rel: "noopener", class: "link font-medium" %>
+              <span class="muted"><%= number_to_human_size(a.byte_size) %></span>
+              <label class="ml-auto flex items-center gap-1.5 text-xs font-medium text-rose-700">
+                <%= check_box_tag "remove_attachment_ids[]", a.id, false, class: "check", id: "rm_#{a.id}" %> Remove
+              </label>
+            </li>
+          <% end %>
+        </ul>
+      <% end %>
+      <div>
+        <%= f.label :attachments, (@circular.attachments.attached? ? "Add more files" : "Upload files"), class: "lbl" %>
+        <%= f.file_field :attachments, multiple: true, class: "inp file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-sm file:font-semibold file:text-brand-700" %>
+        <p class="mt-1.5 text-xs text-slate-500">Any file type – PDF, Word, Excel, PowerPoint, images, zip. Pick as many as you need (hold Ctrl / Cmd). Up to <%= Circular::ATTACHMENT_MAX / 1.megabyte %> MB per file.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-violet-50 text-violet-600"><%= icon(:users) %></span>Who is notified</span></div>
+    <div class="card-body space-y-4">
+      <div class="flex flex-wrap gap-2">
+        <% [["all", "All employees"], ["selected", "Selected employees"]].each do |value, label| %>
+          <label class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white/70 px-4 py-2.5 text-sm font-semibold has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50 has-[:checked]:text-brand-800">
+            <%= f.radio_button :audience, value, class: "check", checked: (@circular.audience || "all") == value, data: { action: "circular-form#audience" } %>
+            <%= label %>
+          </label>
+        <% end %>
+      </div>
+
+      <div data-circular-form-target="picker" hidden class="rounded-xl border border-slate-200 bg-white/60 p-3">
+        <div class="mb-2 flex flex-wrap items-center gap-2">
+          <div class="relative min-w-56 flex-1">
+            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400"><%= icon(:search, "h-4 w-4") %></span>
+            <input type="search" placeholder="Search name, code, department, branch…" class="inp pl-9" data-circular-form-target="search" data-action="input->circular-form#filter">
+          </div>
+          <button type="button" class="btn-soft btn-xs" data-action="circular-form#all">Select all shown</button>
+          <button type="button" class="btn-light btn-xs" data-action="circular-form#none">Clear shown</button>
+          <span class="muted ml-auto" data-circular-form-target="count"></span>
+        </div>
+        <div class="max-h-80 overflow-y-auto rounded-lg border border-slate-200/70 bg-white">
+          <% people.each do |p| %>
+            <label data-circular-form-target="row" data-search="<%= [p.name, p.emp_code, p.designation, p.department, p.branch, p.email].compact.join(' ').downcase %>"
+                   class="flex items-center gap-3 border-b border-slate-100 px-3 py-2 text-sm last:border-0 hover:bg-brand-50/40">
+              <%= check_box_tag "recipient_ids[]", p.id, chosen.include?(p.id), class: "check", id: "rcp_#{p.id}",
+                    data: { circular_form_target: "box", action: "circular-form#recount" } %>
+              <span class="min-w-0 flex-1 leading-tight"><b><%= p.name %></b> <span class="muted">(<%= p.emp_code %>)</span>
+                <span class="muted block"><%= [p.designation, p.department, p.branch || p.location].compact_blank.join(" · ") %><%= " · #{p.email}" if p.email %></span></span>
+            </label>
+          <% end %>
+        </div>
+        <p class="mt-2 text-xs text-slate-500">Employees without an email address in the Employee List get the in-app notification only.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body grid gap-3 sm:grid-cols-2">
+      <label class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2.5 text-sm font-medium"><%= f.check_box :active, { class: "check", checked: @circular.new_record? ? true : @circular.active? } %> Active (employees can see it)</label>
+      <label class="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/60 px-3 py-2.5 text-sm font-medium text-emerald-900"><%= check_box_tag :send_notification, "1", @circular.new_record?, class: "check" %> Send email notification now</label>
+    </div>
+    <div class="flex justify-end gap-2 border-t border-white/70 px-5 py-3">
+      <%= link_to "Back", masters_circulars_path, class: "btn-ghost" %>
+      <%= f.button class: "btn-primary", data: { upload_target: "button" } do %><%= icon(:check) %> <span data-upload-target="label">Save</span><% end %>
+    </div>
+  </div>
+  <p hidden data-upload-target="progress" class="text-right text-xs font-medium text-brand-700">Uploading… please keep this page open.</p>
+<% end %>

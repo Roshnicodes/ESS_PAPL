@@ -1,0 +1,18 @@
+<%= form_with url: import_payment_advices_path, multipart: true, class: "card mb-4 fade-up print:hidden",
+      data: { turbo: false, controller: "upload", action: "submit->upload#start" } do %>
+  <div class="card-head"><span class="card-title"><span class="icon-chip bg-leaf-50 text-leaf-600"><%= icon(:inbox) %></span>Bulk update from Excel</span></div>
+  <div class="card-body grid items-end gap-4 lg:grid-cols-[1fr_auto]">
+    <div>
+      <label class="lbl" for="file">Filled payment advice file (.xlsx / .csv)</label>
+      <input type="file" name="file" id="file" required accept=".xlsx,.csv" class="inp file:mr-3 file:rounded-md file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-sm file:font-semibold file:text-brand-700">
+      <p class="mt-1.5 text-xs text-slate-500">
+        Use <b>Download Excel</b> above, fill the yellow <b>UTR No.</b> column (and optionally <b>Paid On</b> / <b>Payment Remark</b>) and upload the same file back.
+        Rows with a blank UTR are left untouched; the <b>Claim ID</b> column is what each row is matched on.
+      </p>
+    </div>
+    <div class="text-right">
+      <%= button_tag class: "btn-success", data: { turbo_confirm: "Record the UTRs from this file?", upload_target: "button" } do %><%= icon(:send) %> <span data-upload-target="label">Upload</span><% end %>
+      <p hidden data-upload-target="progress" class="mt-1.5 text-xs font-medium text-brand-700">Updating… please keep this page open.</p>
+    </div>
+  </div>
+<% end %>
