@@ -98,6 +98,10 @@ Rails.application.routes.draw do
     end
     resources :claim_cutoff_rules, only: %i[index new create edit update destroy]
     # No destroy: an IOM / Circular is deactivated, never deleted (its audit trail is append-only)
+    # Old IOMs: Excel sheet + whole folder of files (before the :id routes so "import" is not an id)
+    resource :circular_import, only: %i[new create], path: "circulars/import" do
+      get :template
+    end
     resources :circulars, only: %i[index new create edit update] do
       member do
         patch :toggle

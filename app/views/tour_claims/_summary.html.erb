@@ -13,7 +13,7 @@
       Helmet declaration: <%= claim.helmet_declaration? ? "Yes" : "No" %>
     </span>
   <% end %>
-  <span class="ml-auto"><%= status_badge(claim.status) %></span>
+  <span class="ml-auto"><%= claim_status_badge(claim) %></span>
 </div>
 
 <%# Payment account – visible to the employee and to this claim's Finance (PD Finance / admin) %>

@@ -28,6 +28,11 @@ module ApplicationHelper
     status_badge(tour.status, label: label)
   end
 
+  # Claim badge (same as status_badge).
+  def claim_status_badge(claim, label: nil)
+    status_badge(claim.status, label: label)
+  end
+
   def status_badge(status, label: nil)
     tag.span(label || STATUS_LABELS.fetch(status.to_s, status.to_s.humanize), class: "badge badge-dot #{STATUS_COLORS[status.to_s]}")
   end
@@ -103,7 +108,7 @@ module ApplicationHelper
     "cancelled" => "Tour cancelled", "claim_created" => "Claim form prepared", "claim_submitted" => "Claim sent", "claim_edited_resubmitted" => "Claim edited & sent again for approval",
     "claim_l1_approved" => "Claim forwarded by L1", "claim_l2_approved" => "Claim forwarded by L2", "l1_approved" => "Tour forwarded to L2 by L1", "l2_approved" => "Tour forwarded for extra approval", "extra_forwarded" => "Tour forwarded to next approver", "edited_resubmitted" => "Tour edited & sent again for approval",
     "it_tool_opened" => "Opened IT tool", "it_tool_settings_changed" => "IT Tools settings changed", "claim_extra_approved" => "Claim forwarded (extra approval)", "claim_query_sent" => "Finance query sent", "claim_query_replied" => "Finance query replied",
-    "city_added" => "City added", "city_updated" => "City updated", "city_enabled" => "City enabled", "city_disabled" => "City disabled", "saved_draft" => "Tour saved (draft)", "claim_approved" => "Claim approved (PD Finance)",
+    "city_added" => "City added", "city_updated" => "City updated", "city_enabled" => "City enabled", "city_disabled" => "City disabled", "saved_draft" => "Tour saved (draft)", "claim_approved" => "Claim approved (PD Finance)", "claim_under_process" => "Marked under process (PD Finance)",
     "claim_rejected" => "Claim rejected (final)", "claim_returned" => "Claim returned to employee", "returned" => "Tour returned to employee", "rejected" => "Tour rejected (final)", "claim_cancelled" => "Claim cancelled", "deduction_updated" => "Deductions updated", "admin_edited" => "Edited by admin", "deleted" => "Deleted by admin",
     "bank_added" => "Bank account added", "bank_updated" => "Bank account updated", "bank_activated" => "Bank account activated",
     "bank_deactivated" => "Bank account deactivated", "bank_primary" => "Primary bank account changed",
@@ -152,16 +157,17 @@ module ApplicationHelper
   end
 
   # Shown on screen and on the printed copy, at the foot of the document.
-  def approval_seal(record, css: nil)
+  def approval_seal(record, css: nil, top: nil)
     return "".html_safe if record.nil?
+    top ||= seal_subject(record)
     word, tone = SEALS[record.status.to_s]
     return "".html_safe unless word
     who, at = seal_signatory(record)
     tag.div(class: [ "seal", tone, css ]) do
       tag.div(class: "seal-ring") do
         tag.div(class: "seal-core") do
-          tag.div(seal_subject(record), class: "seal-top") +
-            tag.div(word, class: "seal-word") +
+          tag.div(top, class: "seal-top") +
+            tag.div(word, class: [ "seal-word", ("seal-word-long" if word.length > 9) ]) +
             (who.present? ? tag.div(who, class: "seal-line") : "".html_safe) +
             (at ? tag.div(d(at), class: "seal-line") : "".html_safe)
         end

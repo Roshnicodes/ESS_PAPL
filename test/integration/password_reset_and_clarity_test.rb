@@ -91,7 +91,7 @@ class PasswordResetAndClarityTest < ActionDispatch::IntegrationTest
     assert_match "Tour plan history", body                               # plan and claim on separate cards
     assert_match "Claim history", body
     assert_match ">Plan approved<", body
-    assert_equal 2, body.scan('class="seal ').size
+    assert_equal 3, body.scan('class="seal ').size    # plan + claim on screen, plan stamp again beside the printed signatures
   end
 
   test "All Tours: waiting ones first, merely saved ones last" do

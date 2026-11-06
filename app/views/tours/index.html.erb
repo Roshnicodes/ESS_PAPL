@@ -4,6 +4,7 @@
   <%= print_button %>
   <%= link_to new_tour_path(type: local ? "local" : nil), class: "btn-primary" do %><%= icon(:plus) %> <%= local ? "Local Mileage Claim" : "Tour Plan" %><% end %>
 <% end %>
+<%= render "shared/date_range_filter", url: tours_path, from: @from_date, to: @to_date, hidden: { type: params[:type] } %>
 <div class="card overflow-hidden fade-up" data-controller="dialog">
   <div class="overflow-x-auto">
   <table class="tbl tbl-hover tbl-stack">
@@ -29,7 +30,7 @@
         </td>
         <td data-label="Tour"><%= tour_status_badge(t, label: { "draft" => "Saved", "l1_approved" => "Forwarded to L2", "l2_approved" => "Forwarded to #{t.l3_label}", "submitted" => "Pending L1" }[t.status]) %></td>
         <td data-label="TA/DA Comment" class="max-w-56 text-xs text-slate-600"><%= c&.return_remark.presence || c&.reject_remark.presence || c&.activity_logs&.where&.not(remark: nil)&.last&.remark || "NA" %></td>
-        <td data-label="TA/DA"><% if c %><div><%= status_badge(c.status) %><div class="muted mt-1"><%= c.stage_label %></div></div><% else %><span class="muted">NA</span><% end %></td>
+        <td data-label="TA/DA"><% if c %><div><%= claim_status_badge(c) %><div class="muted mt-1"><%= c.stage_label %></div></div><% else %><span class="muted">NA</span><% end %></td>
         <td data-label="Action" class="no-print">
           <div class="flex flex-wrap items-center justify-end gap-1.5">
             <% n = @unread[t.id] %>

@@ -10,6 +10,8 @@
       <div class="relative w-full sm:w-72"><span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400"><%= icon(:search, "h-4 w-4") %></span>
         <%= search_field_tag :q, params[:q], placeholder: "Employee name or code…", class: "inp pl-9" %></div>
       <%= select_tag :action_type, options_for_select([["All my actions", ""]] + labels.map { |k, (l, _)| [l, k] }, params[:action_type]), class: "inp w-48" %>
+      <%= date_field_tag :from, @from_date, class: "inp w-40", title: "From date", aria: { label: "From date" } %>
+      <%= date_field_tag :to, @to_date, class: "inp w-40", title: "To date", aria: { label: "To date" } %>
       <%= button_tag class: "btn-light" do %><%= icon(:filter) %> Filter<% end %>
     <% end %>
   </div>

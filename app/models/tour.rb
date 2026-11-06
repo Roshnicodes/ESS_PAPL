@@ -40,6 +40,7 @@ class Tour < ApplicationRecord
   scope :on_tour_between, ->(from, to) { approved.type_tour.where("from_date <= ? AND to_date >= ?", to, from) }
   # "On tour" list: every live plan (approved or still waiting for approval) that covers the day
   scope :on_tour_on, ->(date) { type_tour.where(status: LIVE).where("from_date <= :d AND to_date >= :d", d: date) }
+  scope :planned_on, ->(date) { on_tour_on(date) }   # name used by the dashboard (same as ASA ESS)
 
   attr_accessor :send_now   # "Save & Send for Approval" vs plain "Save"
 

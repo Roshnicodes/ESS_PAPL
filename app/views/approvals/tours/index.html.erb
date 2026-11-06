@@ -3,6 +3,7 @@
   <%= print_button %>
 <% end %>
 
+<%= render "shared/date_range_filter", url: approvals_tours_path, from: @from_date, to: @to_date %>
 <%# The floating toast disappears after a few seconds; the approver also needs to see,
     on the page itself, exactly which tour they just acted on. %>
 <% if flash[:notice].present? %>

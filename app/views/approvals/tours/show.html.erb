@@ -48,7 +48,7 @@
 
   <div class="flex flex-wrap items-center gap-4 border-t border-white/70 bg-white/30 px-4 py-3 sm:px-5">
     <div class="min-w-0 flex-1"><%= render "shared/history_lines", logs: t.activity_logs, title: "History (maker → L1 → L2)" %></div>
-    <%= approval_seal(t, css: "ml-auto mr-6 shrink-0") %>
+    <%= approval_seal(t, css: "ml-auto mr-6 shrink-0 print:hidden", top: "Tour Plan") %>
   </div>
 </div>
 
@@ -62,7 +62,7 @@
   <div class="mt-5 rounded-2xl bg-white/60 px-4 py-3 text-sm text-slate-600 ring-1 ring-slate-200/70 print:hidden"><%= icon(:info, "mr-1 inline h-4 w-4") %>This tour is not pending with you – <%= t.stage_label %>.</div>
 <% end %>
 
-<%= render "shared/print_signatures", rows: [ [ "Employee", t.user.name, t.submitted_at ],
+<%= render "shared/print_signatures", seal: approval_seal(t, top: "Tour Plan"), rows: [ [ "Employee", t.user.name, t.submitted_at ],
       [ "L1 · Reporting Manager", t.approver&.name, t.l1_approved_at ],
       ([ "L2 · Functional Manager", t.l2_approver.name, t.l2_approver_id == t.decided_by_id ? t.approved_at : t.l2_approved_at ] if t.l2_approver) ].compact +
       t.approval_steps.map { |s| [ s.label, s.approver.name, s.acted_at ] } %>

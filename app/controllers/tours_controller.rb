@@ -1,12 +1,14 @@
 class ToursController < ApplicationController
+  include TourDateRange
   before_action :set_type, only: %i[index new create]
+  before_action :set_tour_date_range, only: :index
   load_and_authorize_resource only: %i[show cancel]
   before_action :set_own_editable_tour, only: %i[edit update submit]
   before_action :require_admin, only: :destroy
 
   # Tour History / Local Mileage History
   def index
-    @tours = current_user.tours.where(tour_type: @type)
+    @tours = within_tour_dates(current_user.tours.where(tour_type: @type))
                          .includes(:approver, :l2_approver, :decided_by, :returned_by, :l1_approved_by, user: :location, tour_claim: %i[approved_by rejected_by l1_approver l2_approver])
                          .includes({ approval_steps: :approver }, activity_logs: :actor, tour_claim: :activity_logs)
                          .newest_first.page(params[:page]).per(20)

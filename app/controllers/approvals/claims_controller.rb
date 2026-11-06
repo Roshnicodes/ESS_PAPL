@@ -8,7 +8,7 @@ class Approvals::ClaimsController < ApplicationController
 
   def index
     @type  = params[:type].to_s == "local" ? "local" : "tour"
-    @scope = params[:scope].to_s == "approved" ? "approved" : "pending"
+    @scope = params[:scope].to_s.in?(%w[approved]) ? params[:scope].to_s : "pending"
     base = TourClaim.where(claim_type: @type).includes(:user, :tour, :approved_by, :project)
     @claims =
       if @scope == "approved"

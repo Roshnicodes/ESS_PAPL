@@ -1,26 +1,28 @@
-<%# locals: (url:, fy:, month:, fy_options:, hidden: {}, label: "Period") %>
+<%# locals: (url:, fy:, month:, fy_options:, hidden: {}, label: "Period", from: nil, to: nil) %>
 <%# FY (1 Apr – 31 Mar) + month picker. Nothing chosen = every month, exactly as the list
     behaved before the filter existed. %>
 <%= form_with url: url, method: :get, class: "card mb-4 fade-up print:hidden" do %>
   <% hidden.each do |key, value| %><%= hidden_field_tag key, value, id: nil %><% end %>
-  <div class="card-body grid items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,14rem)_minmax(0,16rem)_auto_1fr]">
-    <div>
+  <div class="card-body grid grid-cols-2 items-end gap-3 lg:grid-cols-[minmax(0,12rem)_minmax(0,14rem)_minmax(0,10rem)_minmax(0,10rem)_auto_1fr]">
+    <div class="col-span-2 sm:col-span-1">
       <label class="lbl" for="fy">Financial year</label>
       <%= select_tag :fy, options_for_select([["All years", ""]] + fy_options.map { |f| [ "FY #{f.label}", f.label ] }, fy&.label),
             class: "inp", data: { no_search: true } %>
     </div>
-    <div>
+    <div class="col-span-2 sm:col-span-1">
       <label class="lbl" for="month">Month</label>
       <%= select_tag :month,
             grouped_options_for_select(fy_options.map { |f| [ "FY #{f.label}", f.months.map { |m| [ m.strftime("%b-%Y"), m.strftime("%Y-%m") ] } ] },
                                        month&.strftime("%Y-%m"), prompt: "All months of the year"),
             class: "inp", data: { no_search: true } %>
     </div>
+    <div><label class="lbl" for="from">From date</label><%= date_field_tag :from, from, class: "inp" %></div>
+    <div><label class="lbl" for="to">To date</label><%= date_field_tag :to, to, class: "inp" %></div>
     <div class="flex gap-2">
       <%= button_tag class: "btn-primary" do %><%= icon(:filter) %> Show<% end %>
-      <% if fy || month %><%= link_to "Clear", url_for(hidden.merge(only_path: true)), class: "btn-ghost" %><% end %>
+      <% if fy || month || from || to %><%= link_to "Clear", url_for(hidden.merge(only_path: true)), class: "btn-ghost" %><% end %>
     </div>
-    <div class="text-sm text-slate-500 lg:text-right">
+    <div class="col-span-2 text-sm text-slate-500 lg:col-span-1 lg:text-right">
       Showing <b class="text-slate-700"><%= label %></b>
     </div>
   </div>

@@ -13,6 +13,19 @@ class DashboardUiTest < ActionDispatch::IntegrationTest
     assert_no_match 'nav-head">My Tour', response.body
   end
 
+  test "only someone who can write IOMs sees the New IOM button; HR sees the organisation card" do
+    sign_in user("1025")
+    get authenticated_root_path
+    assert_no_match new_masters_circular_path, response.body
+    assert_no_match "Organisation today", response.body
+    assert_match "Unread IOM / Circular", response.body
+
+    sign_in user("ADMIN")
+    get authenticated_root_path
+    assert_match new_masters_circular_path, response.body
+    assert_match "Organisation today", response.body
+  end
+
   test "tour form keeps approval guidance with the selected mode, not a static list" do
     coo = User.create!(emp_code: "COOUI1", name: "Chief Operations", designation: "COO", password: "123456")
     mode = mode("Train(2A)")

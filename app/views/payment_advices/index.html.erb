@@ -21,7 +21,7 @@
   <%= link_to payment_advices_path(request.query_parameters.merge(scope: "paid", page: nil)), class: (@scope == "paid" ? "btn-soft btn-xs" : "btn-ghost btn-xs") do %><%= icon(:check_circle) %> Paid (UTR recorded)<% end %>
 </div>
 
-<%= render "shared/period_filter", url: payment_advices_path, fy: @fy, month: @month, fy_options: @fy_options,
+<%= render "shared/period_filter", url: payment_advices_path, fy: @fy, month: @month, fy_options: @fy_options, from: @from_date, to: @to_date,
       hidden: { type: @type, scope: @scope }, label: period_label %>
 <%= render "shared/amount_totals", totals: @totals, label: period_label,
       note: (@scope == "paid" ? "UTR already recorded" : "Approved, UTR not yet recorded") %>
@@ -44,7 +44,7 @@
             <td data-label="Employee"><div class="flex items-center gap-2.5"><%= avatar(c.user, size: "h-8 w-8 text-xs") %><div class="leading-tight"><b><%= c.user.name %></b><div class="muted"><%= c.user.emp_code %><%= " · #{c.user.location}" if c.user.location %></div></div></div></td>
             <td data-label="Claim"><div class="leading-tight"><span class="font-semibold text-brand-700"><%= tour_type_label(c.tour) %></span><div class="muted">#<%= c.id %> · <%= c.tour.reference_no %></div></div></td>
             <td data-label="Period" class="whitespace-nowrap"><%= c.tour.duration_label %></td>
-            <td data-label="Approved On" class="whitespace-nowrap text-xs text-slate-600"><%= d(c.approved_at) %><div class="muted"><%= c.project&.name %></div></td>
+            <td data-label="Approved On" class="whitespace-nowrap text-xs text-slate-600"><%= d(c.approved_at) %></td>
             <td data-label="Net Payable" class="font-semibold md:text-right"><%= inr(c.balance_amount) %><% if c.advance_amount.to_d.positive? %><div class="muted">of <%= inr(c.grand_total) %></div><% end %></td>
             <td data-label="Bank">
               <% if (b = c.bank_account) %>

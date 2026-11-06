@@ -1,52 +1,207 @@
 <% content_for :title, "Dashboard" %>
-<div class="grid gap-5 xl:grid-cols-3">
-  <div class="space-y-5 xl:col-span-2">
-    <%# action needed %>
-    <% if @pending_tour_approvals.positive? || @pending_claims.positive? || @claim_ready.any? %>
-      <div class="card">
-        <div class="card-head"><span class="card-title"><span class="icon-chip bg-amber-50 text-amber-600"><%= icon(:sparkles) %></span>Needs your attention</span></div>
-        <ul class="divide-y divide-white/70">
-          <% if @pending_tour_approvals.positive? %>
-            <li><%= link_to approvals_tours_path, class: "flex items-center gap-3 px-5 py-3.5 hover:bg-white/50" do %><%= icon(:check_badge, "h-5 w-5 text-brand-600") %><span class="flex-1 text-sm"><b><%= @pending_tour_approvals %></b> tour plan(s) waiting for your approval</span><%= icon(:arrow_right, "h-4 w-4 text-slate-400") %><% end %></li>
-          <% end %>
-          <% if @pending_claims.positive? %>
-            <li><%= link_to approvals_claims_path, class: "flex items-center gap-3 px-5 py-3.5 hover:bg-white/50" do %><%= icon(:clipboard, "h-5 w-5 text-violet-600") %><span class="flex-1 text-sm"><b><%= @pending_claims %></b> claim(s) pending with you</span><%= icon(:arrow_right, "h-4 w-4 text-slate-400") %><% end %></li>
-          <% end %>
-          <% @claim_ready.each do |t| %>
-            <li><%= link_to new_tour_claim_path(t), class: "flex items-center gap-3 px-5 py-3.5 hover:bg-white/50" do %><%= icon(:receipt, "h-5 w-5 text-emerald-600") %><span class="flex-1 text-sm">Claim form ready for <b>your tour</b> · <%= t.duration_label %></span><span class="btn-soft btn-xs">Make claim</span><% end %></li>
-          <% end %>
-        </ul>
-      </div>
-    <% end %>
+<% u = current_user %>
+<% hour = Time.current.hour %>
+<% greeting = hour < 12 ? "Good morning" : (hour < 17 ? "Good afternoon" : "Good evening") %>
+<% waiting = @pending_tour_approvals + @pending_claims %>
+<% attention = @pending_tour_approvals.positive? || @pending_claims.positive? || @claim_ready.any? || @returned_tours.any? || @returned_claims.any? || @local_unsent || @utr_pending.to_i.positive? %>
+<% total = @money.values.sum %>
 
-    <div class="grid gap-5 md:grid-cols-2">
-      <div class="card">
-        <div class="card-head"><span class="card-title"><span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:map) %></span>My latest tour</span><%= link_to "History", tours_path, class: "link text-xs" %></div>
-        <div class="card-body">
-          <% if @last_tour %>
-            <div class="flex items-start justify-between gap-2"><div><div class="font-semibold"><%= link_to tour_type_label(@last_tour), @last_tour, class: "link" %></div><div class="text-sm text-slate-600"><%= @last_tour.duration_label %></div></div><%= tour_status_badge(@last_tour) %></div>
-            <div class="mt-3 flex flex-wrap gap-1.5"><% @last_tour.tour_visits.first(4).each do |v| %><span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600"><%= icon(:pin, "h-3.5 w-3.5") %><%= v.place %></span><% end %></div>
-          <% else %><div class="empty-state py-6"><%= icon(:map) %>No tour yet</div><% end %>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-head"><span class="card-title"><span class="icon-chip bg-violet-50 text-violet-600"><%= icon(:receipt) %></span>My latest claim</span></div>
-        <div class="card-body">
-          <% if @last_claim %>
-            <div class="flex items-start justify-between gap-2"><div><div class="font-semibold"><%= link_to "Claim form", @last_claim.tour, class: "link" %></div><div class="text-sm text-slate-600"><%= @last_claim.tour.duration_label %></div></div><%= status_badge(@last_claim.status) %></div>
-            <div class="mt-3 flex items-end justify-between"><span class="muted"><%= @last_claim.stage_label %></span><span class="text-lg font-bold text-slate-900"><%= inr(@last_claim.grand_total) %></span></div>
-          <% else %><div class="empty-state py-6"><%= icon(:receipt) %>No claim yet</div><% end %>
-        </div>
+<%# welcome strip + quick actions %>
+<div class="dash-welcome mb-5 fade-up">
+  <svg class="dash-welcome-leaf" viewBox="0 0 120 120" aria-hidden="true"><path d="M110 8C60 8 22 34 18 104c40-4 92-28 92-96Z" fill="currentColor"/><path d="M24 100C48 72 74 46 106 14" stroke="#fff" stroke-opacity=".35" stroke-width="3" fill="none"/></svg>
+  <div class="relative flex flex-col gap-4 xl:flex-row xl:items-center">
+    <div class="flex min-w-0 flex-1 items-center gap-4">
+      <%= avatar(u, size: "h-14 w-14 text-lg ring-4 ring-white/30 shadow-lg") %>
+      <div class="min-w-0 flex-1">
+        <div class="text-[11px] font-semibold uppercase tracking-[.18em] text-white/70">Employee Self Service</div>
+        <div class="text-xl font-bold leading-tight sm:text-2xl"><%= greeting %>, <%= u.name.split.first %> 👋</div>
+        <div class="text-sm text-white/85"><%= [u.designation, u.location].compact_blank.join(" · ") %> · <%= Date.current.strftime("%A, %d %B %Y") %></div>
       </div>
     </div>
-
+    <div class="flex flex-wrap gap-2">
+      <%= link_to new_tour_path, class: "dash-quick" do %><%= icon(:map, "h-4 w-4") %> New Tour Plan<% end %>
+      <%= link_to new_local_mileage_path, class: "dash-quick" do %><%= icon(:truck, "h-4 w-4") %> Local Mileage<% end %>
+      <% if can?(:manage, Circular) %>
+        <%= link_to new_masters_circular_path, class: "dash-quick" do %><%= icon(:megaphone, "h-4 w-4") %> New IOM / Circular<% end %>
+      <% else %>
+        <%= link_to account_bank_accounts_path, class: "dash-quick" do %><%= icon(:banknotes, "h-4 w-4") %> Bank Details<% end %>
+      <% end %>
+    </div>
   </div>
+</div>
 
-  <div class="space-y-5">
-    <%= link_to on_tour_path, class: "card card-body flex w-full items-center gap-4 text-left transition hover:ring-2 hover:ring-brand-200" do %>
-      <span class="icon-chip h-12 w-12 bg-amber-50 text-amber-600"><%= icon(:building, "h-6 w-6") %></span>
-      <div class="flex-1"><div class="text-2xl font-bold text-slate-900"><%= @on_tour_count %></div><div class="muted">Colleagues on tour today</div></div>
-      <%= icon(:arrow_right, "h-4 w-4 text-slate-400") %>
+<%# stat tiles %>
+<div class="mb-5 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4 fade-up">
+  <%= link_to (@pending_claims.positive? && @pending_tour_approvals.zero? ? approvals_claims_path : approvals_tours_path), class: "dash-tile dash-amber" do %>
+    <span class="dash-tile-icon"><%= icon(:inbox, "h-5 w-5") %></span>
+    <div><div class="dash-num"><%= waiting %></div><div class="dash-label">Waiting for my approval</div></div>
+  <% end %>
+  <%= link_to tours_path, class: "dash-tile dash-violet" do %>
+    <span class="dash-tile-icon"><%= icon(:receipt, "h-5 w-5") %></span>
+    <div><div class="dash-num"><%= inr(@money[:in_process]) %></div><div class="dash-label">My claims in process</div></div>
+  <% end %>
+  <%= link_to on_tour_path, class: "dash-tile dash-sky" do %>
+    <span class="dash-tile-icon"><%= icon(:building, "h-5 w-5") %></span>
+    <div class="min-w-0 flex-1"><div class="dash-num"><%= @on_tour_count %></div><div class="dash-label">Colleagues on tour today</div>
+      <% if @on_tour_faces.any? %><div class="mt-1.5 flex -space-x-2"><% @on_tour_faces.each do |p| %><%= avatar(p, size: "h-6 w-6 text-[9px] ring-2 ring-white") %><% end %></div><% end %></div>
+  <% end %>
+  <%= link_to circulars_path, class: "dash-tile dash-emerald" do %>
+    <span class="dash-tile-icon"><%= icon(:megaphone, "h-5 w-5") %></span>
+    <div><div class="dash-num"><%= @unread_circular_ids.size %></div><div class="dash-label">Unread IOM / Circular</div></div>
+  <% end %>
+</div>
+
+<%# rows of equal height: attention + IOM · tour + claim + links · money + on tour · organisation %>
+<div class="grid items-stretch gap-5 xl:grid-cols-3">
+  <%# action needed %>
+  <div class="card dash-card dash-c-amber h-full fade-up xl:col-span-2">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-amber-50 text-amber-600"><%= icon(:sparkles) %></span>Needs your attention</span>
+      <% if attention %><span class="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">Action needed</span><% end %></div>
+    <% if attention %>
+      <ul class="divide-y divide-white/70">
+        <% if @pending_tour_approvals.positive? %>
+          <li><%= link_to approvals_tours_path, class: "dash-row" do %><span class="dash-row-icon bg-brand-50 text-brand-600"><%= icon(:check_badge, "h-4 w-4") %></span><span class="flex-1 text-sm"><b><%= @pending_tour_approvals %></b> tour plan(s) waiting for your approval</span><%= icon(:arrow_right, "h-4 w-4 text-slate-400") %><% end %></li>
+        <% end %>
+        <% if @pending_claims.positive? %>
+          <li><%= link_to approvals_claims_path, class: "dash-row" do %><span class="dash-row-icon bg-violet-50 text-violet-600"><%= icon(:clipboard, "h-4 w-4") %></span><span class="flex-1 text-sm"><b><%= @pending_claims %></b> claim(s) pending with you</span><%= icon(:arrow_right, "h-4 w-4 text-slate-400") %><% end %></li>
+        <% end %>
+        <% if @utr_pending.to_i.positive? %>
+          <li><%= link_to payment_advices_path, class: "dash-row" do %><span class="dash-row-icon bg-emerald-50 text-emerald-600"><%= icon(:banknotes, "h-4 w-4") %></span><span class="flex-1 text-sm"><b><%= @utr_pending %></b> approved claim(s) waiting for the payment UTR</span><%= icon(:arrow_right, "h-4 w-4 text-slate-400") %><% end %></li>
+        <% end %>
+        <% @returned_tours.each do |t| %>
+          <li><%= link_to edit_tour_path(t), class: "dash-row" do %><span class="dash-row-icon bg-orange-50 text-orange-600"><%= icon(:warning, "h-4 w-4") %></span><span class="flex-1 text-sm">Your tour plan <b><%= t.duration_label %></b> was returned – correct and send again</span><span class="btn-soft btn-xs">Correct</span><% end %></li>
+        <% end %>
+        <% @returned_claims.each do |c| %>
+          <li><%= link_to edit_tour_claim_path(c.tour), class: "dash-row" do %><span class="dash-row-icon bg-orange-50 text-orange-600"><%= icon(:warning, "h-4 w-4") %></span><span class="flex-1 text-sm">Your claim <b><%= c.tour.duration_label %></b> was returned – correct and send again</span><span class="btn-soft btn-xs">Correct</span><% end %></li>
+        <% end %>
+        <% if @local_unsent %>
+          <li><%= link_to edit_tour_claim_path(@local_unsent), class: "dash-row" do %><span class="dash-row-icon bg-sky-50 text-sky-600"><%= icon(:truck, "h-4 w-4") %></span><span class="flex-1 text-sm">Local mileage <b><%= @local_unsent.claim_month&.strftime("%b-%Y") %></b> is saved but not sent – send it by <b><%= d(@local_deadline) %></b></span><span class="btn-soft btn-xs">Send</span><% end %></li>
+        <% end %>
+        <% @claim_ready.each do |t| %>
+          <li><%= link_to new_tour_claim_path(t), class: "dash-row" do %><span class="dash-row-icon bg-emerald-50 text-emerald-600"><%= icon(:receipt, "h-4 w-4") %></span><span class="flex-1 text-sm">Claim form ready for <b>your tour</b> · <%= t.duration_label %></span><span class="btn-soft btn-xs">Make claim</span><% end %></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <div class="flex items-center gap-3 px-5 py-5 text-sm text-slate-600"><span class="icon-chip bg-emerald-50 text-emerald-600"><%= icon(:check_circle) %></span><span><b class="text-slate-800">All clear!</b> Nothing is waiting for you right now.</span></div>
     <% end %>
   </div>
+
+  <%# IOM / Circular %>
+  <div class="card dash-card dash-c-teal h-full fade-up">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-emerald-50 text-emerald-600"><%= icon(:megaphone) %></span>IOM / Circular</span><%= link_to "View all", circulars_path, class: "link text-xs" %></div>
+    <% if @circulars.any? %>
+      <ul class="divide-y divide-white/70">
+        <% @circulars.each do |c| %>
+          <li><%= link_to circular_path(c), class: "dash-row items-start" do %>
+            <span class="mt-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold <%= c.type_iom? ? 'bg-violet-50 text-violet-700' : 'bg-sky-50 text-sky-700' %>"><%= c.type_label %></span>
+            <span class="min-w-0 flex-1 leading-tight"><span class="block truncate text-sm font-semibold text-slate-900"><%= c.topic %></span>
+              <span class="text-xs text-slate-500"><%= d(c.created_at) %><% if c.attachments.attached? %> · <%= icon(:paperclip, "inline h-3 w-3") %> <%= c.attachments.size %><% end %></span></span>
+            <% if @unread_circular_ids.include?(c.id) %><span class="mt-0.5 rounded-full bg-emerald-500 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white">New</span><% end %>
+          <% end %></li>
+        <% end %>
+      </ul>
+    <% else %>
+      <div class="dash-empty"><span class="dash-empty-icon bg-emerald-50 text-emerald-600"><%= icon(:megaphone, "h-6 w-6") %></span><div class="text-sm text-slate-500">No IOM / Circular yet</div></div>
+    <% end %>
+  </div>
+
+  <%# my latest tour %>
+  <div class="card dash-card dash-c-green h-full fade-up">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:map) %></span>My latest tour</span><%= link_to "History", tours_path, class: "link text-xs" %></div>
+    <div class="card-body">
+      <% if @last_tour %>
+        <div class="flex items-start justify-between gap-2"><div><div class="font-semibold"><%= link_to tour_type_label(@last_tour), @last_tour, class: "link" %></div><div class="text-sm text-slate-600"><%= @last_tour.duration_label %> · <%= @last_tour.days %> <%= "day".pluralize(@last_tour.days) %></div></div><%= tour_status_badge(@last_tour) %></div>
+        <div class="mt-3 flex flex-wrap gap-1.5"><% @last_tour.tour_visits.first(4).each do |v| %><span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600"><%= icon(:pin, "h-3.5 w-3.5") %><%= v.place %></span><% end %></div>
+        <div class="mt-3 text-xs text-slate-500"><%= @last_tour.stage_label %></div>
+      <% else %>
+        <div class="dash-empty"><span class="dash-empty-icon bg-brand-50 text-brand-600"><%= icon(:map, "h-6 w-6") %></span><div class="text-sm text-slate-500">No tour plan yet</div>
+          <%= link_to new_tour_path, class: "btn-soft btn-xs" do %><%= icon(:plus) %> Plan a tour<% end %></div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# my latest claim %>
+  <div class="card dash-card dash-c-violet h-full fade-up">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-violet-50 text-violet-600"><%= icon(:receipt) %></span>My latest claim</span></div>
+    <div class="card-body">
+      <% if @last_claim %>
+        <div class="flex items-start justify-between gap-2"><div><div class="font-semibold"><%= link_to "Claim form", @last_claim.tour, class: "link" %></div><div class="text-sm text-slate-600"><%= @last_claim.tour.duration_label %></div></div><%= claim_status_badge(@last_claim) %></div>
+        <div class="mt-3 flex items-end justify-between"><span class="muted"><%= @last_claim.stage_label %></span><span class="text-lg font-bold text-slate-900"><%= inr(@last_claim.grand_total) %></span></div>
+      <% else %>
+        <div class="dash-empty"><span class="dash-empty-icon bg-violet-50 text-violet-600"><%= icon(:receipt, "h-6 w-6") %></span><div class="text-sm text-slate-500">No claim yet</div>
+          <%= link_to new_local_mileage_path, class: "btn-soft btn-xs" do %><%= icon(:truck) %> Local mileage claim<% end %></div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# quick links %>
+  <div class="card dash-card dash-c-rose card-body h-full fade-up">
+    <div class="mb-2 text-xs font-semibold uppercase tracking-wider text-rose-500">Quick links</div>
+    <div class="grid grid-cols-2 gap-2 text-sm">
+      <%= link_to tours_path, class: "dash-link dash-link-brand" do %><span class="dash-link-icon"><%= icon(:clock, "h-4 w-4") %></span> Tour History<% end %>
+      <%= link_to tours_path(type: "local"), class: "dash-link dash-link-sky" do %><span class="dash-link-icon"><%= icon(:receipt, "h-4 w-4") %></span> Local Mileage History<% end %>
+      <%= link_to account_bank_accounts_path, class: "dash-link dash-link-emerald" do %><span class="dash-link-icon"><%= icon(:banknotes, "h-4 w-4") %></span> Bank Details<% end %>
+      <%= link_to notifications_path, class: "dash-link dash-link-violet" do %><span class="dash-link-icon"><%= icon(:inbox, "h-4 w-4") %></span> Notifications<% end %>
+    </div>
+  </div>
+
+  <%# my money this FY %>
+  <div class="card dash-card dash-c-emerald h-full fade-up xl:col-span-2">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-emerald-50 text-emerald-600"><%= icon(:rupee) %></span>My claims · FY <%= @fy_label %></span>
+      <span class="text-sm text-slate-500">Total <b class="text-slate-900"><%= inr(total) %></b></span></div>
+    <div class="px-5 pt-4">
+      <div class="flex h-2.5 overflow-hidden rounded-full bg-slate-100" title="In process · To be paid · Paid">
+        <% if total.positive? %>
+          <span class="bg-violet-400" style="width: <%= (@money[:in_process] * 100 / total).round(1) %>%"></span>
+          <span class="bg-brand-500" style="width: <%= (@money[:approved] * 100 / total).round(1) %>%"></span>
+          <span class="bg-emerald-400" style="width: <%= (@money[:paid] * 100 / total).round(1) %>%"></span>
+        <% end %>
+      </div>
+    </div>
+    <div class="grid gap-3 p-4 sm:grid-cols-3">
+      <div class="dash-money dash-money-violet"><div class="flex items-center gap-1.5 muted"><span class="h-2 w-2 rounded-full bg-violet-400"></span>In process</div><div class="text-xl font-bold text-slate-900"><%= inr(@money[:in_process]) %></div><div class="text-xs text-slate-500">with L1 / L2 / Finance</div></div>
+      <div class="dash-money dash-money-green"><div class="flex items-center gap-1.5 muted"><span class="h-2 w-2 rounded-full bg-brand-500"></span>Approved – to be paid</div><div class="text-xl font-bold text-brand-700"><%= inr(@money[:approved]) %></div><div class="text-xs text-slate-500">waiting for the bank transfer</div></div>
+      <div class="dash-money dash-money-emerald"><div class="flex items-center gap-1.5 muted"><span class="h-2 w-2 rounded-full bg-emerald-400"></span>Paid</div><div class="text-xl font-bold text-emerald-700"><%= inr(@money[:paid]) %></div>
+        <div class="text-xs text-slate-500"><%= @last_paid ? "Last: #{inr(@last_paid.balance_amount)} · UTR #{@last_paid.utr_no}" : "no payment yet" %></div></div>
+    </div>
+  </div>
+
+  <%# on tour today %>
+  <div class="card dash-card dash-c-sky h-full fade-up">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-sky-50 text-sky-600"><%= icon(:building) %></span>On tour today</span><%= link_to "See all", on_tour_path, class: "link text-xs" %></div>
+    <% if @on_tour_list.any? %>
+      <ul class="divide-y divide-white/70">
+        <% @on_tour_list.each do |t| %>
+          <% places = t.tour_visits.select { |v| v.visit_date == Date.current }.map(&:place).compact_blank.uniq %>
+          <li><%= link_to on_tour_path, class: "dash-row" do %><%= avatar(t.user, size: "h-8 w-8 text-[11px]") %>
+            <span class="min-w-0 flex-1 leading-tight"><span class="block truncate text-sm font-semibold text-slate-900"><%= t.user.name %></span>
+              <span class="block truncate text-xs text-slate-500"><%= icon(:pin, "inline h-3 w-3") %> <%= places.any? ? places.join(", ") : t.duration_label %></span></span>
+            <%= tour_status_badge(t, label: ({ "submitted" => "Pending", "l1_approved" => "Pending", "l2_approved" => "Pending" }[t.status])) %>
+          <% end %></li>
+        <% end %>
+      </ul>
+      <% if @on_tour_count > @on_tour_list.size %><div class="px-5 py-2 text-xs text-slate-500">+ <%= @on_tour_count - @on_tour_list.size %> more</div><% end %>
+    <% else %>
+      <div class="dash-empty"><span class="dash-empty-icon bg-sky-50 text-sky-600"><%= icon(:building, "h-6 w-6") %></span><div class="text-sm text-slate-500">No one is on tour today</div></div>
+    <% end %>
+  </div>
+
+  <%# PD HR / admin: organisation at a glance – full width %>
+  <% if @org %>
+    <div class="card dash-card dash-c-sky fade-up xl:col-span-3">
+      <div class="card-head"><span class="card-title"><span class="icon-chip bg-sky-50 text-sky-600"><%= icon(:users) %></span>Organisation today</span><%= link_to "All Tours", masters_all_tours_path, class: "link text-xs" %></div>
+      <div class="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 2xl:grid-cols-6">
+        <% [ [ "Active employees", @org[:employees], :users, "dash-mini-slate", "text-slate-800", masters_users_path ],
+             [ "Tour plans pending", @org[:tours_pending], :map, "dash-mini-amber", "text-amber-600", masters_all_tours_path(stage: "tour_pending") ],
+             [ "Claims with L1 / L2", @org[:claims_pending], :clipboard, "dash-mini-violet", "text-violet-600", masters_all_tours_path(stage: "claim_pending") ],
+             [ "Claims with Finance", @org[:with_finance], :inbox, "dash-mini-indigo", "text-indigo-600", masters_all_tours_path(stage: "claim_pending") ],
+             [ "Approved, UTR pending", @org[:utr_pending], :banknotes, "dash-mini-emerald", "text-emerald-600", masters_all_tours_path(stage: "claim_approved") ] ].each do |label, n, ic, box, tone, path| %>
+          <%= link_to path, class: "dash-mini #{box}" do %>
+            <span class="flex items-center gap-1.5 text-xs text-slate-500"><%= icon(ic, "h-3.5 w-3.5") %><%= label %></span>
+            <span class="text-xl font-bold <%= tone %>"><%= n %></span>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 </div>

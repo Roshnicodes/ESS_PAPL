@@ -71,11 +71,12 @@ class EssMailRelay
       (tour && (tour.type_local? ? "Local Mileage #{tour.claim_month&.strftime('%b-%Y')}" : "Tour Plan #{tour.duration_label}")),
       (format("Claim amount: Rs. %.2f", claim.grand_total.to_d) if claim)
     ].compact
+    message = item.is_a?(Circular) ? circular_message(item) : [ body.sub(/[.\s]+\z/, ""), details.join(" | ") ].reject(&:blank?).join(". ").squish
     {
       "to_email"      => n.user.email.to_s.strip,
       "to_name"       => n.user.name.to_s,
       "subject"       => "PAPL ESS: #{n.title}".squish.first(200),
-      "message"       => [ body.sub(/[.\s]+\z/, ""), details.join(" | ") ].reject(&:blank?).join(". ").squish,
+      "message"       => message,
       "link"          => n.url.to_s.start_with?("http") ? n.url.to_s : "#{app_url}#{n.url}",
       "employee_name" => owner&.name.to_s,
       "employee_code" => owner&.emp_code.to_s,
@@ -87,6 +88,21 @@ class EssMailRelay
       "remarks"       => remark.to_s,
       "mail_type"     => n.kind.to_s
     }
+  end
+
+  # IOM / Circular mail: short description + a direct download link for the first files (the mail goes as a GET
+  # URL, so it is kept short – the button opens the IOM page with every attachment). The links need an ESS login
+  # and only open for the people the IOM is addressed to.
+  CIRCULAR_LINKS = 3
+  def self.circular_message(c)
+    files = c.attachments.to_a
+    links = files.first(CIRCULAR_LINKS).map do |a|
+      "#{a.filename.to_s.truncate(60)}: #{app_url}#{Rails.application.routes.url_helpers.attachment_circular_path(c, attachment_id: a.id, download: 1)}"
+    end
+    more = files.size > CIRCULAR_LINKS ? "#{files.size - CIRCULAR_LINKS} more file(s) on the IOM page" : nil
+    [ c.description.to_s.squish.truncate(300).presence,
+      ("Download – #{links.join(' | ')}" if links.any?), more,
+      "Open the button below to read it in ESS" ].compact.join(". ")
   end
 
   # Notifier appends the remark as ' – “…”'; krai shows it in its own Remarks row

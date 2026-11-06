@@ -78,7 +78,7 @@ class PaymentAdvicesController < ApplicationController
   private
 
   def base_scope
-    scope = TourClaim.includes(:tour, :user, :project, :approved_by, :utr_updated_by, :bank_account).payable_by(current_user)
+    scope = TourClaim.includes(:tour, :user, :project, :budget_line_item, :budget_line_item_code, :approved_by, :utr_updated_by, :bank_account).payable_by(current_user)
     scope = scope.where(claim_type: TYPES[@type]) if TYPES[@type]
     (@scope == "paid" ? scope.paid.order(utr_updated_at: :desc) : scope.awaiting_payment.order(:approved_at))
   end

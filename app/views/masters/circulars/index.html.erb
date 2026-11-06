@@ -1,6 +1,7 @@
 <% content_for :title, "IOM / Circular" %>
 <%= page_header("IOM / Circular", "Publish an Inter Office Memo or a Circular with attachments and notify employees by email.", icon_name: :megaphone) do %>
   <%= print_button %>
+  <%= link_to new_masters_circular_import_path, class: "btn-light" do %><%= icon(:inbox) %> Import old IOMs<% end %>
   <%= link_to new_masters_circular_path, class: "btn-primary" do %><%= icon(:plus) %> New IOM / Circular<% end %>
 <% end %>
 

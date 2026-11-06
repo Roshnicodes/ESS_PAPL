@@ -17,10 +17,15 @@ module ClaimPeriodFilter
     @fy         = FinancialYear.parse(params[:fy]) || (FinancialYear.for(@month) if @month)
     @month      = nil if @month && @fy && !@fy.covers?(@month)   # year changed – month list is stale
     @fy_options = FinancialYear.options
+    @from_date  = parse_day(params[:from])
+    @to_date    = parse_day(params[:to])
+    @from_date, @to_date = @to_date, @from_date if @from_date && @to_date && @to_date < @from_date
   end
 
   # nil = no filter (everything), else the Date range to keep.
   def period_range
+    # an exact From – To range wins over FY / month
+    return (@from_date || Date.new(2000, 1, 1))..(@to_date || Date.new(2100, 1, 1)) if @from_date || @to_date
     return @month..@month.end_of_month if @month
     @fy&.range
   end
@@ -33,6 +38,9 @@ module ClaimPeriodFilter
   end
 
   def period_label
+    if @from_date || @to_date
+      return [ @from_date&.strftime("%d/%m/%Y") || "start", @to_date&.strftime("%d/%m/%Y") || "today" ].join(" – ")
+    end
     return @month.strftime("%b-%Y") if @month
     return "FY #{@fy.label}" if @fy
     "All months"
@@ -40,12 +48,19 @@ module ClaimPeriodFilter
 
   # "payment_advice_2026-27_oct" / "..._fy" / "..._all"
   def period_slug
+    return "#{@from_date&.iso8601 || 'start'}_to_#{@to_date&.iso8601 || 'end'}" if @from_date || @to_date
     return "#{@fy.label}_#{@month.strftime('%b').downcase}" if @month
     return "fy_#{@fy.label}" if @fy
     "all"
   end
 
   private
+
+  def parse_day(value)
+    Date.parse(value.to_s) if value.present?
+  rescue Date::Error, TypeError
+    nil
+  end
 
   def parse_month(value)
     text = value.to_s.strip

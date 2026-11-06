@@ -1,0 +1,14 @@
+<%# locals: (url:, from:, to:, hidden: {}) %>
+<%# From – To date filter for tour lists (tour dates overlapping the range) %>
+<%= form_with url: url, method: :get, class: "card mb-4 fade-up print:hidden", data: { turbo: false } do %>
+  <% hidden.compact_blank.each do |key, value| %><%= hidden_field_tag key, value, id: nil %><% end %>
+  <div class="card-body grid grid-cols-2 items-end gap-3 sm:grid-cols-[minmax(0,11rem)_minmax(0,11rem)_auto_1fr]">
+    <div><label class="lbl" for="from">From date</label><%= date_field_tag :from, from, class: "inp" %></div>
+    <div><label class="lbl" for="to">To date</label><%= date_field_tag :to, to, class: "inp" %></div>
+    <div class="flex gap-2">
+      <%= button_tag class: "btn-primary" do %><%= icon(:filter) %> Show<% end %>
+      <% if from || to %><%= link_to "Clear", url_for(hidden.compact_blank.merge(only_path: true)), class: "btn-ghost" %><% end %>
+    </div>
+    <div class="col-span-2 text-sm text-slate-500 sm:col-span-1 sm:text-right"><%= from || to ? "Tours between #{from ? d(from) : 'start'} and #{to ? d(to) : 'today'}" : "All dates" %></div>
+  </div>
+<% end %>

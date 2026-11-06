@@ -4,12 +4,25 @@
 <% end %>
 <div class="card overflow-hidden fade-up" data-controller="dialog">
   <div class="card-head">
-    <%= form_with url: masters_all_tours_path, method: :get, class: "flex w-full flex-wrap gap-2" do %>
-      <div class="relative w-full sm:w-72"><span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400"><%= icon(:search, "h-4 w-4") %></span>
-        <%= search_field_tag :q, params[:q], placeholder: "Employee name or code…", class: "inp pl-9" %></div>
-      <%= select_tag :status, options_for_select([["All status", ""]] + Tour::STATUSES.keys.map { |k| [k.to_s.humanize, k] }, params[:status]), class: "inp w-40" %>
-      <%= select_tag :type, options_for_select([["Tour + Local", ""], ["Tour", "tour"], ["Local Mileage", "local"]], params[:type]), class: "inp w-40" %>
-      <%= button_tag class: "btn-light" do %><%= icon(:filter) %> Filter<% end %>
+    <%= form_with url: masters_all_tours_path, method: :get, class: "grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-4 print:hidden", data: { turbo: false } do %>
+      <div class="sm:col-span-2"><label class="lbl" for="q">Employee</label>
+        <div class="relative"><span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400"><%= icon(:search, "h-4 w-4") %></span>
+          <%= search_field_tag :q, params[:q], placeholder: "Name or employee code…", class: "inp pl-9" %></div></div>
+      <div><label class="lbl" for="stage">Show</label>
+        <%= select_tag :stage, options_for_select([["Everything", ""]] + Masters::AllToursController::STAGES.map { |k, (label, _)| [label, k] }, params[:stage]), class: "inp" %></div>
+      <div><label class="lbl" for="type">Type</label>
+        <%= select_tag :type, options_for_select([["Tour + Local", ""], ["Tour", "tour"], ["Local Mileage", "local"]], params[:type]), class: "inp" %></div>
+      <div><label class="lbl" for="status">Tour plan status</label>
+        <%= select_tag :status, options_for_select([["Any", ""]] + Tour::STATUSES.keys.map { |k| [k.to_s.humanize, k] }, params[:status]), class: "inp" %></div>
+      <div><label class="lbl" for="from">Tour dates from</label><%= date_field_tag :from, @from, class: "inp" %></div>
+      <div><label class="lbl" for="to">Tour dates to</label><%= date_field_tag :to, @to, class: "inp" %></div>
+      <div><label class="lbl" for="sort">Sort by</label>
+        <%= select_tag :sort, options_for_select(Masters::AllToursController::SORTS.map { |k, (label, _)| [label, k] }, @sort), class: "inp" %></div>
+      <div class="flex items-end gap-2 sm:col-span-2 lg:col-span-4">
+        <%= button_tag class: "btn-primary" do %><%= icon(:filter) %> Apply<% end %>
+        <%= link_to "Clear", masters_all_tours_path, class: "btn-ghost" %>
+        <span class="ml-auto text-sm text-slate-500"><b class="text-slate-800"><%= @total %></b> found</span>
+      </div>
     <% end %>
   </div>
   <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">
@@ -21,7 +34,7 @@
         <td data-label="Employee" class="whitespace-nowrap"><b><%= t.user.name %></b> <span class="muted">(<%= t.user.emp_code %>)</span></td>
         <td data-label="Duration" class="md:whitespace-nowrap"><%= t.duration_label %></td>
         <td data-label="Tour Plan"><%= tour_status_badge(t) %></td>
-        <td data-label="Claim"><%= t.tour_claim ? status_badge(t.tour_claim.status) : tag.span("—", class: "text-slate-300") %></td>
+        <td data-label="Claim"><%= t.tour_claim ? claim_status_badge(t.tour_claim) : tag.span("—", class: "text-slate-300") %></td>
         <td data-label="Created" class="whitespace-nowrap muted"><%= dt(t.created_at) %></td>
         <td class="no-print"><div class="flex justify-end gap-1">
           <%= link_to t, class: "rounded-lg p-2 text-brand-600 hover:bg-brand-50", title: "History", aria: { label: "History" } do %><%= icon(:clock) %><% end %>

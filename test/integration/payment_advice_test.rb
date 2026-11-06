@@ -2,6 +2,8 @@ require "test_helper"
 
 class PaymentAdviceTest < ActionDispatch::IntegrationTest
   setup do
+    # October local claims are built here; the cutoff rule closes October after 5-Nov, so the suite runs on 3-Nov
+    travel_to Time.zone.local(2026, 11, 3, 12)
     @fin = user("FIN001"); @emp = user("1025"); @other = user("MIS001")
     @oct = approved_claim(@emp, Date.new(2026, 10, 1), 500)
     @nov = approved_claim(@other, Date.new(2026, 11, 1), 300)

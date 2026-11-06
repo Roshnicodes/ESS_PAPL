@@ -1,0 +1,69 @@
+<% content_for :title, "Import old IOMs" %>
+<%= page_header("Import old IOMs / Circulars", "Bring the old IOMs into ESS: fill the Excel sheet (one row per IOM) and choose the folder with the files.", icon_name: :inbox) do %>
+  <%= link_to "Back to IOM / Circular", masters_circulars_path, class: "btn-light" %>
+<% end %>
+
+<div class="grid gap-5 lg:grid-cols-[1fr_22rem] fade-up" data-controller="iom-import"
+     data-iom-import-url-value="<%= masters_circular_import_path %>" data-iom-import-list-value="<%= masters_circulars_path %>">
+  <div class="card">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-brand-50 text-brand-600"><%= icon(:inbox) %></span>Upload</span></div>
+    <div class="card-body space-y-5">
+      <div>
+        <span class="lbl">1 · Excel sheet <span class="font-normal normal-case text-slate-400">(recommended)</span></span>
+        <div class="flex flex-wrap items-center gap-2">
+          <input type="file" accept=".xlsx,.xls,.csv" class="inp max-w-md" data-iom-import-target="sheet">
+          <%= link_to template_masters_circular_import_path, class: "btn-soft btn-xs", data: { turbo: false } do %><%= icon(:receipt) %> Download template<% end %>
+        </div>
+        <p class="mt-1 text-xs text-slate-500">One row per IOM: Type, IOM No., Topic, Description, Date, Send to, File names, Active. The “File names” must match the files in the folder.</p>
+      </div>
+
+      <div>
+        <span class="lbl">2 · Files</span>
+        <div class="grid gap-3 sm:grid-cols-2">
+          <label class="flex cursor-pointer flex-col gap-1 rounded-xl border border-dashed border-brand-300 bg-brand-50/50 p-4 text-sm hover:bg-brand-50">
+            <span class="font-semibold text-brand-800"><%= icon(:inbox, "mr-1 inline h-4 w-4") %>Choose a whole folder</span>
+            <span class="text-xs text-slate-500">All files inside it (and its sub-folders)</span>
+            <input type="file" webkitdirectory directory multiple class="sr-only" data-iom-import-target="folder" data-action="change->iom-import#pick">
+          </label>
+          <label class="flex cursor-pointer flex-col gap-1 rounded-xl border border-dashed border-slate-300 bg-white/60 p-4 text-sm hover:bg-slate-50">
+            <span class="font-semibold text-slate-800"><%= icon(:paperclip, "mr-1 inline h-4 w-4") %>…or pick files</span>
+            <span class="text-xs text-slate-500">Select several files at once</span>
+            <input type="file" multiple class="sr-only" data-iom-import-target="picked" data-action="change->iom-import#pick">
+          </label>
+        </div>
+        <p class="mt-2 text-sm text-slate-600" data-iom-import-target="count">No files chosen.</p>
+      </div>
+
+      <div class="grid gap-3 sm:grid-cols-2" data-iom-import-target="noSheet">
+        <div><label class="lbl" for="iom-type">Type <span class="font-normal normal-case text-slate-400">(when there is no sheet)</span></label>
+          <select id="iom-type" class="inp" data-no-search data-iom-import-target="type"><option value="iom">IOM</option><option value="circular">Circular</option></select></div>
+        <div><label class="lbl" for="iom-date">Date <span class="font-normal normal-case text-slate-400">(when there is no sheet)</span></label>
+          <input id="iom-date" type="date" class="inp" value="<%= Date.current.iso8601 %>" data-iom-import-target="date"></div>
+        <p class="text-xs text-slate-500 sm:col-span-2">Without a sheet every file becomes its own IOM; the topic is taken from the file name and it goes to all employees.</p>
+      </div>
+
+      <label class="flex items-start gap-2 rounded-xl bg-amber-50/70 p-3 text-sm text-amber-900 ring-1 ring-amber-200">
+        <input type="checkbox" class="check mt-0.5" data-iom-import-target="notify">
+        <span>Send email notification for the imported IOMs <span class="block text-xs text-amber-800/80">Off by default – these are old IOMs. When ticked, each new IOM is mailed to its audience once the upload finishes.</span></span>
+      </label>
+
+      <div class="flex flex-wrap items-center gap-3">
+        <button type="button" class="btn-primary" data-iom-import-target="button" data-action="iom-import#start"><%= icon(:send) %> Import</button>
+        <div class="h-2 flex-1 overflow-hidden rounded-full bg-slate-100" hidden data-iom-import-target="bar"><div class="h-full w-0 bg-brand-600 transition-all" data-iom-import-target="fill"></div></div>
+        <span class="text-sm text-slate-600" data-iom-import-target="status"></span>
+      </div>
+      <div class="hidden rounded-xl p-3 text-sm ring-1" data-iom-import-target="result"></div>
+    </div>
+  </div>
+
+  <div class="card card-body space-y-3 text-sm text-slate-600">
+    <div class="font-semibold text-slate-900">How it works</div>
+    <ol class="list-decimal space-y-1.5 pl-5">
+      <li>Download the template and fill one row per old IOM (date as dd/mm/yyyy).</li>
+      <li>Put all the IOM files in one folder and write each file’s name in its row.</li>
+      <li>Choose the sheet and the folder, then Import. Big folders go up in small parts automatically.</li>
+      <li>Importing the same sheet again adds only what is missing – no duplicates.</li>
+    </ol>
+    <p class="text-xs text-slate-500">Each file may be up to <%= Circular::ATTACHMENT_MAX / 1.megabyte %> MB. The IOM keeps its old date, so the list stays in date order.</p>
+  </div>
+</div>

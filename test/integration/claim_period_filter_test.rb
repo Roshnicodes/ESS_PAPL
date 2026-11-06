@@ -3,6 +3,8 @@ require "test_helper"
 # FY + month filter and the month total on the claim lists.
 class ClaimPeriodFilterTest < ActionDispatch::IntegrationTest
   setup do
+    # October local claims are built here; the cutoff rule closes October after 5-Nov, so the suite runs on 3-Nov
+    travel_to Time.zone.local(2026, 11, 3, 12)
     @emp = user("1025"); @fin = user("FIN001")
     # one local claim per employee per month, so the two months use two employees
     @oct = approved_local_claim(@emp, Date.new(2026, 10, 1), 500)
