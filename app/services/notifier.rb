@@ -72,6 +72,13 @@ class Notifier
     case event.to_sym
     when :claim_submitted
       push c.l1_approver, c, actor, :claim_pending, "Claim for your approval (L1)", "#{emp.name} sent #{ref}", approvals_claim_path(c)
+    when :claim_edited_resubmitted
+      push c.l1_approver, c, actor, :claim_pending, "Corrected claim for your approval (L1)",
+           "#{emp.name} corrected #{ref} and sent it for approval again", approvals_claim_path(c)
+      Array(c.previously_approved_by).each do |u|
+        push u, c, actor, :claim_info, "A claim you had approved was corrected",
+             "#{emp.name} · #{ref} – the employee changed it, so it is going through approval again", approvals_claim_path(c)
+      end
     when :claim_l1_approved, :claim_l2_approved, :claim_extra_approved
       if c.l1_approved?
         push emp, c, actor, :claim_forwarded, "Your claim was forwarded to L2", "#{by} forwarded #{ref}", tour_claim_path(t), remark

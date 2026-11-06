@@ -29,6 +29,9 @@ class Ability
     can :create, Tour
     can :create, TourClaim, tour: { user_id: user.id }
     can [ :update, :submit ], TourClaim, user_id: user.id, status: %w[draft returned]
+    # A claim already with an approver (or approved but not yet paid) may still be corrected;
+    # saving it sends it back to L1 – see TourClaim#edit_and_resend!
+    can :update, TourClaim, user_id: user.id, status: TourClaim::RESENDABLE, utr_no: nil
     can :read,   TourClaim, l1_approver_id: user.id
     can :read,   TourClaim, l2_approver_id: user.id
     can :read,   TourClaim, approval_steps: { approver_id: user.id }

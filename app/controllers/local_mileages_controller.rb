@@ -9,7 +9,7 @@ class LocalMileagesController < ApplicationController
     if (existing = current_user.tours.type_local.live.find_by(claim_month: @period.month))
       claim = existing.tour_claim
       return redirect_to(new_tour_claim_path(existing)) if claim.nil?
-      return redirect_to(claim.employee_editable? ? edit_tour_claim_path(existing) : tour_claim_path(existing))
+      return redirect_to(claim.maker_editable? ? edit_tour_claim_path(existing) : tour_claim_path(existing))
     end
     build_unsaved
     render "tour_claims/edit"

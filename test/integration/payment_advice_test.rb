@@ -159,11 +159,8 @@ class PaymentAdviceTest < ActionDispatch::IntegrationTest
     claim.claim_local_travels.build(travel_date: month, place_from: "Office", place_to: "Field",
                                     travel_mode: mode("Public Transport"), kilometers: 10, amount: amount, purpose: "Visit")
     claim.bank_account = employee.bank_accounts.first
-    claim.save!
-    coding = finance_mapping
+    travel_to(month + 1.day) { claim.save! }   # filled within its month (local claims close on the cutoff day)
     claim.update_columns(status: "approved", approved_at: Time.current, approved_by_id: @fin.id,
-                         project_id: coding.project_id, budget_line_item_id: coding.budget_line_item_id,
-                         budget_line_item_code_id: coding.budget_line_item_code_id,
                          l1_approver_id: user("AM001").id, finance_approver_id: @fin.id)
     claim.reload
   end

@@ -6,7 +6,7 @@ class TourClaimsController < ApplicationController
 
   def new
     if (existing = @tour.tour_claim)
-      return redirect_to edit_tour_claim_path(@tour) if existing.employee_editable?
+      return redirect_to edit_tour_claim_path(@tour) if existing.maker_editable?
       return redirect_to tour_claim_path(@tour)
     end
     @claim = TourClaim.build_for(@tour)
@@ -34,6 +34,7 @@ class TourClaimsController < ApplicationController
 
   def update
     authorize! :update, @claim
+    return resend_corrected if @claim.needs_reapproval_on_edit?
     @claim.assign_attributes(claim_params)
     save_and_maybe_submit
   end
@@ -45,6 +46,17 @@ class TourClaimsController < ApplicationController
   end
 
   private
+
+  # A claim that is already with an approver (or approved) has no draft to go back to:
+  # any correction clears the approvals and starts again from L1.
+  def resend_corrected
+    @claim.edit_and_resend!(claim_params, by: current_user)
+    redirect_to tours_path(type: @tour.tour_type),
+      notice: "Claim corrected and sent again to L1 – #{@claim.l1_approver} for approval."
+  rescue ActiveRecord::RecordInvalid
+    seed_rows
+    render :edit, status: :unprocessable_entity
+  end
 
   def save_and_maybe_submit
     TourClaim.transaction do
@@ -66,7 +78,7 @@ class TourClaimsController < ApplicationController
   def block_closed_local_month
     return unless @tour.type_local? && @tour.claim_month
     return if current_user.admin?   # admin may still correct an old month
-    return if @claim && !@claim.employee_editable?
+    return if @claim && !@claim.maker_editable?
     period = LocalMileagePeriod.new(@tour.user)
     return unless period.closed?(@tour.claim_month)
     redirect_to tours_path(type: "local"), alert: period.closed_message(@tour.claim_month)

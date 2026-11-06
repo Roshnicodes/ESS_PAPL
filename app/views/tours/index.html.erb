@@ -54,6 +54,10 @@
             <% elsif c&.employee_editable? %>
               <%= link_to edit_tour_claim_path(t), class: "btn-primary btn-xs" do %><%= icon(:pencil) %> Edit Claim<% end %>
               <% if (send_by = c.local_send_by) %><span class="text-[11px] text-slate-500" title="Local mileage cutoff set by PD HR">Send by <%= d(send_by) %></span><% end %>
+            <% elsif c&.maker_editable? %>
+              <%# already sent / approved but not paid – correcting it starts the approval again %>
+              <%= link_to edit_tour_claim_path(t), class: "btn-light btn-xs", title: "Correct this claim – it will go to L1 for approval again" do %><%= icon(:pencil) %> Edit &amp; Send Again<% end %>
+              <%= link_to tour_claim_path(t), class: "btn-light btn-xs btn-icon", title: "View claim", aria: { label: "View claim" } do %><%= icon(:eye) %><% end %>
             <% elsif c %>
               <%= link_to tour_claim_path(t), class: "btn-light btn-xs" do %><%= icon(:eye) %> Claim Form<% end %>
             <% end %>

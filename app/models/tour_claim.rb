@@ -13,6 +13,10 @@ class TourClaim < ApplicationRecord
 
   STATUSES = %w[draft submitted l1_approved extra_pending finance_pending finance_query approved returned rejected cancelled].index_by(&:itself).freeze
   IN_PROCESS = %w[submitted l1_approved extra_pending finance_pending finance_query].freeze
+  # A claim the employee may still correct although it has already gone for approval.
+  # Saving such a claim clears every approval and starts again from L1.
+  # "rejected" is final and "cancelled" is gone, so neither is here.
+  RESENDABLE = (IN_PROCESS + %w[approved]).freeze
   enum :status, STATUSES, validate: true
   enum :claim_type, Tour::TYPES, prefix: :type, validate: true
 
@@ -118,6 +122,7 @@ class TourClaim < ApplicationRecord
   end
 
   attr_accessor :submitting
+  attr_accessor :previously_approved_by   # captured before a correction wipes the approval trail
 
   # ---- Factory -------------------------------------------------------------
 
@@ -155,6 +160,13 @@ class TourClaim < ApplicationRecord
   # ---- Permissions helpers ------------------------------------------------
 
   def employee_editable? = draft? || returned?   # rejected is final
+
+  # The employee may also correct a claim that is already with an approver, and even one
+  # Finance has approved – right up until the money is actually paid. Saving it then sends
+  # it round again from L1 (#edit_and_resend!), exactly like a tour plan edited after approval.
+  def maker_editable? = employee_editable? || (status.in?(RESENDABLE) && !paid?)
+  def needs_reapproval_on_edit? = status.in?(RESENDABLE)
+
   def submitting? = !!submitting
 
   # ---- Local mileage month window -----------------------------------------
@@ -300,6 +312,40 @@ class TourClaim < ApplicationRecord
       self.l1_approved_at = self.l1_approved_by = self.l2_approved_at = self.l2_approved_by = nil
       self.status = "submitted"
     end
+  end
+
+  # Employee corrects a claim that has already gone for approval. Every approval is cleared
+  # and it starts again from L1 – nobody's old "approved" is left standing on figures that
+  # have since changed. A paid claim (UTR recorded) can no longer be touched.
+  def edit_and_resend!(attrs, by:)
+    raise Workflow::NotAllowed, "Only the employee can edit this claim" unless by.id == user_id
+    raise Workflow::NotAllowed, "This claim can no longer be edited" unless maker_editable? && needs_reapproval_on_edit?
+    self.previously_approved_by = [ l1_approved_by, l2_approved_by, approved_by,
+                                    *approval_steps.select(&:done?).map(&:acted_by) ].compact.uniq - [ by ]
+    with_lock do
+      from = status
+      assign_attributes(attrs)
+      self.submitting   = true
+      self.submitted_at = Time.current
+      self.l1_approver  = user.reporting_manager
+      self.l2_approver  = (user.l2_manager unless user.l2_manager_id.nil? || user.l2_manager_id == user.reporting_manager_id)
+      raise Workflow::NotAllowed, "L1 (reporting manager) is not set. Contact PD HR." if l1_approver.nil?
+      self.finance_approver = user.finance_approver
+      assign_extra_steps
+      # a Finance question still waiting for an answer is closed by the correction itself
+      open_query&.assign_attributes(answer: "Employee corrected the claim and sent it again.", answered_at: Time.current)
+      self.returned_at = self.returned_by = self.return_remark = nil
+      self.l1_approved_at = self.l1_approved_by = self.l2_approved_at = self.l2_approved_by = nil
+      self.l1_remark = self.l2_remark = self.finance_remark = nil
+      self.approved_at = self.approved_by = nil
+      self.status = "submitted"
+      save!
+      claim_queries.each { |q| q.save! if q.changed? }
+      log_activity!(:claim_edited_resubmitted, actor: by, from: from, to: status,
+                    details: { grand_total: grand_total.to_s, balance: balance_amount.to_s })
+      Notifier.claim(self, :claim_edited_resubmitted, actor: by)
+    end
+    self
   end
 
   # L1 / L2 / extra approval – moves the claim on: L1 → L2 (if set) → extra approvers (COO, Director …) → Finance.
