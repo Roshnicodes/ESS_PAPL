@@ -68,14 +68,11 @@
           <%= render "layouts/flash" %>
           <main class="app-main mx-auto max-w-[1540px] px-3 py-5 sm:px-6 sm:py-7">
             <%# letter-head on every printed page %>
+            <%# letter-head on paper: PAPL logo in the middle and the organisation's name – nothing else %>
             <div class="print-only mb-3 border-b-2 border-brand-700 pb-2">
-              <div class="flex items-center justify-between gap-4">
+              <div class="flex flex-col items-center text-center leading-tight">
                 <%= image_tag "papl_logo_full.png", class: "h-14 w-auto", alt: "Ploughman Agro" %>
-                <div class="text-right leading-tight">
-                  <div class="text-base font-extrabold text-brand-800">Ploughman Agro Private Limited</div>
-                  <div class="text-[11px] text-slate-600">Employee Self Service · <%= content_for(:title) %></div>
-                  <div class="text-[10px] text-slate-500">Printed by <%= current_user.name %> (<%= current_user.emp_code %>) on <%= Time.current.strftime("%d/%m/%Y %I:%M %p") %></div>
-                </div>
+                <div class="mt-1 text-base font-extrabold text-brand-800">Ploughman Agro Private Limited</div>
               </div>
             </div>
             <%= yield %>

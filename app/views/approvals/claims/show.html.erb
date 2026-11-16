@@ -1,6 +1,7 @@
-<% content_for :title, "Review Claim" %>
+<% claim_title = @claim.type_local? ? "Local Mileage Claim" : "Tour Claim" %>
+<% content_for :title, claim_title %>
 <% step = @claim.review_step %>
-<%= page_header("Review Claim", @claim.tour.duration_label, icon_name: :clipboard) do %>
+<%= page_header(claim_title, @claim.type_local? ? @claim.tour.claim_month&.strftime("%b-%Y") : @claim.tour.duration_label, icon_name: :clipboard) do %>
   <%= history_link(@claim.tour, target: "_blank") %>
   <%= print_button %>
 <% end %>

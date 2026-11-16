@@ -225,6 +225,15 @@
   .print-only.print-sign-row { display: flex !important; align-items: center; gap: 12px; break-inside: avoid; }
   .print-sign-seal { flex-shrink: 0; padding: 0 6px; }
   .seal-foot { display: none !important; }   /* on paper the stamp is printed beside the signatures */
+  /* reviewer's deduction boxes print as plain values (empty = nothing), not as form fields */
+  .tbl-review input, .tbl-review textarea { border: 0 !important; background: transparent !important; box-shadow: none !important;
+    padding: 0 !important; min-height: 0 !important; height: auto !important; font-size: inherit !important; color: #0f172a !important; }
+  .tbl-review input::placeholder, .tbl-review textarea::placeholder { color: transparent !important; }
+  /* compact totals + pay-to on paper so the signatures stay on the same page */
+  .claim-totals > div > div { padding-top: 2px !important; padding-bottom: 2px !important; font-size: 10.5px !important; }
+  .claim-totals > div > div b { font-size: 11.5px !important; }
+  .claim-totals { margin-bottom: 6px !important; }
+  .card.mb-4 { margin-bottom: 6px !important; }
   .print-sign-seal .seal-ring { width: 96px; height: 96px; }
   .fade-up { animation: none !important; }
   .page-heading { margin-bottom: .5rem !important; }
