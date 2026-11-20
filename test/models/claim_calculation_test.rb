@@ -52,31 +52,39 @@ class ClaimCalculationTest < ActiveSupport::TestCase
     assert line.valid?, line.errors.full_messages.join(", ")
   end
 
-  test "lodging: No of days and Amount are what the employee typed – nothing is worked out" do
+  test "lodging: No of days as typed, Amount = days × rate – a typed amount is ignored" do
     l = @claim.claim_lodgings.build(lodging_date: @tour.from_date, city: City.find_by!(name: "Jhabua"),
       from_date: @tour.from_date.to_time + 12.hours, to_date: @tour.to_date.to_time + 20.hours, rate: 900, no_of_days: 2, amount: 1_750)
     @claim.save!
     assert_equal 2, l.no_of_days                    # not 2.5 from the clock
-    assert_equal 1_750, l.amount                    # not 2 × 900
-    assert_equal 1_750, l.total_amount
+    assert_equal 1_800, l.amount                    # 2 × 900, not the typed 1,750
+    assert_equal 1_800, l.total_amount
   end
 
-  test "lodging needs days and amount from the employee; rate may be left blank" do
+  test "lodging needs days and rate from the employee" do
     city = City.find_by!(name: "Jhabua")
     l = @claim.claim_lodgings.build(lodging_date: @tour.from_date, city: city,
       from_date: @tour.from_date.to_time + 10.hours, to_date: @tour.from_date.to_time + 20.hours)
     assert_not l.valid?
     assert l.errors[:no_of_days].any?
-    assert l.errors[:amount].any?
-    l.assign_attributes(no_of_days: 1, amount: 1_200, rate: nil)
+    assert l.errors[:rate].any?
+    l.assign_attributes(no_of_days: 1.5, rate: 800)
     assert l.valid?, l.errors.full_messages.to_sentence
     @claim.save!
-    assert_equal 0, l.rate
+    assert_equal 1_200, l.amount
+  end
+
+  test "lodging amount = No of days × rate even if something else is sent" do
+    l = @claim.claim_lodgings.build(lodging_date: @tour.from_date, place_name: "Aligarh",
+      from_date: @tour.from_date.to_time + 12.hours, to_date: @tour.to_date.to_time + 12.hours, no_of_days: 2, rate: 500, amount: 99)
+    assert l.valid?, l.errors.full_messages.to_sentence
+    @claim.save!
+    assert_equal [ 1_000, 1_000 ], [ l.amount, l.total_amount ]
   end
 
   test "a reviewer saving deductions keeps the employee's lodging amount" do
     l = @claim.claim_lodgings.build(lodging_date: @tour.from_date, place_name: "Guest house",
-      from_date: @tour.from_date.to_time + 10.hours, to_date: @tour.from_date.to_time + 20.hours, no_of_days: 1, amount: 800)
+      from_date: @tour.from_date.to_time + 10.hours, to_date: @tour.from_date.to_time + 20.hours, no_of_days: 1, rate: 800)
     @claim.save!
     @claim.update_columns(status: "submitted", submitted_at: Time.current, l1_approver_id: @am.id)
     l.reload.update!(deduction_amount: 100, deduction_remark: "Over limit")

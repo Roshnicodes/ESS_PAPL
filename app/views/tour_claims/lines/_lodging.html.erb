@@ -9,9 +9,9 @@
   <td data-label="To Date"><%= f.datetime_field :to_date, class: "inp", min: "#{@tour.from_date}T00:00", max: "#{@tour.to_date}T23:59", data: { calc: "arr" } %></td>
   <td data-label="No of Days"><%= f.number_field :no_of_days, value: (o.no_of_days.to_d.zero? ? nil : o.no_of_days.to_d.to_s("F").sub(/\.0\z/, "")), placeholder: "Days", step: "0.25", min: 0, class: "inp",
         title: "Number of days of the stay – enter it yourself", data: { calc: "days" } %></td>
-  <td data-label="Lodging Rate"><%= f.number_field :rate, step: "0.01", min: 0, value: (o.rate.to_d.zero? ? nil : o.rate), placeholder: "Rate (optional)", class: "inp", title: "Lodging rate per day – for reference only", data: { calc: "rate_in" } %></td>
+  <td data-label="Lodging Rate"><%= f.number_field :rate, step: "0.01", min: 0, value: (o.rate.to_d.zero? ? nil : o.rate), placeholder: "Rate / day", class: "inp", title: "Lodging rate per day – Amount = No of Days × Rate", data: { calc: "rate_in" } %></td>
   <td data-label="Remark"><%= f.text_field :remark, class: "inp" %></td>
-  <td data-label="Amount (Rs.)"><%= f.number_field :amount, step: "0.01", min: 0, value: (o.amount.to_d.zero? ? nil : o.amount), placeholder: "0.00", class: "inp text-right", title: "Lodging amount (Rs.) – enter it yourself", data: { calc: "amount" } %></td>
+  <td data-label="Amount (Rs.)"><%= f.number_field :amount, step: "0.01", min: 0, value: (o.amount.to_d.zero? ? nil : o.amount), placeholder: "0.00", readonly: true, tabindex: -1, class: "inp text-right", title: "Lodging amount (Rs.) = No of Days × Rate", data: { calc: "amount" } %></td>
   <%= render "tour_claims/lines/tail", f: f %>
   <td class="w-16 whitespace-nowrap text-right"><%= render "tour_claims/lines/row_actions" %></td>
 </tr>

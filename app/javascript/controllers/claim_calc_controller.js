@@ -102,7 +102,10 @@ export default class extends Controller {
       }
       const days = q("days")
       if (kind === "lodging") {
-        // No of days and Amount are typed by the employee – nothing is filled in for them
+        // No of days and Rate are typed by the employee; Amount = days × rate (read-only).
+        // Only when one of them is typed, so a saved amount is shown as it was saved.
+        if (changed === "days" || changed === "rate_in")
+          amountEl.value = (this.num(days.value) * this.num(rateEl.value)).toFixed(2)
       } else {
         const dep = q("dep")?.value, arr = q("arr")?.value
         if (dep && arr) days.value = this.daDays(new Date(dep), new Date(arr)) || ""

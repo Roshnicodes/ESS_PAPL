@@ -5,9 +5,9 @@ class ClaimLodging < ApplicationRecord
 
   validates :from_date, :to_date, presence: true
   validates :no_of_days, :rate, numericality: { greater_than_or_equal_to: 0 }
-  # the employee types No of days and Amount (the actual stay); rate is optional, for reference
+  # the employee types No of days and Lodging Rate; Amount = days × rate (not typed)
   validates :no_of_days, numericality: { greater_than: 0, message: "– enter the number of days" }, if: :employee_filling?
-  validates :amount, numericality: { greater_than: 0, message: "– enter the lodging amount (Rs.)" }, if: :employee_filling?
+  validates :rate, numericality: { greater_than: 0, message: "– enter the lodging rate per day" }, if: :employee_filling?
   before_validation { self.rate ||= 0; self.no_of_days ||= 0 }
   validate  :place_given
   validate  :date_order
@@ -16,9 +16,12 @@ class ClaimLodging < ApplicationRecord
 
   private
 
-  # No of days and Amount are typed by the employee – nothing is worked out here any more, so a saved
-  # claim keeps exactly what was filled (reviewers only add deductions).
-  def compute_amount; end
+  # Amount = No of days × rate while the employee fills the claim. Once sent, reviewers only add
+  # deductions, so the amount of a sent claim is never worked out again.
+  def compute_amount
+    return unless employee_filling?
+    self.amount = (no_of_days.to_d * rate.to_d).round(2)
+  end
 
   def employee_filling? = tour_claim.nil? || tour_claim.employee_editable?
 
