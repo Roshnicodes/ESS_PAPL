@@ -6,6 +6,7 @@
 #   that can be filled in and uploaded back for a bulk update.
 class PaymentAdvicesController < ApplicationController
   include ClaimPeriodFilter
+  include ListSearch
 
   before_action :require_payment_role
   before_action :set_claim_period, only: :index
@@ -15,7 +16,7 @@ class PaymentAdvicesController < ApplicationController
   def index
     @type  = TYPES.key?(params[:type].to_s) ? params[:type].to_s : "all"
     @scope = params[:scope].to_s == "paid" ? "paid" : "pending"
-    @claims = filter_by_period(base_scope)
+    @claims = search_claims(filter_by_period(base_scope))
     @totals = payment_totals(@claims)
     respond_to do |format|
       format.html { @claims = @claims.page(params[:page]).per(50) }

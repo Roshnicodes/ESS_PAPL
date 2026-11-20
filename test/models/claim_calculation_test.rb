@@ -52,22 +52,36 @@ class ClaimCalculationTest < ActiveSupport::TestCase
     assert line.valid?, line.errors.full_messages.join(", ")
   end
 
-  test "lodging days are counted from date-time (same rule as DA) and amount = rate x days" do
+  test "lodging: No of days and Amount are what the employee typed – nothing is worked out" do
     l = @claim.claim_lodgings.build(lodging_date: @tour.from_date, city: City.find_by!(name: "Jhabua"),
-      from_date: @tour.from_date.to_time + 12.hours, to_date: @tour.to_date.to_time + 20.hours, rate: 900)
+      from_date: @tour.from_date.to_time + 12.hours, to_date: @tour.to_date.to_time + 20.hours, rate: 900, no_of_days: 2, amount: 1_750)
     @claim.save!
-    assert_equal 2.5, l.no_of_days                  # 12:00 day 1 → 20:00 day 3 = 2 days 8 h → 2 + ½
-    assert_equal 900, l.rate                        # lodging rate is what the employee typed
-    assert_equal 2250, l.amount
+    assert_equal 2, l.no_of_days                    # not 2.5 from the clock
+    assert_equal 1_750, l.amount                    # not 2 × 900
+    assert_equal 1_750, l.total_amount
   end
 
-  test "lodging rate is entered by the employee – the city's DA rate is not used" do
+  test "lodging needs days and amount from the employee; rate may be left blank" do
     city = City.find_by!(name: "Jhabua")
     l = @claim.claim_lodgings.build(lodging_date: @tour.from_date, city: city,
-      from_date: @tour.from_date.to_time + 10.hours, to_date: @tour.from_date.to_time + 20.hours, rate: 1_200)
+      from_date: @tour.from_date.to_time + 10.hours, to_date: @tour.from_date.to_time + 20.hours)
+    assert_not l.valid?
+    assert l.errors[:no_of_days].any?
+    assert l.errors[:amount].any?
+    l.assign_attributes(no_of_days: 1, amount: 1_200, rate: nil)
+    assert l.valid?, l.errors.full_messages.to_sentence
     @claim.save!
-    assert_equal 1_200, l.rate
-    assert_equal 1_200, l.amount                     # 10 h = 1 day
+    assert_equal 0, l.rate
+  end
+
+  test "a reviewer saving deductions keeps the employee's lodging amount" do
+    l = @claim.claim_lodgings.build(lodging_date: @tour.from_date, place_name: "Guest house",
+      from_date: @tour.from_date.to_time + 10.hours, to_date: @tour.from_date.to_time + 20.hours, no_of_days: 1, amount: 800)
+    @claim.save!
+    @claim.update_columns(status: "submitted", submitted_at: Time.current, l1_approver_id: @am.id)
+    l.reload.update!(deduction_amount: 100, deduction_remark: "Over limit")
+    assert_equal 800, l.amount
+    assert_equal 700, l.total_amount
   end
 
   test "DA = days x city DA rate x applicable %" do
@@ -123,9 +137,9 @@ class ClaimCalculationTest < ActiveSupport::TestCase
     assert @claim.blocked_words_removed?
   end
 
-  test "lodging days from date-time × typed rate; DA keeps the city master rate" do
+  test "lodging days and amount as typed; DA keeps the city master rate" do
     city = City.find_by!(name: "Jhabua")
-    l = @claim.claim_lodgings.build(lodging_date: @tour.from_date, city: city, rate: 700,
+    l = @claim.claim_lodgings.build(lodging_date: @tour.from_date, city: city, rate: 700, no_of_days: 1.5, amount: 1_050,
       from_date: @tour.from_date.to_time + 10.hours, to_date: @tour.from_date.to_time + 1.day + 18.hours)
     d = @claim.claim_daily_allowances.build(departure_city: "Bhopal", city: city, da_rate: 1,
       departure_at: @tour.from_date.to_time + 10.hours, arrival_at: @tour.from_date.to_time + 1.day + 18.hours, applicable_percent: 100)

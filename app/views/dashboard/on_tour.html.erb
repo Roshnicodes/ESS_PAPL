@@ -9,10 +9,11 @@
 <% end %>
 
 <% status_label = ->(t) { { "submitted" => "Pending L1", "l1_approved" => "Forwarded to L2", "l2_approved" => "Forwarded to #{t.l3_label}" }[t.status] } %>
-<div class="card overflow-hidden fade-up" data-controller="dialog">
+<div class="card overflow-hidden fade-up" data-controller="dialog table-filter">
+  <%= render "shared/table_filter_field", placeholder: "Search name, code, location, place…" %>
   <table class="tbl tbl-stack">
     <thead><tr><th>Employee</th><th>Tour</th><th>Place on <%= d(@date) %></th><th>Status</th><th class="no-print"></th></tr></thead>
-    <tbody>
+    <tbody data-table-filter-target="body">
       <% @tours.each do |t| %>
         <% u = t.user; day_places = t.tour_visits.select { |v| v.visit_date == @date }.map(&:place).compact_blank.uniq %>
         <tr class="cursor-pointer transition hover:bg-brand-50/50" data-action="click->dialog#open" data-dialog-id-param="on-tour-<%= t.id %>">

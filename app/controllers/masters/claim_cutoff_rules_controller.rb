@@ -35,8 +35,12 @@ class Masters::ClaimCutoffRulesController < ApplicationController
     if @claim_cutoff_rule.global?
       redirect_to masters_claim_cutoff_rules_path, alert: "The all-employee rule cannot be removed, only changed."
     else
-      @claim_cutoff_rule.log_activity!(:cutoff_removed, details: { scope: @claim_cutoff_rule.user.emp_code, day: @claim_cutoff_rule.cutoff_day })
-      @claim_cutoff_rule.destroy!
+      # `delete`, not `destroy`: the change history (append-only activity_logs)
+      # must survive, and Auditable's restrict callback would block a destroy.
+      ClaimCutoffRule.transaction do
+        @claim_cutoff_rule.log_activity!(:cutoff_removed, details: { scope: @claim_cutoff_rule.user.emp_code, day: @claim_cutoff_rule.cutoff_day })
+        @claim_cutoff_rule.delete
+      end
       redirect_to masters_claim_cutoff_rules_path, notice: "Employee override removed; all-employee rule applies."
     end
   end

@@ -5,6 +5,10 @@ class ClaimLodging < ApplicationRecord
 
   validates :from_date, :to_date, presence: true
   validates :no_of_days, :rate, numericality: { greater_than_or_equal_to: 0 }
+  # the employee types No of days and Amount (the actual stay); rate is optional, for reference
+  validates :no_of_days, numericality: { greater_than: 0, message: "– enter the number of days" }, if: :employee_filling?
+  validates :amount, numericality: { greater_than: 0, message: "– enter the lodging amount (Rs.)" }, if: :employee_filling?
+  before_validation { self.rate ||= 0; self.no_of_days ||= 0 }
   validate  :place_given
   validate  :date_order
 
@@ -12,12 +16,11 @@ class ClaimLodging < ApplicationRecord
 
   private
 
-  def compute_amount
-    # days from From / To date-time, same rule as DA (full 24 h = 1 day; rest ≤6 h 25 %, under 10 h 50 %, 10 h or more 100 %)
-    self.no_of_days = ClaimDailyAllowance.days_between(from_date, to_date) if from_date && to_date && to_date >= from_date
-    # lodging rate is typed by the employee (only DA comes from the City master)
-    self.amount = (no_of_days.to_d * rate.to_d).round(2)
-  end
+  # No of days and Amount are typed by the employee – nothing is worked out here any more, so a saved
+  # claim keeps exactly what was filled (reviewers only add deductions).
+  def compute_amount; end
+
+  def employee_filling? = tour_claim.nil? || tour_claim.employee_editable?
 
   def place_given
     errors.add(:base, "Lodging: select a city or enter the place") if city.nil? && place_name.blank?

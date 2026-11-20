@@ -225,6 +225,14 @@
   .print-only.print-sign-row { display: flex !important; align-items: center; gap: 12px; break-inside: avoid; }
   .print-sign-seal { flex-shrink: 0; padding: 0 6px; }
   .seal-foot { display: none !important; }   /* on paper the stamp is printed beside the signatures */
+  /* letter-head: logo centred, the name in bold, one clean rule under it – no background */
+  .print-only.print-letterhead { display: flex !important; flex-direction: column; align-items: center; gap: 3px;
+    margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid #1a6b39; }
+  .print-letterhead img { height: 56px; width: auto; }
+  .print-letterhead-name { font-size: 16px; font-weight: 800; letter-spacing: .03em; color: #14532d; }
+  /* claimant card on paper: one type size for name, details, location and duration */
+  .claimant-card b, .claimant-card span { font-size: 11px !important; }
+  .claimant-card .text-xs { font-size: 9px !important; }
   /* reviewer's deduction boxes print as plain values (empty = nothing), not as form fields */
   .tbl-review input, .tbl-review textarea { border: 0 !important; background: transparent !important; box-shadow: none !important;
     padding: 0 !important; min-height: 0 !important; height: auto !important; font-size: inherit !important; color: #0f172a !important; }

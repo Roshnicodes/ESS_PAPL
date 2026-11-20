@@ -7,7 +7,11 @@ class Masters::ItToolSettingsController < ApplicationController
     "KRA_PORTAL_URL"    => [ "Key Result portal address", "https://kra.ploughmanagro.com" ],
     "KRA_SSO_SECRET"    => [ "Key Result secret (ESS_SSO_SECRET on the Key Result server)", nil ],
     "OLD_ESS_URL"        => [ "Old ESS address", "https://ess.asaindia.org/papl" ],
-    "OLD_ESS_SSO_SECRET" => [ "Old ESS secret (same value inside ess_sso.php on the old ESS) – blank = old ESS opens its login page", nil ]
+    "OLD_ESS_SSO_SECRET" => [ "Old ESS secret (same value inside ess_sso.php on the old ESS) – blank = old ESS opens its login page", nil ],
+    "ASA_KRA_URL"        => [ "KRA portal address – blank = KRA shows “Soon”", nil ],
+    "ASA_KRA_SSO_SECRET" => [ "KRA secret (ESS_SSO_SECRET on the KRA server)", nil ],
+    "EXAM_URL"           => [ "Exam portal address (opens its own login) – blank = Exam shows “Soon”", nil ],
+    "EXAM_ACCESS_CODES"  => [ "Who else sees Exam (besides PD HR / admin) – employee codes, comma separated", ExternalAppLink::EXAM_DEFAULT_CODES ]
   }.freeze
 
   def show

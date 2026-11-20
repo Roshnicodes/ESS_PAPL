@@ -1,6 +1,7 @@
 # Claim approval: L1 -> L2 (if set) -> PD Finance.
 class Approvals::ClaimsController < ApplicationController
   include ClaimPeriodFilter
+  include ListSearch
 
   before_action :set_claim, except: :index
   before_action :set_claim_period, only: :index
@@ -27,7 +28,7 @@ class Approvals::ClaimsController < ApplicationController
       else
         base.in_queue_of(current_user).order(:submitted_at)
       end
-    @claims = filter_by_period(@claims)   # no FY / month picked -> unchanged
+    @claims = search_claims(filter_by_period(@claims))   # no FY / month / search -> unchanged
     @totals = claim_totals(@claims)
     respond_to do |format|
       format.html { @claims = @claims.page(params[:page]).per(25) }

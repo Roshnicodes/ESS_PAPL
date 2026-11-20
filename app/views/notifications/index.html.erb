@@ -3,6 +3,7 @@
   <%= print_button %>
   <%= button_to mark_all_read_notifications_path, method: :patch, class: "btn-light" do %><%= icon(:check) %> Mark all read<% end %>
 <% end %>
+<%= render "shared/search_bar", url: notifications_path, placeholder: "Search notifications – name, tour, claim…" %>
 <div class="card overflow-hidden fade-up">
   <ul class="divide-y divide-white/70">
     <% @notifications.each do |n| %>

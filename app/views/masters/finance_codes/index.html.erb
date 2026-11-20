@@ -23,6 +23,7 @@
   </div>
 <% end %>
 
+<%= render "shared/search_bar", url: masters_finance_codes_path, placeholder: "Search project, BLI or code…" %>
 <div class="card overflow-hidden fade-up">
   <div class="card-head"><span class="card-title">Current finance mapping</span><span class="muted"><%= @mapping_count %> BLI-code mappings across <%= @project_count %> projects</span></div>
   <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">

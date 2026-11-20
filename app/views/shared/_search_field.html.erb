@@ -1,0 +1,6 @@
+<%# locals: (placeholder: "Search…") %>
+<%# the search box shared by every list (name, code, place, …); each word must match %>
+<div class="relative">
+  <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400"><%= icon(:search, "h-4 w-4") %></span>
+  <%= search_field_tag :q, params[:q], placeholder: placeholder, class: "inp pl-9", autocomplete: "off", aria: { label: "Search" } %>
+</div>

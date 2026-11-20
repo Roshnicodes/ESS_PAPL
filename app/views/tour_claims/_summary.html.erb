@@ -2,12 +2,12 @@
 <%# pass f (form builder) to let reviewers edit deductions %>
 <% tour = claim.tour; u = claim.user %>
 <div data-controller="review-calc" data-review-calc-advance-value="<%= claim.advance_amount.to_d %>">
-<div class="card mb-4 flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2.5 text-sm sm:px-5">
+<div class="card claimant-card mb-4 flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2.5 text-sm sm:px-5">
   <%# name on the first line; Location and Duration under it %>
   <span class="flex items-center gap-2.5"><%= avatar(u, size: "h-9 w-9 text-xs") %>
     <span class="leading-tight">
       <span class="block"><b><%= u.name %></b> <span class="text-slate-500"><%= [u.designation, u.level, u.emp_code].compact.join(" · ") %></span></span>
-      <span class="mt-0.5 flex flex-wrap gap-x-4 text-[13px]">
+      <span class="mt-0.5 flex flex-wrap gap-x-4">
         <span><span class="text-xs font-semibold uppercase text-slate-400">Location</span> <%= u.location || "—" %></span>
         <span><span class="text-xs font-semibold uppercase text-slate-400">Duration</span> <%= claim.type_local? ? tour.claim_month.strftime("%b-%Y") : tour.duration_label %></span>
       </span>

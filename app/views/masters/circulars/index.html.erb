@@ -5,6 +5,7 @@
   <%= link_to new_masters_circular_path, class: "btn-primary" do %><%= icon(:plus) %> New IOM / Circular<% end %>
 <% end %>
 
+<%= render "shared/search_bar", url: masters_circulars_path, placeholder: "Search IOM / Circular – topic, number, words in it…" %>
 <div class="card overflow-hidden fade-up">
   <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">
     <thead><tr><th>Type</th><th>Topic</th><th>Attachments</th><th>Notified</th><th>Published</th><th>Active / Inactive</th><th class="no-print"></th></tr></thead>

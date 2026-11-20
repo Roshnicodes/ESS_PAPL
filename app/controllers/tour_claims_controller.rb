@@ -112,7 +112,7 @@ class TourClaimsController < ApplicationController
     @claim.seed_daily_visit_reports
   end
 
-  LINE_AMOUNTS = %i[id position amount _destroy].freeze
+  LINE_AMOUNTS = %i[id position amount deduction_amount deduction_remark _destroy].freeze   # PAPL: filler may enter deductions
 
   def claim_params
     params.require(:tour_claim).permit(:bank_account_id, 

@@ -6,6 +6,19 @@ class CircularsTest < ActionDispatch::IntegrationTest
     @file = Rack::Test::UploadedFile.new(Rails.root.join("test/fixtures/files/passbook.png"), "image/png")
   end
 
+  test "the IOM lists can be searched by topic" do
+    Circular.create!(topic_type: "iom", topic: "Office timing change", audience: "all", active: true, created_by: @admin)
+    Circular.create!(topic_type: "iom", topic: "Holi holiday list", audience: "all", active: true, created_by: @admin)
+    sign_in @admin
+    get masters_circulars_path(q: "timing")
+    assert_match "Office timing change", response.body
+    assert_no_match "Holi holiday list", response.body
+    sign_in @emp
+    get circulars_path(q: "holi")
+    assert_match "Holi holiday list", response.body
+    assert_no_match "Office timing change", response.body
+  end
+
   test "admin publishes an IOM for all employees and everyone is notified" do
     sign_in @admin
     get new_masters_circular_path
@@ -158,6 +171,39 @@ class CircularsTest < ActionDispatch::IntegrationTest
     post masters_circulars_path, params: { circular: { topic_type: "iom", topic: "Sneaky", audience: "all" } }
     assert_redirected_to authenticated_root_path
     assert_nil Circular.find_by(topic: "Sneaky")
+  end
+
+  test "the IOM page shows pictures and the PDF right on the page; other files only download" do
+    c = Circular.create!(topic_type: "iom", topic: "Old IOM with scan", audience: "all", created_by: @admin)
+    c.attachments.attach(io: File.open(Rails.root.join("test/fixtures/files/passbook.png")), filename: "scan.png", content_type: "image/png")
+    c.attachments.attach(io: StringIO.new("%PDF-1.4\n%%EOF"), filename: "iom.pdf", content_type: "application/pdf")
+    c.attachments.attach(io: StringIO.new("<script>alert(1)</script>"), filename: "note.html", content_type: "text/html")
+    png, pdf, html = c.attachments.sort_by { |a| a.filename.to_s }.values_at(2, 0, 1)
+
+    sign_in @emp
+    get circular_path(c)
+    assert_match %(<img src="#{attachment_circular_path(c, attachment_id: png.id)}"), response.body
+    assert_match %(<iframe src="#{attachment_circular_path(c, attachment_id: pdf.id)}#view=FitH"), response.body
+
+    get attachment_circular_path(c, attachment_id: png.id)
+    assert_match "inline", response.headers["Content-Disposition"]
+    get attachment_circular_path(c, attachment_id: pdf.id)
+    assert_match "inline", response.headers["Content-Disposition"]
+    get attachment_circular_path(c, attachment_id: html.id)
+    assert_match "attachment", response.headers["Content-Disposition"]
+  end
+
+  test "an IOM with no file says so – admin gets the Attach button, employees a note" do
+    c = Circular.create!(topic_type: "iom", topic: "Old IOM without file", audience: "all", created_by: @admin)
+    sign_in @emp
+    get circular_path(c)
+    assert_match "No file is attached to this IOM yet", response.body
+    assert_no_match edit_masters_circular_path(c), response.body
+    get circulars_path
+    assert_match "No file", response.body
+    sign_in @admin
+    get circular_path(c)
+    assert_match "Attach file", response.body
   end
 
   private

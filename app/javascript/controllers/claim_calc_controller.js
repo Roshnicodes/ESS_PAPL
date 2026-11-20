@@ -4,8 +4,7 @@ import { Controller } from "@hotwired/stimulus"
 //   A / E   total = amount − deduction
 //   B       Two/Four Wheeler: KM = meter to − meter from, amount column = ₹/km, total = KM × rate − deduction
 //           Public Transport: meters locked at 0, KM and total typed
-//   C       days from From / To date-time (same hours rule as D), rate auto-filled from the chosen city's
-//           rate typed by the employee, amount = rate × days
+//   C       No of days and Amount typed by the employee (rate optional, for reference)
 //   D       rate auto-filled from arrival city (editable), amount = days × DA rate × applicable % / 100
 //   Grand total = Σ section sub totals, Balance = grand total − advance
 export default class extends Controller {
@@ -34,7 +33,8 @@ export default class extends Controller {
     const q = (k) => row.querySelector(`[data-calc="${k}"]`)
     const changed = event?.target && row.contains(event.target) ? event.target.dataset.calc : null
     const amountEl = q("amount")
-    const deduction = this.num(q("deduction")?.dataset.value)
+    const dedEl = q("deduction")
+    const deduction = this.num(dedEl?.dataset.value ?? dedEl?.value)   // typed box (employee) or fixed value
 
     // "NA" = no journey on this line: places, ticket, meters, km and amount are cleared and locked, total ₹0
     const na = row.querySelector("[data-na-mode]")?.selectedOptions[0]?.dataset.none === "true"
@@ -102,9 +102,7 @@ export default class extends Controller {
       }
       const days = q("days")
       if (kind === "lodging") {
-        const from = q("dep")?.value, to = q("arr")?.value
-        if (from && to) days.value = this.daDays(new Date(from), new Date(to)) || ""
-        amountEl.value = (this.num(days.value) * this.num(rateEl.value)).toFixed(2)
+        // No of days and Amount are typed by the employee – nothing is filled in for them
       } else {
         const dep = q("dep")?.value, arr = q("arr")?.value
         if (dep && arr) days.value = this.daDays(new Date(dep), new Date(arr)) || ""

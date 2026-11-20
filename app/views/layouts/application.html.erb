@@ -69,11 +69,9 @@
           <main class="app-main mx-auto max-w-[1540px] px-3 py-5 sm:px-6 sm:py-7">
             <%# letter-head on every printed page %>
             <%# letter-head on paper: PAPL logo in the middle and the organisation's name – nothing else %>
-            <div class="print-only mb-3 border-b-2 border-brand-700 pb-2">
-              <div class="flex flex-col items-center text-center leading-tight">
-                <%= image_tag "papl_logo_full.png", class: "h-14 w-auto", alt: "Ploughman Agro" %>
-                <div class="mt-1 text-base font-extrabold text-brand-800">Ploughman Agro Private Limited</div>
-              </div>
+            <div class="print-only print-letterhead">
+              <%= image_tag "papl_logo_full.png", alt: "Ploughman Agro" %>
+              <div class="print-letterhead-name">Ploughman Agro Private Limited</div>
             </div>
             <%= yield %>
           </main>

@@ -4,10 +4,11 @@
   <%= link_to new_masters_travel_mode_path, class: "btn-primary" do %><%= icon(:plus) %> Add Mode of Travel<% end %>
 <% end %>
 <% yes = ->(b) { b ? icon(:check_circle, "h-5 w-5 text-emerald-500") : tag.span("—", class: "text-slate-300") } %>
-<div class="card overflow-hidden fade-up">
+<div class="card overflow-hidden fade-up" data-controller="table-filter">
+  <%= render "shared/table_filter_field", placeholder: "Search mode of travel…" %>
   <div class="overflow-x-auto"><table class="tbl tbl-hover tbl-stack">
     <thead><tr><th>#</th><th>Mode of Travel</th><th class="text-center">Tour Plan</th><th class="text-center">Claim A (City)</th><th class="text-center">Local Mileage</th><th>Per KM Amount</th><th>Extra approval / Notify</th><th>Enable / Disable</th><th class="no-print"></th></tr></thead>
-    <tbody><% @travel_modes.each do |m| %>
+    <tbody data-table-filter-target="body"><% @travel_modes.each do |m| %>
       <tr class="<%= 'opacity-55' unless m.active? %>">
         <td data-label="Order" class="text-slate-400"><%= m.position %></td>
         <td data-label="Mode" class="font-semibold"><%= m.name %></td>

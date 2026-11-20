@@ -1,10 +1,13 @@
 # Admin-managed project → BLI → code mapping used at PD Finance approval.
 class Masters::FinanceCodesController < ApplicationController
+  include ListSearch
   before_action :require_admin
 
   def index
-    @mappings = ProjectBudgetLineItem.includes(:project, :budget_line_item, :budget_line_item_code)
-                                     .joins(:project).order("projects.name", "project_budget_line_items.id")
+    @mappings = search_columns(ProjectBudgetLineItem.joins(:project, :budget_line_item, :budget_line_item_code),
+                               %w[projects.name budget_line_items.name budget_line_item_codes.name])
+                  .includes(:project, :budget_line_item, :budget_line_item_code)
+                  .order("projects.name", "project_budget_line_items.id")
                                      .page(params[:page]).per(50)
     @mapping_count = ProjectBudgetLineItem.active.count
     @project_count = Project.joins(:project_budget_line_items).merge(ProjectBudgetLineItem.active).distinct.count

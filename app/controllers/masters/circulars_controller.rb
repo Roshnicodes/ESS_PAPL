@@ -1,12 +1,14 @@
 # Admin: IOM / Circular – write it, attach the files, choose who is told, activate / deactivate.
 class Masters::CircularsController < ApplicationController
+  include ListSearch
   # Every employee may READ a circular, so reading rights alone must not open these
   # screens – writing one is an admin job.
   before_action -> { authorize!(:manage, Circular) }
   load_and_authorize_resource
 
   def index
-    @circulars = Circular.includes(:created_by, :circular_recipients).with_attached_attachments.newest_first.page(params[:page]).per(20)
+    @circulars = search_columns(Circular.all, %w[circulars.topic circulars.description circulars.topic_type])
+                   .includes(:created_by, :circular_recipients).with_attached_attachments.newest_first.page(params[:page]).per(20)
   end
 
   def new

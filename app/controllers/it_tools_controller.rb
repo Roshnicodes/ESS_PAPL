@@ -3,6 +3,7 @@ class ItToolsController < ApplicationController
   def open
     key = params[:tool].to_s
     return redirect_to(authenticated_root_path, alert: "Unknown tool.") unless ExternalAppLink.tool?(key)
+    return redirect_to(authenticated_root_path, alert: "You do not have access to #{ExternalAppLink.label(key)}.") unless ExternalAppLink.visible?(key, current_user)
 
     url = ExternalAppLink.url_for(key, current_user)
     return redirect_to(authenticated_root_path, alert: "#{ExternalAppLink.label(key)} is not connected yet – please contact IT.") unless url

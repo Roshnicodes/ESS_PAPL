@@ -1,6 +1,7 @@
 # L1 / L2 tour approval: Approve, Return (to employee) or Reject (final) – remark mandatory for all three.
 class Approvals::ToursController < ApplicationController
   include TourDateRange
+  include ListSearch
   before_action :set_pending_tour, only: %i[approve send_back reject]
   before_action :set_tour_date_range, only: %i[index done]
   before_action -> { redirect_to authenticated_root_path, alert: "Approvals are only for approvers." unless current_user.tour_approver? }, only: %i[index done]
@@ -10,7 +11,7 @@ class Approvals::ToursController < ApplicationController
                  .includes(:l2_approver, :l3_approver, :l1_approved_by, :l2_approved_by, { approval_steps: :approver }, user: :location, tour_visits: :travel_mode,
                            activity_logs: :actor)
                  .order(:submitted_at)
-    @tours = within_tour_dates(@tours)
+    @tours = search_tours(within_tour_dates(@tours))
   end
 
   # Tour Approval History: everything I forwarded / approved / returned / rejected
@@ -19,10 +20,7 @@ class Approvals::ToursController < ApplicationController
     my_logs = my_logs.where(action: params[:action_type]) if params[:action_type].present?
     tour_ids = my_logs.select(:trackable_id)
     @tours = Tour.type_tour.where(id: tour_ids).includes(:user, :approver, :l2_approver)
-    if params[:q].present?
-      q = "%#{Tour.sanitize_sql_like(params[:q].strip)}%"
-      @tours = @tours.joins(:user).where("users.name ILIKE :q OR users.emp_code ILIKE :q", q: q)
-    end
+    @tours = search_tours(@tours)   # name, code, location, place, reference …
     @tours = within_tour_dates(@tours).order(updated_at: :desc).page(params[:page]).per(30)
     @my_last = ActivityLog.where(trackable_type: "Tour", trackable_id: @tours.map(&:id), actor_id: current_user.id,
                                  action: %w[l1_approved l2_approved extra_forwarded approved returned rejected])

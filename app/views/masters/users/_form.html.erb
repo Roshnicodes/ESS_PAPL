@@ -18,7 +18,19 @@
   <div><%= f.label :reporting_manager_id, "L-1 · Reporting manager (tour + claim L1)", class: "lbl" %><%= f.collection_select :reporting_manager_id, people, :id, ->(p) { "#{p.name} (#{p.emp_code})" }, { include_blank: "None" }, class: "inp" %></div>
   <div><%= f.label :l2_manager_id, "L-2 · Functional manager (tour + claim L2)", class: "lbl" %><%= f.collection_select :l2_manager_id, people, :id, ->(p) { "#{p.name} (#{p.emp_code})" }, { include_blank: "None" }, class: "inp" %></div>
   <div><%= f.label :finance_approver_id, "Finance · PD Finance for this employee's claims", class: "lbl" %><%= f.collection_select :finance_approver_id, people, :id, ->(p) { "#{p.name} (#{p.emp_code})" }, { include_blank: "Any PD Finance" }, class: "inp" %></div>
-  <label class="flex items-center gap-2 self-end rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium"><%= f.check_box :active, class: "check" %> Active (can log in)</label>
+  <div class="self-end">
+    <label class="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium"><%= f.check_box :active, class: "check" %> Active (can log in)</label>
+    <% if @user.persisted? && @user.active_in_database %>
+      <% dependents = @user.approval_dependents.count %>
+      <% pending = @user.pending_approval_tours.count + @user.pending_approval_claims.count %>
+      <% if dependents.positive? %>
+        <p class="mt-1 text-[11px] text-amber-700">Approval authority (L-1 / L-2 / Finance) for <%= dependents %> active employee<%= "s" unless dependents == 1 %> – set a new approver for them before deactivating.</p>
+      <% end %>
+      <% if pending.positive? %>
+        <p class="mt-1 text-[11px] text-amber-700"><%= pending %> tour plan / claim<%= "s" unless pending == 1 %> pending with them for approval – these must be approved / rejected before deactivating.</p>
+      <% end %>
+    <% end %>
+  </div>
   <%# Show / hide so HR can read back the password being set. Saved passwords are one-way
       encrypted and can never be read again – set a new one here if it is forgotten. %>
   <div data-controller="reveal">

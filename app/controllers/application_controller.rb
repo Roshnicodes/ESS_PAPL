@@ -26,6 +26,12 @@ class ApplicationController < ActionController::Base
     redirect_back fallback_location: root_path, alert: "This record was changed by someone else. Please reload and try again."
   end
 
+  # A delete blocked by linked records (history, claims, …) – show a message instead of a 500 page
+  rescue_from ActiveRecord::DeleteRestrictionError, ActiveRecord::InvalidForeignKey, ActiveRecord::RecordNotDestroyed do
+    redirect_back fallback_location: authenticated_root_path,
+                  alert: "This record cannot be deleted because other records are linked to it. Deactivate or edit it instead."
+  end
+
   private
 
   def set_current

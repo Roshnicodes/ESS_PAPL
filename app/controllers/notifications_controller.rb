@@ -1,6 +1,7 @@
 class NotificationsController < ApplicationController
+  include ListSearch
   def index
-    @notifications = current_user.notifications.includes(:actor).page(params[:page]).per(30)
+    @notifications = search_columns(current_user.notifications, %w[notifications.title notifications.body]).includes(:actor).page(params[:page]).per(30)
   end
 
   # open = mark read + go to the page

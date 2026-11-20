@@ -4,7 +4,7 @@
   <%= print_button %>
   <%= link_to new_tour_path(type: local ? "local" : nil), class: "btn-primary" do %><%= icon(:plus) %> <%= local ? "Local Mileage Claim" : "Tour Plan" %><% end %>
 <% end %>
-<%= render "shared/date_range_filter", url: tours_path, from: @from_date, to: @to_date, hidden: { type: params[:type] } %>
+<%= render "shared/date_range_filter", url: tours_path, from: @from_date, to: @to_date, hidden: { type: params[:type] }, placeholder: "Search place, description, month, status…" %>
 <div class="card overflow-hidden fade-up" data-controller="dialog">
   <div class="overflow-x-auto">
   <table class="tbl tbl-hover tbl-stack">

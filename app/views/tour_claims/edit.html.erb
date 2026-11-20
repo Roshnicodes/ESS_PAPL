@@ -62,8 +62,8 @@
   <% unless local %>
     <%= render "tour_claims/section", f: f, assoc: :claim_lodgings, key: "lodging", icon_name: :bed, tone: "violet",
           title: "C. Lodging Expenses (Stay Expenses)",
-          hint: "Pick From and To with date and time – No of Days fills itself (24 h = 1 day; remaining up to 6 h = ¼, 6 h to under 10 h = ½, 10 h or more = 1 day)",
-          heads: ["Date", "Place", "From (Date & Time)", "To (Date & Time)", "No of Days (auto)", "Lodging Rate", "Remark", "Amount (Rs.)"] + ded %>
+          hint: "Pick From and To with date and time, then enter No of Days and the Amount (Rs.) yourself – the rate is optional",
+          heads: ["Date", "Place", "From (Date & Time)", "To (Date & Time)", "No of Days", "Lodging Rate", "Remark", "Amount (Rs.)"] + ded %>
     <%= render "tour_claims/section", f: f, assoc: :claim_daily_allowances, key: "da", icon_name: :sun, tone: "amber",
           title: "D. Daily Allowance (DA)",
           hint: "Pick From and To with date and time – No of Days fills itself (24 h = 1 day; remaining up to 6 h = ¼, 6 h to under 10 h = ½, 10 h or more = 1 day)",

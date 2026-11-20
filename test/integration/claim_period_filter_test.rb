@@ -68,6 +68,16 @@ class ClaimPeriodFilterTest < ActionDispatch::IntegrationTest
     assert_match "Oct-2026", response.body
   end
 
+  test "the search box keeps only claims whose employee matches every word" do
+    get approvals_claims_path(type: "local", scope: "approved", q: @emp.emp_code)
+    assert_response :success
+    assert_match "Oct-2026", response.body
+    assert_no_match(/Nov-2026<\/span>/, response.body)
+
+    get approvals_claims_path(type: "local", scope: "approved", q: "#{@emp.name.split.first} nobody-matches-this")
+    assert_no_match(/Oct-2026<\/span>/, response.body)
+  end
+
   private
 
   def totals_card(body) = body[/Grand total.{0,200}/m].to_s

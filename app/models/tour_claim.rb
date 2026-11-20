@@ -58,7 +58,7 @@ class TourClaim < ApplicationRecord
 
   accepts_nested_attributes_for :claim_city_travels,     allow_destroy: true, reject_if: blank_row.(%i[travel_date departure_city arrival_city amount])
   accepts_nested_attributes_for :claim_local_travels,    allow_destroy: true, reject_if: blank_row.(%i[travel_date place_from place_to kilometers])
-  accepts_nested_attributes_for :claim_lodgings,         allow_destroy: true, reject_if: blank_row.(%i[from_date to_date city_id place_name])
+  accepts_nested_attributes_for :claim_lodgings,         allow_destroy: true, reject_if: blank_row.(%i[from_date to_date city_id place_name no_of_days amount])
   accepts_nested_attributes_for :claim_daily_allowances, allow_destroy: true, reject_if: blank_row.(%i[departure_city departure_at arrival_at])
   accepts_nested_attributes_for :claim_incidentals,      allow_destroy: true, reject_if: blank_row.(%i[expense_date particular amount])
   accepts_nested_attributes_for :claim_visit_reports,    allow_destroy: true, reject_if: blank_row.(%i[visit_date place_visited tasks_accomplished])

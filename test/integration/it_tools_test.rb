@@ -3,7 +3,7 @@ require "test_helper"
 class ItToolsTest < ActionDispatch::IntegrationTest
   setup do
     @emp = user("1025")
-    @keys = %w[KRA_SSO_SECRET KRA_PORTAL_URL OLD_ESS_SSO_SECRET OLD_ESS_URL]
+    @keys = %w[KRA_SSO_SECRET KRA_PORTAL_URL OLD_ESS_SSO_SECRET OLD_ESS_URL ASA_KRA_SSO_SECRET ASA_KRA_URL EXAM_URL EXAM_ACCESS_CODES]
     @env = ENV.to_h.slice(*@keys)
   end
   teardown { @keys.each { |k| ENV[k] = @env[k] } }
@@ -23,6 +23,47 @@ class ItToolsTest < ActionDispatch::IntegrationTest
     %w[guest_house help_desk training].each { |t| assert_no_match it_tool_path(t), response.body }
     assert_match it_tool_path("old_ess"), response.body
     assert_match "link is not set up yet", response.body
+  end
+
+  test "KRA: 'Soon' until admin sets its address and secret, then opens already signed in" do
+    ENV["ASA_KRA_SSO_SECRET"] = nil; ENV["ASA_KRA_URL"] = nil
+    sign_in @emp
+    get authenticated_root_path
+    assert_no_match it_tool_path("asa_kra"), response.body                 # PAPL: no default KRA address
+    assert_match "KRA link is not set up yet", response.body
+
+    ENV["ASA_KRA_SSO_SECRET"] = "kra-secret"; ENV["ASA_KRA_URL"] = "https://kra.example.org"
+    get authenticated_root_path
+    assert_match it_tool_path("asa_kra"), response.body
+    get it_tool_path("asa_kra")
+    uri = URI.parse(response.location)
+    q = URI.decode_www_form(uri.query).to_h
+    assert_equal "kra.example.org", uri.host
+    assert_equal "/users/ess_sign_in/#{@emp.emp_code}", uri.path
+    expected = OpenSSL::HMAC.hexdigest("SHA256", "kra-secret", "#{@emp.emp_code}:#{q['expires_at']}")
+    assert_equal expected, q["signature"]
+  end
+
+  test "Exam is only in the menu of PD HR / admin and the listed employees" do
+    ENV["EXAM_URL"] = "https://exam.example.org"; ENV["EXAM_ACCESS_CODES"] = nil
+    sign_in @emp
+    get authenticated_root_path
+    assert_no_match it_tool_path("exam"), response.body                   # PAPL: nobody listed by default
+    get it_tool_path("exam")
+    assert_redirected_to authenticated_root_path
+    assert_match "do not have access", flash[:alert]
+
+    ENV["EXAM_ACCESS_CODES"] = "PAPL900"
+    listed = User.create!(emp_code: "PAPL900", name: "HR Manager", designation: "Manager HR", password: "123456")
+    sign_in listed
+    get authenticated_root_path
+    assert_match it_tool_path("exam"), response.body
+    get it_tool_path("exam")
+    assert_redirected_to "https://exam.example.org"
+
+    sign_in user("HR001")
+    get it_tool_path("exam")
+    assert_redirected_to "https://exam.example.org"
   end
 
   test "not connected yet → friendly message, no redirect away" do

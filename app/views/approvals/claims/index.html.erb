@@ -2,7 +2,7 @@
 <% content_for :title, "#{name} #{{ 'approved' => 'Approved' }.fetch(@scope, 'Recommendation')}" %>
 <%= page_header("#{name} List", @scope == "approved" ? (current_user.finance? || current_user.hr? ? "Claims approved by PD Finance" : "Claims you approved – with their current stage") : "Claims waiting for your action", icon_name: :clipboard) do %>
   <%= print_button %>
-  <%= link_to approvals_claims_path(type: @type, scope: @scope, fy: params[:fy], month: params[:month], from: params[:from], to: params[:to], format: :xlsx), class: "btn-light", data: { turbo: false } do %><%= icon(:receipt) %> Download Excel<% end %>
+  <%= link_to approvals_claims_path(type: @type, scope: @scope, fy: params[:fy], month: params[:month], from: params[:from], to: params[:to], q: params[:q], format: :xlsx), class: "btn-light", data: { turbo: false } do %><%= icon(:receipt) %> Download Excel<% end %>
 <% end %>
 <div class="mb-4 flex flex-wrap gap-2">
   <% [["TA/DA", "tour"], ["Local Mileage", "local"]].each do |label, type| %>

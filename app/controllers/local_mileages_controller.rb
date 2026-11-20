@@ -61,6 +61,6 @@ class LocalMileagesController < ApplicationController
 
   def claim_params
     params.require(:tour_claim).permit(:bank_account_id, :helmet_declaration,
-      claim_local_travels_attributes: %i[id position amount _destroy travel_date place_from place_to travel_mode_id meter_from meter_to kilometers purpose])
+      claim_local_travels_attributes: %i[id position amount deduction_amount deduction_remark _destroy travel_date place_from place_to travel_mode_id meter_from meter_to kilometers purpose])
   end
 end

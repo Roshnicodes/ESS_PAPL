@@ -19,6 +19,12 @@ class EmployeeMasterFormTest < ActionDispatch::IntegrationTest
     assert_match "The old password cannot be shown", response.body
   end
 
+  test "edit page warns when the employee is someone's approver" do
+    get edit_masters_user_path(user("AM001"))   # L-1 of employee 1025
+    assert_response :success
+    assert_match "set a new approver for them before deactivating", response.body
+  end
+
   test "an admin can still set a password from this form" do
     emp = user("1025")
     patch masters_user_path(emp), params: { user: { emp_code: emp.emp_code, name: emp.name, password: "newpass", password_confirmation: "newpass" } }

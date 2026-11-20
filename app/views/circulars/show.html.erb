@@ -21,12 +21,44 @@
   <% end %>
 
   <% if c.attachments.attached? %>
+    <% images = c.attachments.select { |a| a.content_type.to_s.start_with?("image/") && !a.content_type.to_s.include?("svg") } %>
+    <% pdfs = c.attachments.select { |a| a.content_type.to_s == "application/pdf" } %>
+
+    <%# pictures shown on the page itself (click = full size in a new tab) %>
+    <% if images.any? %>
+      <div class="border-t border-white/70 px-4 py-4 sm:px-5">
+        <div class="grid gap-3 <%= images.size > 1 ? 'sm:grid-cols-2' : '' %>">
+          <% images.each do |a| %>
+            <%= link_to attachment_circular_path(c, attachment_id: a.id), target: "_blank", rel: "noopener", class: "group block overflow-hidden rounded-xl border border-slate-200 bg-slate-50", title: "Open full size" do %>
+              <img src="<%= attachment_circular_path(c, attachment_id: a.id) %>" alt="<%= a.filename %>" loading="lazy"
+                   class="mx-auto max-h-[75vh] w-auto max-w-full object-contain transition group-hover:opacity-95">
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# PDF read right here; more than one → each can be opened from the list below %>
+    <% if pdfs.any? %>
+      <div class="border-t border-white/70 px-4 py-4 sm:px-5 print:hidden" data-controller="pdf-tabs">
+        <% if pdfs.size > 1 %>
+          <div class="mb-2 flex flex-wrap gap-1.5">
+            <% pdfs.each_with_index do |a, i| %>
+              <button type="button" class="<%= i.zero? ? 'btn-soft' : 'btn-ghost' %> btn-xs" data-action="pdf-tabs#show" data-pdf-tabs-src-param="<%= attachment_circular_path(c, attachment_id: a.id) %>"><%= icon(:document, "h-3.5 w-3.5") %> <%= a.filename.to_s.truncate(40) %></button>
+            <% end %>
+          </div>
+        <% end %>
+        <iframe src="<%= attachment_circular_path(c, attachment_id: pdfs.first.id) %>#view=FitH" title="<%= pdfs.first.filename %>"
+                class="h-[78vh] w-full rounded-xl border border-slate-200 bg-slate-50" data-pdf-tabs-target="frame"></iframe>
+      </div>
+    <% end %>
+
     <div class="border-t border-white/70 px-4 py-4 sm:px-5">
       <div class="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">Attachments</div>
       <ul class="grid gap-2 sm:grid-cols-2">
         <% c.attachments.each do |a| %>
           <li class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white/60 px-3 py-2.5">
-            <%= icon(:document, "h-5 w-5 shrink-0 text-slate-400") %>
+            <%= icon(a.content_type.to_s.start_with?("image/") ? :eye : :document, "h-5 w-5 shrink-0 text-slate-400") %>
             <span class="min-w-0 flex-1 leading-tight">
               <%= link_to a.filename.to_s, attachment_circular_path(c, attachment_id: a.id), target: "_blank", rel: "noopener", class: "link block truncate font-medium" %>
               <span class="muted"><%= number_to_human_size(a.byte_size) %></span>
@@ -35,6 +67,21 @@
           </li>
         <% end %>
       </ul>
+    </div>
+  <% end %>
+
+  <% unless c.attachments.attached? %>
+    <div class="border-t border-white/70 px-4 py-6 sm:px-5">
+      <div class="flex flex-col items-center gap-2 rounded-xl border border-dashed border-amber-300 bg-amber-50/60 px-4 py-6 text-center">
+        <span class="icon-chip bg-amber-100 text-amber-700"><%= icon(:paperclip) %></span>
+        <div class="text-sm font-semibold text-amber-900">No file is attached to this <%= c.type_label %> yet</div>
+        <% if current_user.admin? %>
+          <div class="text-xs text-amber-800">The original file was not in the uploaded folder. Attach it here, or add it to the folder and import the sheet again.</div>
+          <%= link_to edit_masters_circular_path(c), class: "btn-soft btn-xs mt-1" do %><%= icon(:plus) %> Attach file<% end %>
+        <% else %>
+          <div class="text-xs text-amber-800">Only the subject is available for now. Please contact PD HR for a copy.</div>
+        <% end %>
+      </div>
     </div>
   <% end %>
 

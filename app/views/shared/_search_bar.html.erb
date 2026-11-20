@@ -1,0 +1,10 @@
+<%# locals: (url:, placeholder: "Search…", hidden: {}) %>
+<%# a search box above a list: every word typed must appear in the row %>
+<%= form_with url: url, method: :get, class: "card mb-4 fade-up print:hidden", data: { turbo: false } do %>
+  <% hidden.compact_blank.each do |key, value| %><%= hidden_field_tag key, value, id: nil %><% end %>
+  <div class="card-body flex flex-wrap items-center gap-2 py-3">
+    <div class="min-w-0 flex-1"><%= render "shared/search_field", placeholder: placeholder %></div>
+    <%= button_tag class: "btn-primary" do %><%= icon(:search) %> Search<% end %>
+    <% if params[:q].present? %><%= link_to "Clear", url_for(hidden.compact_blank.merge(only_path: true)), class: "btn-ghost" %><% end %>
+  </div>
+<% end %>
