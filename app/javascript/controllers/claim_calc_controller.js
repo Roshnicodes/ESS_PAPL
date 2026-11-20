@@ -84,7 +84,7 @@ export default class extends Controller {
         q("rate").value = rate.toFixed(2)
         amountEl.value = km.value === "" ? "" : (this.num(km.value) * rate).toFixed(2)
       }
-      const localTotal = this.num(amountEl.value) - deduction
+      const localTotal = this.checkDeduction(row, this.num(amountEl.value), deduction)
       const t = q("total"); if (t) t.textContent = this.money(localTotal)
       return localTotal
     }
@@ -110,10 +110,25 @@ export default class extends Controller {
       }
     }
 
-    const total = this.num(amountEl?.value) - deduction
+    const total = this.checkDeduction(row, this.num(amountEl?.value), deduction)
     const totalEl = q("total")
     if (totalEl) totalEl.textContent = this.money(total)
     return total
+  }
+
+  // Deduction typed on the line: never more than the amount, and a reason is needed – both shown at once
+  // (red box + message) instead of only after saving. Returns the line total (amount − deduction, never below 0).
+  checkDeduction(row, amount, deduction) {
+    const dedEl = row.querySelector('[data-calc="deduction"]')
+    const remark = row.querySelector('input[name*="[deduction_remark]"]')
+    if (dedEl && !dedEl.readOnly && dedEl.dataset.value === undefined) {
+      this.flag(dedEl, deduction > amount ? "Deduction cannot be more than the amount" : "")
+      if (remark) {
+        remark.required = deduction > 0
+        remark.placeholder = deduction > 0 ? "Reason (required)" : "Reason"
+      }
+    }
+    return Math.max(amount - deduction, 0)
   }
 
   // red box + message under the field; also blocks Save / Send until fixed

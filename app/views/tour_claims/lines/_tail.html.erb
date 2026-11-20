@@ -1,7 +1,7 @@
 <%# locals: (f:, total_input: false) %>
 <%# DEDUCTION AMT. / DEDUCTION REMARK – PAPL: the person filling the claim may enter them too (reviewers can still change them) %>
-<td data-label="Deduction"><%= f.number_field :deduction_amount, step: "0.01", min: 0, value: (f.object.deduction_amount.to_d.zero? ? nil : f.object.deduction_amount), placeholder: "0.00", class: "inp px-2 text-right", data: { calc: "deduction" } %></td>
-<td data-label="Deduction Remark"><%= f.text_field :deduction_remark, maxlength: 255, class: "inp px-2", placeholder: "Reason" %></td>
+<td data-label="Deduction"><%= f.number_field :deduction_amount, step: "0.01", min: 0, value: (f.object.deduction_amount.to_d.zero? ? nil : f.object.deduction_amount), placeholder: "0.00", class: "inp px-2 text-right", data: { calc: "deduction", na_off: true } %></td>
+<td data-label="Deduction Remark"><%= f.text_field :deduction_remark, maxlength: 255, class: "inp px-2", placeholder: "Reason", data: { na_off: true } %></td>
 <% if total_input %>
   <td data-label="Total"><%= f.number_field :amount, step: "0.01", min: 0, value: (f.object.amount.to_d.zero? ? nil : f.object.amount), placeholder: "0.00", class: "inp px-2 text-right font-semibold", data: { calc: "amount" } %><span hidden data-calc="total"></span><%= f.hidden_field :_destroy %></td>
 <% else %>
