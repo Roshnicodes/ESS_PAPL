@@ -19,7 +19,10 @@ class Approvals::ToursController < ApplicationController
     my_logs = ActivityLog.where(trackable_type: "Tour", actor_id: current_user.id, action: %w[l1_approved l2_approved extra_forwarded approved returned rejected])
     my_logs = my_logs.where(action: params[:action_type]) if params[:action_type].present?
     tour_ids = my_logs.select(:trackable_id)
-    @tours = Tour.type_tour.where(id: tour_ids).includes(:user, :approver, :l2_approver)
+    # a tour returned to the employee (by L1, L2 or a later step) is also shown to its L1 and L2 until it is sent again
+    chain_returned = Tour.returned.where(approver: current_user).or(Tour.returned.where(l2_approver: current_user)).select(:id)
+    chain_returned = Tour.none.select(:id) unless params[:action_type].blank? || params[:action_type] == "returned"
+    @tours = Tour.type_tour.where(id: tour_ids).or(Tour.type_tour.where(id: chain_returned)).includes(:user, :approver, :l2_approver)
     @tours = search_tours(@tours)   # name, code, location, place, reference …
     @tours = within_tour_dates(@tours).order(updated_at: :desc).page(params[:page]).per(30)
     @my_last = ActivityLog.where(trackable_type: "Tour", trackable_id: @tours.map(&:id), actor_id: current_user.id,

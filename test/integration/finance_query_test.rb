@@ -41,6 +41,17 @@ class FinanceQueryTest < ActionDispatch::IntegrationTest
     assert_equal %w[claim_query_sent claim_query_replied], @claim.activity_logs.last(2).map(&:action)
   end
 
+  test "the Return dropdown sends l1 / l2 / employee, so the choice on the page works" do
+    sign_in @fin
+    get approvals_claim_path(@claim)
+    options = response.body[/<select[^>]*name="return_to".*?<\/select>/m].scan(/<option[^>]*value="([^"]*)"[^>]*>([^<]*)</)
+    assert_equal %w[employee l1 l2], options.map(&:first)
+    assert_equal "L1 – #{@l1} (reply)", options.to_h["l1"]
+    patch send_back_approvals_claim_path(@claim), params: { return_to: options.to_h.key(options.to_h["l1"]), remark: "Check dates" }
+    assert @claim.reload.finance_query?
+    assert_equal @l1, @claim.open_query.asked_to
+  end
+
   test "Finance can still return to the employee for correction" do
     sign_in @fin
     patch send_back_approvals_claim_path(@claim), params: { return_to: "employee", remark: "Attach bill" }

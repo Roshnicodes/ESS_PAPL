@@ -253,9 +253,10 @@ class TourClaim < ApplicationRecord
 
   # people Finance can send it back to: Employee (edit & resend), L1 / L2 (reply only)
   def finance_return_options
-    [ [ "employee", "Employee – #{user.name} (edit & send again)" ],
-      ([ "l1", "L1 – #{l1_approved_by || l1_approver} (reply)" ] if l1_approver_id),
-      ([ "l2", "L2 – #{l2_approved_by || l2_approver} (reply)" ] if l2_approver_id) ].compact
+    # [label shown, value sent] – the order options_for_select expects
+    [ [ "Employee – #{user.name} (edit & send again)", "employee" ],
+      ([ "L1 – #{l1_approved_by || l1_approver} (reply)", "l1" ] if l1_approver_id),
+      ([ "L2 – #{l2_approved_by || l2_approver} (reply)", "l2" ] if l2_approver_id) ].compact
   end
 
   # Finance → L1 / L2 with a question; claim waits for their reply

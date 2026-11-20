@@ -1,6 +1,6 @@
 <% name = @type == "local" ? "Local Mileage Claim" : "TA/DA Claim" %>
-<% content_for :title, "#{name} #{{ 'approved' => 'Approved' }.fetch(@scope, 'Recommendation')}" %>
-<%= page_header("#{name} List", @scope == "approved" ? (current_user.finance? || current_user.hr? ? "Claims approved by PD Finance" : "Claims you approved – with their current stage") : "Claims waiting for your action", icon_name: :clipboard) do %>
+<% content_for :title, "#{name} #{{ 'approved' => 'Approved', 'returned' => 'Returned' }.fetch(@scope, 'Recommendation')}" %>
+<%= page_header("#{name} List", @scope == "approved" ? (current_user.finance? || current_user.hr? ? "Claims approved by PD Finance" : "Claims you approved – with their current stage") : (@scope == "returned" ? "Claims returned to the employee for correction – not sent again yet" : "Claims waiting for your action"), icon_name: :clipboard) do %>
   <%= print_button %>
   <%= link_to approvals_claims_path(type: @type, scope: @scope, fy: params[:fy], month: params[:month], from: params[:from], to: params[:to], q: params[:q], format: :xlsx), class: "btn-light", data: { turbo: false } do %><%= icon(:receipt) %> Download Excel<% end %>
 <% end %>
@@ -11,6 +11,7 @@
   <span class="mx-1 w-px bg-slate-300"></span>
   <%= link_to approvals_claims_path(type: @type), class: (@scope == "pending" ? "btn-soft btn-xs" : "btn-ghost btn-xs") do %><%= icon(:inbox) %> Pending with me<% end %>
   <%= link_to approvals_claims_path(type: @type, scope: "approved"), class: (@scope == "approved" ? "btn-soft btn-xs" : "btn-ghost btn-xs") do %><%= icon(:check_circle) %> Approved<% end %>
+  <%= link_to approvals_claims_path(type: @type, scope: "returned"), class: (@scope == "returned" ? "btn-soft btn-xs" : "btn-ghost btn-xs") do %><%= icon(:warning) %> Returned<% end %>
 </div>
 
 <%= render "shared/period_filter", url: approvals_claims_path, fy: @fy, month: @month, fy_options: @fy_options, from: @from_date, to: @to_date,
@@ -29,10 +30,10 @@
         <td data-label="Amount" class="font-semibold md:text-right"><%= inr(c.grand_total) %></td>
         <td data-label="Status"><div><%= claim_status_badge(c) %><div class="muted mt-1"><%= c.stage_label %></div></div></td>
         <td data-label="Action" class="no-print"><div class="flex flex-wrap justify-end gap-1.5"><%= history_link(c.tour, css: "btn-light btn-xs") %>
-          <%= link_to approvals_claim_path(c), class: (@scope == "approved" ? "btn-light btn-xs" : "btn-primary btn-xs") do %><%= icon(@scope == "approved" ? :eye : :clipboard) %> <%= @scope == "approved" ? "View" : "Review" %><% end %></div></td>
+          <%= link_to approvals_claim_path(c), class: (@scope.in?(%w[approved returned]) ? "btn-light btn-xs" : "btn-primary btn-xs") do %><%= icon(@scope.in?(%w[approved returned]) ? :eye : :clipboard) %> <%= @scope.in?(%w[approved returned]) ? "View" : "Review" %><% end %></div></td>
       </tr>
     <% end %>
-    <%= empty_row(7, { "approved" => "No approved claims" }.fetch(@scope, "Nothing pending with you")) if @claims.empty? %>
+    <%= empty_row(7, { "approved" => "No approved claims", "returned" => "No returned claim" }.fetch(@scope, "Nothing pending with you")) if @claims.empty? %>
     </tbody>
     <% if @totals[:count].positive? %>
       <tfoot><tr class="border-t-2 border-slate-300 bg-white/60 font-bold">

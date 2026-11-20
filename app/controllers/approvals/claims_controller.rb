@@ -9,7 +9,7 @@ class Approvals::ClaimsController < ApplicationController
 
   def index
     @type  = params[:type].to_s == "local" ? "local" : "tour"
-    @scope = params[:scope].to_s.in?(%w[approved]) ? params[:scope].to_s : "pending"
+    @scope = params[:scope].to_s.in?(%w[approved returned]) ? params[:scope].to_s : "pending"
     base = TourClaim.where(claim_type: @type).includes(:user, :tour, :approved_by, :project)
     @claims =
       if @scope == "approved"
@@ -25,6 +25,11 @@ class Approvals::ClaimsController < ApplicationController
           base.where(id: mine.approved.select(:id)).or(base.where(id: acted.select(:id)))
               .order(Arel.sql("COALESCE(tour_claims.approved_at, tour_claims.updated_at) DESC"))
         end
+      elsif @scope == "returned"
+        # sent back to the employee and not yet sent again – shown to everyone in its approval chain
+        chain = base.where(l1_approver: current_user).or(base.where(l2_approver: current_user)).or(base.where(finance_approver: current_user))
+                    .or(base.where(returned_by: current_user)).or(base.where(id: ClaimApprovalStep.where(approver_id: current_user.id).select(:tour_claim_id)))
+        base.returned.where(id: chain.select(:id)).order(returned_at: :desc)
       else
         base.in_queue_of(current_user).order(:submitted_at)
       end

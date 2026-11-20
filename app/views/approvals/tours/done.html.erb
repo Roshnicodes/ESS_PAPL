@@ -1,5 +1,5 @@
 <% content_for :title, "Tour Approval History" %>
-<%= page_header("Tour Approval History", "Tours you have forwarded, approved, returned or rejected", icon_name: :clock) do %>
+<%= page_header("Tour Approval History", "Tours you have forwarded, approved, returned or rejected – and tours returned to your team member", icon_name: :clock) do %>
   <%= print_button %>
 <% end %>
 <% labels = { "l1_approved" => ["Forwarded", "bg-sky-50 text-sky-700 ring-sky-300/60"], "l2_approved" => ["Forwarded", "bg-sky-50 text-sky-700 ring-sky-300/60"], "extra_forwarded" => ["Forwarded", "bg-sky-50 text-sky-700 ring-sky-300/60"], "approved" => ["Plan approved", "bg-emerald-50 text-emerald-700 ring-emerald-300/60"],
@@ -23,7 +23,7 @@
         <td data-label="Employee" class="whitespace-nowrap"><b><%= t.user.name %></b> <span class="muted">(<%= t.user.emp_code %>)</span></td>
         <td data-label="Tour" class="whitespace-nowrap font-semibold text-brand-700">Tour Plan</td>
         <td data-label="Duration" class="whitespace-nowrap"><%= t.duration_label %></td>
-        <td data-label="My Action"><div><% if lbl %><span class="badge <%= css %>"><%= lbl %></span><% end %><div class="muted mt-0.5 whitespace-nowrap"><%= dt(log&.created_at) %></div></div></td>
+        <td data-label="My Action"><div><% if lbl %><span class="badge <%= css %>"><%= lbl %></span><% elsif t.returned? %><span class="muted">Returned by <%= t.returned_by %></span><% end %><div class="muted mt-0.5 whitespace-nowrap"><%= dt(log&.created_at) %></div></div></td>
         <td data-label="Status"><div><%= tour_status_badge(t) %><div class="muted mt-0.5"><%= t.stage_label %></div></div></td>
         <td class="md:text-right no-print"><%= link_to approvals_tour_path(t), class: "ml-auto inline-flex rounded-lg p-2 text-brand-600 hover:bg-brand-50", title: "History" do %><%= icon(:clock) %><span class="sr-only">History</span><% end %></td>
       </tr>
