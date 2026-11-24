@@ -12,6 +12,12 @@ module ClaimsHelper
   # so opening an old tour / claim never silently changes its mode.
   def modes_with_current(modes, current) = current && !modes.include?(current) ? modes + [ current ] : modes
 
+  # min / max for a claim date box – empty while TourClaim::LIMIT_DATES_TO_TOUR is off
+  def claim_date_limits(datetime: false)
+    return {} unless TourClaim::LIMIT_DATES_TO_TOUR && @tour
+    datetime ? { min: "#{@tour.from_date}T00:00", max: "#{@tour.to_date}T23:59" } : { min: @tour.from_date, max: @tour.to_date }
+  end
+
   def nd(date)  = tag.span(d(date), class: "whitespace-nowrap")
   def ndt(time) = tag.span(dt(time), class: "whitespace-nowrap")
 

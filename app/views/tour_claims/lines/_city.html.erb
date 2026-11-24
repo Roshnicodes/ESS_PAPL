@@ -1,5 +1,5 @@
 <tr data-nested-row data-new-record="<%= f.object.new_record? %>">
-  <td data-label="Date"><%= f.date_field :travel_date, class: "inp", min: @tour.from_date, max: @tour.to_date %></td>
+  <td data-label="Date"><%= f.date_field :travel_date, class: "inp", **claim_date_limits %></td>
   <td data-label="Departure City"><%= f.text_field :departure_city, class: "inp", data: { na_off: true } %></td>
   <td data-label="Arrived City"><%= f.text_field :arrival_city, class: "inp", data: { na_off: true } %></td>
   <% modes = city_travel_modes %>

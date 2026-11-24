@@ -1,7 +1,7 @@
 <% modes = local_travel_modes %>
 <% o = f.object %>
 <tr data-nested-row data-new-record="<%= o.new_record? %>">
-  <td data-label="Date"><%= f.date_field :travel_date, class: "inp", min: @tour.from_date, max: @tour.to_date %></td>
+  <td data-label="Date"><%= f.date_field :travel_date, class: "inp", **claim_date_limits %></td>
   <td data-label="Place From"><%= f.text_field :place_from, class: "inp", data: { na_off: true } %></td>
   <td data-label="Place To"><%= f.text_field :place_to, class: "inp", data: { na_off: true } %></td>
   <td data-label="Mode of Travel"><%= f.select :travel_mode_id,

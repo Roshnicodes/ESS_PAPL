@@ -1,5 +1,5 @@
 <tr data-nested-row data-new-record="<%= f.object.new_record? %>">
-  <td data-label="Date"><%= f.date_field :visit_date, class: "inp", min: @tour.from_date, max: @tour.to_date %></td>
+  <td data-label="Date"><%= f.date_field :visit_date, class: "inp", **claim_date_limits %></td>
   <td data-label="Place Visited"><%= f.text_field :place_visited, class: "inp" %></td>
   <td data-label="Tour Visit Created Date" class="text-sm text-slate-600"><%= f.object.planned_date ? d(f.object.planned_date) : "—" %></td>
   <td data-label="Tasks Accomplished *"><%= f.text_area :tasks_accomplished, rows: 1, class: "inp", placeholder: "Required", maxlength: 2000 %></td>

@@ -7,6 +7,10 @@
 #   PD Finance must pick Project + Budget line item + Code before approving.
 #   Finance can also send it back to L1 / L2 with a question (finance_query) → they reply → finance_pending again.
 class TourClaim < ApplicationRecord
+  # Expense dates limited to the tour's From–To dates (calendar and check on save). PAPL: switched off for now –
+  # set to true to bring the limit back.
+  LIMIT_DATES_TO_TOUR = false
+
   include Auditable
   include BlockedWords
   include SoftDeletable
@@ -509,7 +513,7 @@ class TourClaim < ApplicationRecord
   end
 
   def lines_inside_tour_dates
-    return unless tour
+    return unless LIMIT_DATES_TO_TOUR && tour
     range = tour.from_date..tour.to_date
     dated = claim_city_travels.map(&:travel_date) + claim_local_travels.map(&:travel_date) + claim_incidentals.map(&:expense_date)
     outside = dated.compact.reject { |d| range.cover?(d) }
