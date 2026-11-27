@@ -1,3 +1,19 @@
 <% content_for :title, "Edit Special DA Rate" %>
-<%= page_header("Edit Special DA Rate", @rule.applies_to + " · " + @rule.city_label, icon_name: :rupee) %>
-<div class="card max-w-xl fade-up"><%= render "form", rule: @rule %></div>
+<%= page_header("Edit Special DA Rate", "#{@rule.applies_to} · #{@rule.city_label}", icon_name: :rupee) %>
+<div class="card max-w-xl fade-up">
+  <div class="card-body">
+    <%= error_box(@rule) %>
+    <%= form_with model: [ :masters, @rule ], class: "space-y-4" do |f| %>
+      <div class="grid gap-3 rounded-xl bg-slate-50 p-3 text-sm sm:grid-cols-2">
+        <div><span class="lbl">Applies to</span><b><%= @rule.applies_to %></b></div>
+        <div><span class="lbl">City rate</span><%= @rule.city ? inr(@rule.city.da_rate) : "—" %></div>
+      </div>
+      <div><%= f.label :city_id, "City", class: "lbl" %><%= f.collection_select :city_id, City.active.ordered, :id, :name, { include_blank: "All cities" }, class: "inp" %></div>
+      <div><%= f.label :da_rate, "DA rate per day", class: "lbl" %>
+        <div class="relative"><span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">₹</span><%= f.number_field :da_rate, step: "0.01", min: 0, required: true, class: "inp pl-7 text-lg font-semibold" %></div></div>
+      <div><%= f.label :remark, class: "lbl" %><%= f.text_field :remark, class: "inp" %></div>
+      <label class="flex items-center gap-2 text-sm text-slate-700"><%= f.check_box :active, class: "check" %> Active – use this rate in claims</label>
+      <div class="flex justify-end gap-2"><%= link_to "Cancel", masters_da_rate_rules_path, class: "btn-light" %><%= f.button class: "btn-primary" do %><%= icon(:check) %> Save<% end %></div>
+    <% end %>
+  </div>
+</div>

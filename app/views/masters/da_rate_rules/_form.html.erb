@@ -1,35 +1,72 @@
-<%# locals: (rule:) %>
-<% levels = User.where.not(level: [ nil, "" ]).distinct.order(:level).pluck(:level) %>
-<% designations = User.where.not(designation: [ nil, "" ]).distinct.order(:designation).pluck(:designation) %>
-<% employees = User.active.order(:name).pluck(:emp_code, :name) %>
+<%# locals: (rule:, choices:, cities:, scope: "all", city_ids: []) %>
 <%= error_box(rule) %>
-<%= form_with model: [ :masters, rule ], class: "card-body space-y-4" do |f| %>
+<%= form_with model: [ :masters, rule ], class: "space-y-5", data: { controller: "da-rule-form" } do |f| %>
+  <%# 1. who %>
   <div>
-    <%= f.label :match_type, "Applies to", class: "lbl" %>
-    <%= f.select :match_type, DaRateRule::TYPES.invert, {}, class: "inp", data: { no_search: true } %>
+    <span class="lbl">1 · Applies to</span>
+    <div class="grid grid-cols-3 gap-1 rounded-xl bg-slate-100/80 p-1" role="radiogroup">
+      <% DaRateRule::TYPES.each do |type, label| %>
+        <label class="da-seg">
+          <%= f.radio_button :match_type, type, class: "peer sr-only", data: { action: "change->da-rule-form#chooseType" } %>
+          <span class="da-seg-btn"><%= icon({ "level" => :check_badge, "designation" => :users, "employee" => :user }[type], "h-4 w-4") %><%= label %></span>
+        </label>
+      <% end %>
+    </div>
+    <% DaRateRule::TYPES.each do |type, label| %>
+      <div class="mt-3" data-da-rule-form-target="value" data-type="<%= type %>" <%= "hidden" unless rule.match_type == type %>>
+        <%= select_tag "da_rate_rule[match_value]",
+              options_for_select(choices[type].values.map { |c| [ c[:label] + (type == "employee" ? "" : " · #{c[:count]} #{'employee'.pluralize(c[:count])}"), c[:value] ] },
+                                 rule.match_type == type ? rule.match_value : nil),
+              include_blank: "Choose #{label.downcase}…", class: "inp", disabled: rule.match_type != type,
+              id: "da_rule_value_#{type}", "aria-label": label %>
+      </div>
+    <% end %>
+    <p class="mt-1.5 text-xs text-slate-500">From the Employee List – the number shows how many employees get this rate.</p>
   </div>
+
+  <%# 2. where %>
   <div>
-    <%= f.label :match_value, "Level / Designation / Employee code", class: "lbl" %>
-    <%= f.text_field :match_value, list: "da-rule-values", required: true, class: "inp", placeholder: "e.g. L - 5, Area Manager or PAPL134" %>
-    <datalist id="da-rule-values">
-      <% levels.each do |v| %><option value="<%= v %>">Level</option><% end %>
-      <% designations.each do |v| %><option value="<%= v %>">Designation</option><% end %>
-      <% employees.each do |code, name| %><option value="<%= code %>"><%= name %></option><% end %>
-    </datalist>
-    <p class="mt-1 text-xs text-slate-500">Pick from the list – it must match the Employee List.</p>
+    <span class="lbl">2 · Cities</span>
+    <div class="grid grid-cols-2 gap-1 rounded-xl bg-slate-100/80 p-1">
+      <label class="da-seg"><%= radio_button_tag :city_scope, "all", scope == "all", class: "peer sr-only", data: { action: "change->da-rule-form#chooseCities" } %><span class="da-seg-btn"><%= icon(:map, "h-4 w-4") %>All cities</span></label>
+      <label class="da-seg"><%= radio_button_tag :city_scope, "some", scope == "some", class: "peer sr-only", data: { action: "change->da-rule-form#chooseCities" } %><span class="da-seg-btn"><%= icon(:pin, "h-4 w-4") %>Selected cities</span></label>
+    </div>
+    <div class="mt-3 rounded-xl ring-1 ring-slate-200/80" data-da-rule-form-target="cityBox" <%= "hidden" unless scope == "some" %>>
+      <div class="flex flex-wrap items-center gap-2 border-b border-slate-100 p-2.5">
+        <div class="relative min-w-0 flex-1">
+          <span class="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-slate-400"><%= icon(:search, "h-4 w-4") %></span>
+          <input type="search" class="inp py-1.5 pl-8 text-sm" placeholder="Find a city…" data-da-rule-form-target="cityFilter" data-action="input->da-rule-form#filterCities" aria-label="Find a city">
+        </div>
+        <button type="button" class="btn-ghost btn-xs" data-action="da-rule-form#selectShown">Select shown</button>
+        <button type="button" class="btn-ghost btn-xs" data-action="da-rule-form#clearCities">Clear</button>
+      </div>
+      <div class="da-city-list">
+        <% cities.each do |c| %>
+          <label class="da-city" data-da-rule-form-target="city" data-name="<%= c.name.downcase %>">
+            <%= check_box_tag "city_ids[]", c.id, city_ids.include?(c.id), id: "da_city_#{c.id}", class: "check", data: { action: "change->da-rule-form#countCities" } %>
+            <span class="min-w-0 flex-1 truncate"><%= c.name %></span>
+            <span class="text-[11px] text-slate-400" title="City rate for everyone else"><%= inr(c.da_rate) %></span>
+          </label>
+        <% end %>
+      </div>
+      <div class="flex items-center justify-between border-t border-slate-100 px-3 py-2 text-xs text-slate-600">
+        <span><b data-da-rule-form-target="counter">0</b> of <%= cities.size %> cities ticked</span>
+        <span class="text-slate-400">grey = city rate for everyone else</span>
+      </div>
+    </div>
   </div>
-  <div>
-    <%= f.label :city_id, "City", class: "lbl" %>
-    <%= f.collection_select :city_id, City.active.ordered, :id, :name, { include_blank: "All cities" }, class: "inp" %>
+
+  <%# 3. rate %>
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <%= f.label :da_rate, "3 · DA rate per day", class: "lbl" %>
+      <div class="relative"><span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">₹</span><%= f.number_field :da_rate, step: "0.01", min: 0, required: true, class: "inp pl-7 text-lg font-semibold", placeholder: "0.00" %></div>
+    </div>
+    <div><%= f.label :remark, "Remark (optional)", class: "lbl" %><%= f.text_field :remark, class: "inp", placeholder: "e.g. HR policy 2026" %></div>
   </div>
-  <div>
-    <%= f.label :da_rate, "DA rate per day", class: "lbl" %>
-    <div class="relative"><span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">₹</span><%= f.number_field :da_rate, step: "0.01", min: 0, required: true, class: "inp pl-7" %></div>
-  </div>
-  <div><%= f.label :remark, class: "lbl" %><%= f.text_field :remark, class: "inp", placeholder: "e.g. As per HR policy for managers" %></div>
-  <label class="flex items-center gap-2 text-sm text-slate-700"><%= f.check_box :active, class: "check" %> Active</label>
-  <div class="flex justify-end gap-2">
-    <% if rule.persisted? %><%= link_to "Cancel", masters_da_rate_rules_path, class: "btn-light" %><% end %>
-    <%= f.button class: "btn-primary" do %><%= icon(:check) %> Save<% end %>
-  </div>
+  <label class="flex items-center gap-2 text-sm text-slate-700"><%= f.check_box :active, class: "check" %> Active – use this rate in claims</label>
+  <p class="rounded-lg bg-emerald-50/70 px-3 py-2 text-xs text-emerald-800 ring-1 ring-emerald-100">
+    <%= icon(:info, "mr-1 inline h-4 w-4") %>A city that already has a special rate for the same person / position gets the new rate. Claims already sent keep their rate.
+  </p>
+  <div class="flex justify-end"><%= f.button class: "btn-primary btn-lg" do %><%= icon(:check) %> Save special rate<% end %></div>
 <% end %>

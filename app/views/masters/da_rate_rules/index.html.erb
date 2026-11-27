@@ -1,33 +1,66 @@
 <% content_for :title, "Special DA Rate" %>
-<%= page_header("Special DA Rate", "DA rate for some employees by position. Everyone else gets the City & DA Rate master rate. If several rules fit: Employee → Designation → Level; a city rule before an “All cities” rule.", icon_name: :rupee) do %>
+<%= page_header("Special DA Rate", "A different DA rate for some employees by Level, Designation or Employee – in every city or in the cities you tick. Everyone else gets the City & DA Rate master rate.", icon_name: :rupee) do %>
   <%= link_to masters_cities_path, class: "btn-light" do %><%= icon(:building) %> City & DA Rate<% end %>
   <%= print_button %>
 <% end %>
-<div class="grid gap-5 xl:grid-cols-[360px_1fr]">
-  <div class="card h-fit fade-up">
-    <div class="card-head"><span class="card-title"><span class="icon-chip bg-emerald-50 text-emerald-600"><%= icon(:plus) %></span>Add special rate</span></div>
-    <%= render "form", rule: @rule %>
+
+<%# which rule wins – short, always visible %>
+<div class="mb-5 flex flex-wrap items-center gap-2 text-xs text-slate-600 fade-up">
+  <span class="font-semibold uppercase tracking-wide text-slate-400">If several fit:</span>
+  <% [ [ "Employee", :user ], [ "Designation", :users ], [ "Level", :check_badge ], [ "City rate", :building ] ].each_with_index do |(label, ic), i| %>
+    <% if i.positive? %><%= icon(:arrow_right, "h-3.5 w-3.5 text-slate-300") %><% end %>
+    <span class="inline-flex items-center gap-1 rounded-full bg-white/80 px-2.5 py-1 ring-1 ring-slate-200"><%= icon(ic, "h-3.5 w-3.5 text-brand-600") %><%= label %></span>
+  <% end %>
+  <span class="text-slate-400">· a city's own rule comes before “All cities”</span>
+</div>
+
+<div class="grid gap-5 xl:grid-cols-[minmax(0,440px)_1fr]">
+  <div class="card h-fit fade-up xl:sticky xl:top-20">
+    <div class="card-head"><span class="card-title"><span class="icon-chip bg-emerald-50 text-emerald-600"><%= icon(:plus) %></span>Add / change special rate</span></div>
+    <div class="card-body"><%= render "form", rule: @rule, choices: @choices, cities: @cities, scope: @scope, city_ids: @city_ids || [] %></div>
   </div>
-  <div class="card overflow-hidden fade-up" data-controller="table-filter">
-    <%= render "shared/table_filter_field", placeholder: "Search level, designation, employee, city…" %>
-    <table class="tbl tbl-stack">
-      <thead><tr><th>Applies to</th><th>City</th><th class="text-right">DA rate / day</th><th>Status</th><th>Remark</th><th class="no-print"></th></tr></thead>
-      <tbody data-table-filter-target="body">
-        <% @rules.each do |r| %>
-          <tr>
-            <td data-label="Applies to"><span class="text-xs font-semibold uppercase text-slate-400"><%= DaRateRule::TYPES[r.match_type] %></span><div class="font-semibold text-slate-900"><%= r.match_value %></div></td>
-            <td data-label="City"><%= r.city_label %></td>
-            <td data-label="DA rate" class="font-semibold md:text-right"><%= inr(r.da_rate) %></td>
-            <td data-label="Status"><%= r.active? ? tag.span("Active", class: "badge badge-dot bg-emerald-50 text-emerald-700 ring-emerald-200") : tag.span("Off", class: "badge badge-dot bg-slate-50 text-slate-500 ring-slate-200") %></td>
-            <td data-label="Remark" class="text-sm text-slate-600"><%= r.remark.presence || "—" %></td>
-            <td class="no-print"><div class="flex justify-end gap-1.5">
-              <%= link_to edit_masters_da_rate_rule_path(r), class: "btn-light btn-xs" do %><%= icon(:pencil) %> Edit<% end %>
-              <%= button_to masters_da_rate_rule_path(r), method: :delete, class: "btn-soft-danger btn-xs", form_class: "inline", data: { turbo_confirm: "Remove this special DA rate? #{r.applies_to} will get the city rate again." } do %><%= icon(:trash) %><% end %>
-            </div></td>
-          </tr>
-        <% end %>
-        <%= empty_row(6, "No special DA rate yet – everyone gets the city rate.") if @rules.empty? %>
-      </tbody>
-    </table>
+
+  <div class="space-y-4 fade-up" data-controller="table-filter">
+    <div class="card"><%= render "shared/table_filter_field", placeholder: "Search level, designation, employee, city…" %></div>
+    <div data-table-filter-target="body" class="space-y-4">
+      <% @groups.each do |g| %>
+        <% first = g[:rules].first %>
+        <div class="card overflow-hidden" data-filter-row>
+          <div class="card-head">
+            <span class="card-title">
+              <span class="icon-chip bg-brand-50 text-brand-600"><%= icon({ "level" => :check_badge, "designation" => :users, "employee" => :user }[g[:type]]) %></span>
+              <span class="leading-tight"><span class="block text-[11px] font-semibold uppercase tracking-wide text-slate-400"><%= DaRateRule::TYPES[g[:type]] %></span><%= g[:value] %></span>
+            </span>
+            <span class="flex items-center gap-2">
+              <span class="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600"><%= g[:count] %> <%= "employee".pluralize(g[:count]) %> · <%= g[:rules].size %> <%= "rate".pluralize(g[:rules].size) %></span>
+              <%= button_to masters_da_rate_rule_path(first, group: 1), method: :delete, class: "btn-ghost btn-xs text-rose-600", form_class: "inline no-print",
+                    data: { turbo_confirm: "Remove all #{g[:rules].size} special DA rates of #{first.applies_to}? They get the city rate again." } do %><%= icon(:trash, "h-4 w-4") %> All<% end %>
+            </span>
+          </div>
+          <table class="tbl tbl-stack">
+            <thead><tr><th>City</th><th class="text-right">Special DA / day</th><th class="text-right">City rate</th><th>Status</th><th>Remark</th><th class="no-print"></th></tr></thead>
+            <tbody>
+              <% g[:rules].each do |r| %>
+                <tr class="<%= 'opacity-60' unless r.active? %>">
+                  <td data-label="City" class="font-medium"><%= r.city ? r.city.name : tag.span("All cities", class: "inline-flex items-center gap-1 text-brand-700") %></td>
+                  <td data-label="Special DA" class="font-bold text-slate-900 md:text-right"><%= inr(r.da_rate) %></td>
+                  <td data-label="City rate" class="text-slate-500 md:text-right"><%= r.city ? inr(r.city.da_rate) : "—" %></td>
+                  <td data-label="Status"><%= r.active? ? tag.span("Active", class: "badge badge-dot bg-emerald-50 text-emerald-700 ring-emerald-200") : tag.span("Off", class: "badge badge-dot bg-slate-50 text-slate-500 ring-slate-200") %></td>
+                  <td data-label="Remark" class="text-sm text-slate-600"><%= r.remark.presence || "—" %></td>
+                  <td class="no-print"><div class="flex justify-end gap-1.5">
+                    <%= link_to edit_masters_da_rate_rule_path(r), class: "btn-light btn-xs" do %><%= icon(:pencil) %> Edit<% end %>
+                    <%= button_to masters_da_rate_rule_path(r), method: :delete, class: "btn-soft-danger btn-xs btn-icon", form_class: "inline", title: "Remove",
+                          data: { turbo_confirm: "Remove the special DA rate of #{r.applies_to} in #{r.city_label}?" } do %><%= icon(:trash) %><% end %>
+                  </div></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+    <% if @groups.empty? %>
+      <div class="card"><div class="empty-state"><%= icon(:rupee) %>No special DA rate yet – everyone gets the city rate.<span class="text-xs">Add one on the left.</span></div></div>
+    <% end %>
   </div>
 </div>

@@ -49,6 +49,34 @@ class DaRateRule < ApplicationRecord
     cities.to_h { |c| [ c.id, rate_for(user, c) || c.da_rate ] }
   end
 
+  # the rule for this Level / Designation / Employee in this city (nil = "all cities"), if there is one
+  def self.find_same(type, value, city_id)
+    key = norm(type, value)
+    where(match_type: type, city_id: city_id).to_a.find { |r| norm(type, r.match_value) == key }
+  end
+
+  # every rule (all its cities) of the same Level / Designation / Employee
+  def self.group_of(rule)
+    key = norm(rule.match_type, rule.match_value)
+    where(match_type: rule.match_type).to_a.select { |r| norm(r.match_type, r.match_value) == key }
+  end
+
+  # What the form offers, from the active Employee List: { "level" => { key => { value:, label:, count: } }, ... }
+  def self.choices
+    users = User.active.pluck(:emp_code, :name, :designation, :level)
+    by = ->(type, idx) {
+      users.map { _1[idx] }.compact_blank.group_by { norm(type, _1) }
+           .transform_values { |vals| { value: vals.first, label: vals.first, count: vals.size } }
+           .sort_by { |_, v| v[:label].downcase }.to_h
+    }
+    {
+      "level" => by.("level", 3),
+      "designation" => by.("designation", 2),
+      "employee" => users.sort_by { _1[1].to_s.downcase }
+                         .to_h { |code, name, *| [ norm("employee", code), { value: code, label: "#{name} (#{code})", count: 1 } ] }
+    }
+  end
+
   def applies_to = "#{TYPES[match_type]}: #{match_value}"
   def city_label = city&.name || "All cities"
 

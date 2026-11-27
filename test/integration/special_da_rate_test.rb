@@ -52,16 +52,39 @@ class SpecialDaRateTest < ActionDispatch::IntegrationTest
     assert_match %(data-rate="400.0" value="#{@bhopal.id}"), response.body          # form picks the special rate too
   end
 
-  test "PD HR / admin manage special DA rates from Masters" do
+  test "PD HR / admin manage special DA rates from Masters – all cities, or many ticked cities in one save" do
     sign_in @admin
     get masters_da_rate_rules_path
     assert_response :success
-    post masters_da_rate_rules_path, params: { da_rate_rule: { match_type: "designation", match_value: "Area Manager", city_id: "", da_rate: 650, active: "1" } }
+    assert_match "Area Manager · 1 employee", response.body                       # choices come from the Employee List
+
+    post masters_da_rate_rules_path, params: { city_scope: "all", da_rate_rule: { match_type: "designation", match_value: "Area Manager", da_rate: 650, active: "1" } }
     assert_redirected_to masters_da_rate_rules_path
     r = DaRateRule.last
     assert_equal [ "designation", "Area Manager", nil, 650 ], [ r.match_type, r.match_value, r.city_id, r.da_rate.to_i ]
+
+    # one save, two ticked cities
+    post masters_da_rate_rules_path, params: { city_scope: "some", city_ids: [ @bhopal.id, @jhabua.id ],
+                                               da_rate_rule: { match_type: "level", match_value: "L - 5", da_rate: 520, active: "1" } }
+    assert_match "2 added", flash[:notice]
+    assert_equal [ 520, 520 ], [ @bhopal, @jhabua ].map { DaRateRule.rate_for(@emp, _1).to_i }
+
+    # same level again for one of them: that city's rate is changed, no second rule
+    post masters_da_rate_rules_path, params: { city_scope: "some", city_ids: [ @bhopal.id ],
+                                               da_rate_rule: { match_type: "level", match_value: "l-5", da_rate: 560, active: "1" } }
+    assert_match "1 updated", flash[:notice]
+    assert_equal 2, DaRateRule.where(match_type: "level").count
+    assert_equal 560, DaRateRule.rate_for(@emp, @bhopal).to_i
+
+    # "Selected cities" without a city ticked
+    post masters_da_rate_rules_path, params: { city_scope: "some", da_rate_rule: { match_type: "level", match_value: "L - 5", da_rate: 1 } }
+    assert_response :unprocessable_entity
+    assert_match "Tick at least one city", response.body
+
     patch masters_da_rate_rule_path(r), params: { da_rate_rule: { da_rate: 700 } }
     assert_equal 700, r.reload.da_rate.to_i
+    delete masters_da_rate_rule_path(DaRateRule.find_by(match_type: "level", city: @bhopal), group: 1)   # whole group
+    assert_equal 0, DaRateRule.where(match_type: "level").count
     delete masters_da_rate_rule_path(r)
     assert_not DaRateRule.exists?(r.id)
 
