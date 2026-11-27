@@ -1,0 +1,35 @@
+<%# locals: (rule:) %>
+<% levels = User.where.not(level: [ nil, "" ]).distinct.order(:level).pluck(:level) %>
+<% designations = User.where.not(designation: [ nil, "" ]).distinct.order(:designation).pluck(:designation) %>
+<% employees = User.active.order(:name).pluck(:emp_code, :name) %>
+<%= error_box(rule) %>
+<%= form_with model: [ :masters, rule ], class: "card-body space-y-4" do |f| %>
+  <div>
+    <%= f.label :match_type, "Applies to", class: "lbl" %>
+    <%= f.select :match_type, DaRateRule::TYPES.invert, {}, class: "inp", data: { no_search: true } %>
+  </div>
+  <div>
+    <%= f.label :match_value, "Level / Designation / Employee code", class: "lbl" %>
+    <%= f.text_field :match_value, list: "da-rule-values", required: true, class: "inp", placeholder: "e.g. L - 5, Area Manager or PAPL134" %>
+    <datalist id="da-rule-values">
+      <% levels.each do |v| %><option value="<%= v %>">Level</option><% end %>
+      <% designations.each do |v| %><option value="<%= v %>">Designation</option><% end %>
+      <% employees.each do |code, name| %><option value="<%= code %>"><%= name %></option><% end %>
+    </datalist>
+    <p class="mt-1 text-xs text-slate-500">Pick from the list – it must match the Employee List.</p>
+  </div>
+  <div>
+    <%= f.label :city_id, "City", class: "lbl" %>
+    <%= f.collection_select :city_id, City.active.ordered, :id, :name, { include_blank: "All cities" }, class: "inp" %>
+  </div>
+  <div>
+    <%= f.label :da_rate, "DA rate per day", class: "lbl" %>
+    <div class="relative"><span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">₹</span><%= f.number_field :da_rate, step: "0.01", min: 0, required: true, class: "inp pl-7" %></div>
+  </div>
+  <div><%= f.label :remark, class: "lbl" %><%= f.text_field :remark, class: "inp", placeholder: "e.g. As per HR policy for managers" %></div>
+  <label class="flex items-center gap-2 text-sm text-slate-700"><%= f.check_box :active, class: "check" %> Active</label>
+  <div class="flex justify-end gap-2">
+    <% if rule.persisted? %><%= link_to "Cancel", masters_da_rate_rules_path, class: "btn-light" %><% end %>
+    <%= f.button class: "btn-primary" do %><%= icon(:check) %> Save<% end %>
+  </div>
+<% end %>

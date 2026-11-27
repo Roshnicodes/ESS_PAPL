@@ -18,6 +18,9 @@ module ClaimsHelper
     datetime ? { min: "#{@tour.from_date}T00:00", max: "#{@tour.to_date}T23:59" } : { min: @tour.from_date, max: @tour.to_date }
   end
 
+  # DA rate per city for the employee whose claim this is (special DA rate where one fits, else the city's rate)
+  def claim_da_rates = @claim_da_rates ||= DaRateRule.rates_for(@tour&.user, claim_cities)
+
   def nd(date)  = tag.span(d(date), class: "whitespace-nowrap")
   def ndt(time) = tag.span(dt(time), class: "whitespace-nowrap")
 

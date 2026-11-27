@@ -61,6 +61,7 @@
     <div class="nav-head">Masters</div>
     <%= link.("Mode of Travel", masters_travel_modes_path, :route) if can?(:manage, TravelMode) %>
     <%= link.("City & DA Rate", masters_cities_path, :building) if can?(:manage, City) %>
+    <%= link.("Special DA Rate", masters_da_rate_rules_path, :rupee) if can?(:manage, City) %>
     <%= link.("Per KM Rate", masters_mileage_rates_path, :rupee) if can?(:create, MileageRate) %>
     <%= link.("Local Claim Cutoff Day", masters_claim_cutoff_rules_path, :calendar) if can?(:manage, ClaimCutoffRule) %>
     <%= link.("Employee List", masters_users_path, :users) if can?(:create, User) %>

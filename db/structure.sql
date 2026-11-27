@@ -838,6 +838,45 @@ ALTER SEQUENCE public.claim_visit_reports_id_seq OWNED BY public.claim_visit_rep
 
 
 --
+-- Name: da_rate_rules; Type: TABLE; Schema: public; Owner: -
+--
+
+CREATE TABLE public.da_rate_rules (
+    id bigint NOT NULL,
+    match_type character varying(20) NOT NULL,
+    match_value character varying(150) NOT NULL,
+    city_id bigint,
+    da_rate numeric(10,2) NOT NULL,
+    active boolean DEFAULT true NOT NULL,
+    remark character varying(255),
+    created_by_id bigint,
+    created_at timestamp(6) without time zone NOT NULL,
+    updated_at timestamp(6) without time zone NOT NULL,
+    CONSTRAINT chk_da_rate_rules_rate CHECK ((da_rate >= (0)::numeric)),
+    CONSTRAINT chk_da_rate_rules_type CHECK (((match_type)::text = ANY ((ARRAY['level'::character varying, 'designation'::character varying, 'employee'::character varying])::text[])))
+);
+
+
+--
+-- Name: da_rate_rules_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.da_rate_rules_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- Name: da_rate_rules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE public.da_rate_rules_id_seq OWNED BY public.da_rate_rules.id;
+
+
+--
 -- Name: locations; Type: TABLE; Schema: public; Owner: -
 --
 
@@ -1543,6 +1582,13 @@ ALTER TABLE ONLY public.claim_visit_reports ALTER COLUMN id SET DEFAULT nextval(
 
 
 --
+-- Name: da_rate_rules id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.da_rate_rules ALTER COLUMN id SET DEFAULT nextval('public.da_rate_rules_id_seq'::regclass);
+
+
+--
 -- Name: locations id; Type: DEFAULT; Schema: public; Owner: -
 --
 
@@ -1795,6 +1841,14 @@ ALTER TABLE ONLY public.claim_visit_reports
 
 
 --
+-- Name: da_rate_rules da_rate_rules_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.da_rate_rules
+    ADD CONSTRAINT da_rate_rules_pkey PRIMARY KEY (id);
+
+
+--
 -- Name: tours excl_tours_no_overlap; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -2009,6 +2063,13 @@ CREATE INDEX idx_claims_utr ON public.tour_claims USING btree (utr_no) WHERE (ut
 --
 
 CREATE INDEX idx_claims_utr_by ON public.tour_claims USING btree (utr_updated_by_id) WHERE (utr_updated_by_id IS NOT NULL);
+
+
+--
+-- Name: idx_da_rate_rules_unique; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE UNIQUE INDEX idx_da_rate_rules_unique ON public.da_rate_rules USING btree (match_type, lower((match_value)::text), COALESCE(city_id, (0)::bigint));
 
 
 --
@@ -2303,6 +2364,20 @@ CREATE INDEX index_claim_visit_reports_on_tour_claim_id_and_visit_date ON public
 --
 
 CREATE INDEX index_claim_visit_reports_on_tour_visit_id ON public.claim_visit_reports USING btree (tour_visit_id);
+
+
+--
+-- Name: index_da_rate_rules_on_city_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_da_rate_rules_on_city_id ON public.da_rate_rules USING btree (city_id);
+
+
+--
+-- Name: index_da_rate_rules_on_created_by_id; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX index_da_rate_rules_on_created_by_id ON public.da_rate_rules USING btree (created_by_id);
 
 
 --
@@ -2831,6 +2906,14 @@ ALTER TABLE ONLY public.budget_line_item_codes
 
 ALTER TABLE ONLY public.notifications
     ADD CONSTRAINT fk_rails_06a39bb8cc FOREIGN KEY (actor_id) REFERENCES public.users(id);
+
+
+--
+-- Name: da_rate_rules fk_rails_097ba32537; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.da_rate_rules
+    ADD CONSTRAINT fk_rails_097ba32537 FOREIGN KEY (created_by_id) REFERENCES public.users(id);
 
 
 --
@@ -3434,6 +3517,14 @@ ALTER TABLE ONLY public.app_settings
 
 
 --
+-- Name: da_rate_rules fk_rails_f969631947; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.da_rate_rules
+    ADD CONSTRAINT fk_rails_f969631947 FOREIGN KEY (city_id) REFERENCES public.cities(id);
+
+
+--
 -- Name: tour_claims fk_rails_fc59a6d7c3; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
@@ -3456,6 +3547,7 @@ ALTER TABLE ONLY public.projects
 SET search_path TO "$user", public;
 
 INSERT INTO "schema_migrations" (version) VALUES
+('20261127100001'),
 ('20261105120001'),
 ('20261105100001'),
 ('20261102100001'),

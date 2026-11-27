@@ -3,6 +3,7 @@
   <%= print_button %>
   <%= render "shared/activity_button", id: "city-history", title: "City master history", sections: [["Changes", @logs.reverse]] %>
   <%= link_to export_masters_cities_path, class: "btn-light", data: { turbo: false } do %><%= icon(:receipt) %> Download Excel<% end %>
+  <%= link_to masters_da_rate_rules_path, class: "btn-light", title: "Different DA rate for some employees by level / designation" do %><%= icon(:rupee) %> Special DA Rate<% end %>
   <%= link_to new_masters_city_path, class: "btn-primary" do %><%= icon(:plus) %> Add City<% end %>
 <% end %>
 

@@ -30,8 +30,11 @@ class ClaimDailyAllowance < ApplicationRecord
 
   def compute_amount
     self.no_of_days = self.class.days_between(departure_at, arrival_at) if departure_at && arrival_at
-    # rate always from the City master; a sent claim keeps its rate unless the city itself is changed
-    self.da_rate = city.da_rate if city&.da_rate && (new_record? || city_id_changed? || da_rate.to_d.zero?)
+    # rate from the City master – or the employee's special DA rate (Masters → Special DA Rate) where one fits;
+    # a sent claim keeps its rate unless the city itself is changed
+    if city&.da_rate && (new_record? || city_id_changed? || da_rate.to_d.zero?)
+      self.da_rate = DaRateRule.rate_for(tour_claim&.user, city) || city.da_rate
+    end
     self.amount = (no_of_days.to_d * da_rate.to_d * applicable_percent.to_i / 100).round(2)
   end
 

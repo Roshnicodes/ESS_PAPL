@@ -78,6 +78,7 @@ Rails.application.routes.draw do
 
   namespace :masters do
     resource :it_tool_settings, only: %i[show update], path: "it-tool-settings"
+    resources :da_rate_rules, only: %i[index create edit update destroy], path: "special-da-rates"   # DA rate by position
     resources :cities, only: %i[index new create edit update] do
       patch :toggle, on: :member
       collection do
